@@ -1,63 +1,93 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
 
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
   mode: "signin" | "signup"
+  onToggleMode: () => void
 }
 
-export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, mode, onToggleMode }: AuthModalProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    name: "",
+  })
 
   const handleGoogleAuth = async () => {
     setIsLoading(true)
-    // Google OAuth integration would go here
-    console.log("Google authentication")
-    setTimeout(() => {
-      setIsLoading(false)
+    try {
+      console.log("[v0] Google authentication initiated")
+      // Simulate Google OAuth flow
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      console.log("[v0] Google authentication successful")
       onClose()
-    }, 2000)
+    } catch (error) {
+      console.error("[v0] Google authentication failed:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // Email authentication would go here
-    setTimeout(() => {
-      setIsLoading(false)
+
+    try {
+      // Basic validation
+      if (mode === "signup" && formData.password !== formData.confirmPassword) {
+        alert("Passwords don't match!")
+        return
+      }
+
+      console.log("[v0] Email authentication:", { mode, email: formData.email })
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      console.log("[v0] Email authentication successful")
       onClose()
-    }, 2000)
+    } catch (error) {
+      console.error("[v0] Email authentication failed:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md glass-enhanced border-0">
         <DialogHeader>
-          <DialogTitle className="text-center">
+          <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
             {mode === "signin" ? "Welcome back to CamEdu" : "Join CamEdu today"}
           </DialogTitle>
-          <DialogDescription className="text-center">
+          <DialogDescription className="text-center text-muted-foreground">
             {mode === "signin" ? "Sign in to continue your learning journey" : "Create your account and start learning"}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Google Sign In Button */}
+        <div className="space-y-6">
           <Button
             onClick={handleGoogleAuth}
             disabled={isLoading}
-            className="w-full relative bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 transition-all duration-300 hover:shadow-lg"
+            className="w-full relative bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 transition-all duration-300 hover:shadow-lg hover:scale-105 py-3"
           >
-            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -87,44 +117,101 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
             </div>
           </div>
 
-          {/* Email Form */}
           <form onSubmit={handleEmailAuth} className="space-y-4">
+            {mode === "signup" && (
+              <div className="space-y-2">
+                <Label htmlFor="name" className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Full Name
+                </Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  required
+                  className="transition-all duration-200 focus:ring-2 focus:ring-cyan-500/20 pl-4"
+                />
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="Enter your email"
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
                 required
-                className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+                className="transition-all duration-200 focus:ring-2 focus:ring-cyan-500/20 pl-4"
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                required
-                className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
-              />
+              <Label htmlFor="password" className="flex items-center gap-2">
+                <Lock className="w-4 h-4" />
+                Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  required
+                  className="transition-all duration-200 focus:ring-2 focus:ring-cyan-500/20 pl-4 pr-12"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </Button>
+              </div>
             </div>
+
             {mode === "signup" && (
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Confirm your password"
-                  required
-                  className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
-                />
+                <Label htmlFor="confirmPassword" className="flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  Confirm Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm your password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                    required
+                    className="transition-all duration-200 focus:ring-2 focus:ring-cyan-500/20 pl-4 pr-12"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
               </div>
             )}
+
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white transition-all duration-300 hover:shadow-lg hover:shadow-orange-400/25"
+              className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/25 hover:scale-105 py-3"
             >
               {isLoading ? "Please wait..." : mode === "signin" ? "Sign In" : "Create Account"}
             </Button>
@@ -134,10 +221,8 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
             {mode === "signin" ? "Don't have an account? " : "Already have an account? "}
             <button
               type="button"
-              onClick={() => {
-                /* Toggle between signin/signup */
-              }}
-              className="text-primary hover:underline font-medium"
+              onClick={onToggleMode}
+              className="text-cyan-600 hover:text-cyan-700 hover:underline font-medium transition-colors duration-200"
             >
               {mode === "signin" ? "Sign up" : "Sign in"}
             </button>
