@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Search, Filter, Star, Clock, Users, ChevronRight, Heart, BookOpen, Award, TrendingUp, X } from "lucide-react"
 import { CourseSkeleton } from "@/components/course-skeleton"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
+import {Header} from "@/components/header"
+import {Footer} from "@/components/footer"
 
 export default function CoursesPage() {
   const [isLoading, setIsLoading] = useState(false)
