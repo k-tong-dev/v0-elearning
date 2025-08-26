@@ -5,7 +5,20 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AuthModal } from "@/components/auth-modal"
-import { Menu, X, BookOpen, User, Search, ChevronDown } from "lucide-react"
+import {
+  Menu,
+  X,
+  BookOpen,
+  User,
+  Search,
+  ChevronDown,
+  MessageCircle,
+  Info,
+  FileText,
+  Briefcase,
+  HelpCircle,
+  Phone,
+} from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export function Header() {
@@ -47,12 +60,48 @@ export function Header() {
   }
 
   const exploreItems = [
-    { title: "Forum", description: "Join discussions with fellow learners", href: "/forum" },
-    { title: "About Us", description: "Learn about our mission and team", href: "/about" },
-    { title: "Blog", description: "Read our latest articles and insights", href: "/blog" },
-    { title: "Services", description: "Explore our educational services", href: "/services" },
-    { title: "Support", description: "Get help when you need it", href: "/support" },
-    { title: "Contact", description: "Reach out to our team", href: "/contact" },
+    {
+      title: "Forum",
+      description: "Join discussions with fellow learners",
+      href: "/forum",
+      icon: MessageCircle,
+      color: "text-blue-500",
+    },
+    {
+      title: "About Us",
+      description: "Learn about our mission and team",
+      href: "/about",
+      icon: Info,
+      color: "text-green-500",
+    },
+    {
+      title: "Blog",
+      description: "Read our latest articles and insights",
+      href: "/blog",
+      icon: FileText,
+      color: "text-purple-500",
+    },
+    {
+      title: "Services",
+      description: "Explore our educational services",
+      href: "/services",
+      icon: Briefcase,
+      color: "text-orange-500",
+    },
+    {
+      title: "Support",
+      description: "Get help when you need it",
+      href: "/support",
+      icon: HelpCircle,
+      color: "text-red-500",
+    },
+    {
+      title: "Contact",
+      description: "Reach out to our team",
+      href: "/contact",
+      icon: Phone,
+      color: "text-cyan-500",
+    },
   ]
 
   return (
@@ -83,22 +132,37 @@ export function Header() {
                 Courses
               </Link>
               <DropdownMenu open={isExploreOpen} onOpenChange={setIsExploreOpen}>
-                <DropdownMenuTrigger className="flex items-center gap-1 text-foreground hover:text-primary transition-colors duration-200">
+                <DropdownMenuTrigger className="flex items-center gap-1 text-foreground hover:text-primary transition-all duration-200 hover:scale-105">
                   Explore
                   <ChevronDown
                     className={`w-4 h-4 transition-transform duration-200 ${isExploreOpen ? "rotate-180" : ""}`}
                   />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-80 p-2">
+                <DropdownMenuContent className="w-96 p-3 glass-enhanced border-0 shadow-2xl">
                   <div className="grid grid-cols-2 gap-2">
-                    {exploreItems.map((item) => (
-                      <DropdownMenuItem key={item.title} asChild>
-                        <Link href={item.href} className="flex flex-col items-start p-3 rounded-lg hover:bg-accent/20">
-                          <span className="font-medium text-sm">{item.title}</span>
-                          <span className="text-xs text-muted-foreground">{item.description}</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    ))}
+                    {exploreItems.map((item) => {
+                      const IconComponent = item.icon
+                      return (
+                        <DropdownMenuItem key={item.title} asChild>
+                          <Link
+                            href={item.href}
+                            className="flex flex-col items-start p-4 rounded-xl hover:bg-gradient-to-r hover:from-accent/20 hover:to-accent/10 transition-all duration-300 hover:scale-105 hover:shadow-lg group border border-transparent hover:border-accent/20"
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <IconComponent
+                                className={`w-5 h-5 ${item.color} group-hover:scale-110 transition-transform duration-200`}
+                              />
+                              <span className="font-semibold text-sm group-hover:text-primary transition-colors duration-200">
+                                {item.title}
+                              </span>
+                            </div>
+                            <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+                              {item.description}
+                            </span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )
+                    })}
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -159,15 +223,19 @@ export function Header() {
                 <div className="space-y-2">
                   <span className="text-foreground font-medium py-2">Explore</span>
                   <div className="pl-4 space-y-2">
-                    {exploreItems.map((item) => (
-                      <Link
-                        key={item.title}
-                        href={item.href}
-                        className="block text-sm text-muted-foreground hover:text-primary transition-colors duration-200 py-1"
-                      >
-                        {item.title}
-                      </Link>
-                    ))}
+                    {exploreItems.map((item) => {
+                      const IconComponent = item.icon
+                      return (
+                        <Link
+                          key={item.title}
+                          href={item.href}
+                          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors duration-200 py-2 hover:pl-2 transition-all duration-200"
+                        >
+                          <IconComponent className={`w-4 h-4 ${item.color}`} />
+                          {item.title}
+                        </Link>
+                      )
+                    })}
                   </div>
                 </div>
                 <Link

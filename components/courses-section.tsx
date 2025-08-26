@@ -1,9 +1,10 @@
 "use client"
 
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, Clock, Play } from "lucide-react"
+import { Star, Clock, Play, ArrowRight } from "lucide-react"
 
 const courses = [
   {
@@ -152,11 +153,14 @@ export function CoursesSection() {
         {/* View All Button */}
         <div className="text-center">
           <Button
-            variant="outline"
+            asChild
             size="lg"
-            className="border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 bg-transparent"
+            className="group bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white px-8 py-4 rounded-xl transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/25 hover:scale-105 text-lg font-semibold"
           >
-            View All Courses
+            <Link href="/courses" className="flex items-center gap-2">
+              See All Courses
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+            </Link>
           </Button>
         </div>
       </div>
