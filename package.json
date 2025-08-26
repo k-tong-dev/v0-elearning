@@ -12,7 +12,7 @@
     "@clerk/clerk-react": "latest",
     "@heroicons/react": "latest",
     "@hookform/resolvers": "^3.10.0",
-    "@lottiefiles/dotlottie-react": "latest",
+    "@lottiefiles/dotlottie-react": "^0.15.1",
     "@material-tailwind/react": "latest",
     "@nextui-org/react": "latest",
     "@radix-ui/react-accordion": "1.2.2",

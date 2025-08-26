@@ -11,7 +11,7 @@ import { Footer } from "@/components/footer"
 
 export default function HomePage() {
   useEffect(() => {
-    // Initialize AOS (Animate On Scroll) library
+    // Initialize AOS (Animate On Scroll) libraryßßß
     const initAOS = async () => {
       const AOS = (await import("aos")).default
       await import("aos/dist/aos.css")
