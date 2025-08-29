@@ -14,17 +14,17 @@ export default function NotFound() {
       </div>
 
       <div className="text-center space-y-8 px-4 max-w-4xl mx-auto relative z-10">
-        <div className="relative">
-          <div className="w-80 h-80 mx-auto relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 rounded-full blur-2xl animate-pulse"></div>
-            <DotLottieReact
-              src="https://lottie.host/ae624a3a-021a-4e51-b64f-c3f0e6cbc81c/27dx4gDtKt.lottie"
-              loop
-              autoplay
-              className="relative z-10"
-            />
-          </div>
-        </div>
+        {/*<div className="relative">*/}
+        {/*  <div className="w-80 h-80 mx-auto relative">*/}
+        {/*    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 rounded-full blur-2xl animate-pulse"></div>*/}
+        {/*    <DotLottieReact*/}
+        {/*      src="https://lottie.host/ae624a3a-021a-4e51-b64f-c3f0e6cbc81c/27dx4gDtKt.lottie"*/}
+        {/*      loop*/}
+        {/*      autoplay*/}
+        {/*      className="relative z-10"*/}
+        {/*    />*/}
+        {/*  </div>*/}
+        {/*</div>*/}
 
         <div className="space-y-6">
           <div className="space-y-2">

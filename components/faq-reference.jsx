@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { FaPlus, FaTimes, FaArrowRight } from "react-icons/fa"
-import { Button } from "@material-tailwind/react"
+import {Button} from "@heroui/react";
+
 
 const faqs = [
   {
@@ -70,7 +71,7 @@ export default function FAQSection() {
                 <div className="mt-3 text-sm text-gray-600 text-left">
                   <p className={"py-5"}>{faq.answer}</p>
                   {faq.buttonText && (
-                    <Button className="w-full p-4 mt-4 flex justify-between items-center bg-gray-200 text-gray-900 text-sm hover:shadow-none font-normal mb-4">
+                    <Button className="w-full p-4 mt-4 flex justify-between items-center bg-gray-200 text-gray-900 text-sm hover:shadow-none hover:bg-orange-400 font-normal mb-4">
                       {faq.buttonText}
                       <div className={"w-9 h-9 bg-gray-50 rounded-full flex items-center justify-center"}>
                         <FaArrowRight />

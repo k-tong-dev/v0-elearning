@@ -8,10 +8,11 @@ import { TestimonialsSection } from "@/components/testimonials-section"
 import { FAQSection } from "@/components/faq-section"
 import { CTASection } from "@/components/cta-section"
 import { Footer } from "@/components/footer"
+import {HeroCompany} from "@/components/hero-company";
 
 export default function HomePage() {
   useEffect(() => {
-    // Initialize AOS (Animate On Scroll) libraryßßß
+    // Initialize AOS (Animate On Scroll) library
     const initAOS = async () => {
       const AOS = (await import("aos")).default
       await import("aos/dist/aos.css")
@@ -33,6 +34,9 @@ export default function HomePage() {
       <Header />
       <div data-aos="fade-up">
         <HeroSection />
+      </div>
+        <div data-aos="fade-up">
+        <HeroCompany />
       </div>
       <div data-aos="fade-up" data-aos-delay="100">
         <CoursesSection />

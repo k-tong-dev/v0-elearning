@@ -11,6 +11,9 @@
   "dependencies": {
     "@clerk/clerk-react": "latest",
     "@heroicons/react": "latest",
+    "@heroui/react": "^2.8.2",
+    "@heroui/system": "^2.4.20",
+    "@heroui/theme": "^2.4.20",
     "@hookform/resolvers": "^3.10.0",
     "@lottiefiles/dotlottie-react": "latest",
     "@material-tailwind/react": "latest",
@@ -52,7 +55,7 @@
     "context": "latest",
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
-    "framer-motion": "^11.11.17",
+    "framer-motion": "^11.18.2",
     "geist": "latest",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",

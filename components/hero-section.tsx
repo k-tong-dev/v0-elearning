@@ -91,7 +91,7 @@ export function HeroSection() {
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="text-center max-w-5xl mx-auto">
+        <div className="text-center mt-[100px] max-w-5xl mx-auto">
           <div className="animate-slide-in-up" data-aos="fade-up" data-aos-duration="1000">
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
               <span className="block mb-4">Transform Your Future with</span>
@@ -128,7 +128,7 @@ export function HeroSection() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className="w-full pl-6 pr-16 py-4 bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-cyan-500/50 text-lg"
+                  className="w-full pl-6 pr-16 py-4 bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-cyan-transparent text-lg focus-visible:border-none focus-visible:ring-0"
                 />
                 <Button
                   onClick={handleSearch}
@@ -198,31 +198,6 @@ export function HeroSection() {
               </div>
               <div className="text-3xl font-bold text-foreground mb-1">98%</div>
               <div className="text-muted-foreground">Success Rate</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="absolute bottom-8 left-0 right-0" data-aos="fade-up" data-aos-delay="1000">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-6">Trusted by professionals from</p>
-            <div className="flex items-center justify-center space-x-12 opacity-70 hover:opacity-100 transition-opacity duration-300">
-              <div className="text-2xl font-bold text-muted-foreground hover:text-cyan-500 transition-colors duration-300">
-                Microsoft
-              </div>
-              <div className="text-2xl font-bold text-muted-foreground hover:text-emerald-500 transition-colors duration-300">
-                Google
-              </div>
-              <div className="text-2xl font-bold text-muted-foreground hover:text-blue-500 transition-colors duration-300">
-                Apple
-              </div>
-              <div className="text-2xl font-bold text-muted-foreground hover:text-purple-500 transition-colors duration-300">
-                Amazon
-              </div>
-              <div className="text-2xl font-bold text-muted-foreground hover:text-pink-500 transition-colors duration-300">
-                Meta
-              </div>
             </div>
           </div>
         </div>

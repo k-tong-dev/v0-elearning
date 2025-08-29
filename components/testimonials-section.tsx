@@ -41,7 +41,7 @@ export function TestimonialsSection() {
         {/* Section Header */}
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Testimonials</span>
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent uppercase">Testimonials</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Hear from our learners as they share their journeys of transformation, success, and how our platform has
