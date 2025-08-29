@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
+// import { Button } from "@/components/ui/button"
+import {Button} from "@heroui/react";
+
 import { FaPlus, FaTimes, FaArrowRight } from "react-icons/fa"
 
 const faqs = [
@@ -67,7 +69,7 @@ export function FAQSection() {
                     onClick={() => setOpenIndex(isOpen ? -1 : index)}
                   >
                     <h3 className="font-medium text-left pr-4">{faq.question}</h3>
-                    <div className="text-muted-foreground p-3 rounded-md text-sm bg-orange-50 dark:bg-orange-950">
+                    <div className="text-muted-foreground p-3 rounded-md text-sm bg-orange-50 dark:bg-gray-400 dark:text-black">
                       {isOpen ? <FaTimes /> : <FaPlus />}
                     </div>
                   </div>
@@ -75,7 +77,7 @@ export function FAQSection() {
                     <div className="mt-3 text-sm text-muted-foreground text-left">
                       <p className="py-5">{faq.answer}</p>
                       {faq.buttonText && (
-                        <Button className="w-full p-4 mt-4 flex justify-between items-center bg-muted text-foreground text-sm hover:shadow-none font-normal mb-4">
+                        <Button className="w-full py-6 mt-4 flex justify-between items-center bg-muted text-foreground text-sm dark:hover:shadow-cyan-500 hover:shadow-md font-normal mb-4 rounded-3xl">
                           {faq.buttonText}
                           <div className="w-9 h-9 bg-background rounded-full flex items-center justify-center">
                             <FaArrowRight />
