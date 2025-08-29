@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -68,6 +69,7 @@ interface Category {
 }
 
 export default function ForumPage() {
+    const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedCategory, setSelectedCategory] = useState("all")
     const [sortBy, setSortBy] = useState("recent")
@@ -255,6 +257,14 @@ export default function ForumPage() {
         setNewPost({title: "", content: "", category: "", tags: ""})
     }
 
+    const handlePostClick = (postId: number) => {
+        router.push(`/forum/${postId}`)
+    }
+
+    const handleAuthorClick = (authorId: string) => {
+        router.push(`/users/${authorId}`)
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
             <Header/>
@@ -426,10 +436,16 @@ export default function ForumPage() {
                                     Pinned Discussions
                                 </h2>
                                 {pinnedPosts.map(post => (
-                                    <Card key={post.id} className="hover:shadow-md transition-shadow">
+                                    <Card key={post.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handlePostClick(post.id)}>
                                         <CardContent className="p-6">
                                             <div className="flex items-start gap-4">
-                                                <Avatar className="w-10 h-10">
+                                                <Avatar 
+                                                    className="w-10 h-10 cursor-pointer hover:scale-110 transition-transform"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        handleAuthorClick("1")
+                                                    }}
+                                                >
                                                     <AvatarImage src={post.author.avatar || "/images/Avatar.jpg"}/>
                                                     <AvatarFallback>
                                                         {post.author.name.split(" ").map(n => n[0]).join("")}
@@ -441,7 +457,7 @@ export default function ForumPage() {
                                                         <div className="space-y-1">
                                                             <div className="flex items-center gap-2">
                                                                 <Pin className="w-4 h-4 text-cyan-500"/>
-                                                                <h3 className="font-semibold hover:text-primary cursor-pointer">
+                                                                <h3 className="font-semibold hover:text-primary cursor-pointer" onClick={() => handlePostClick(post.id)}>
                                                                     {post.title}
                                                                 </h3>
                                                                 {post.isAnswered && (
@@ -505,10 +521,16 @@ export default function ForumPage() {
                             <h2 className="text-xl font-semibold">Recent Discussions</h2>
                             {regularPosts.length > 0 ? (
                                 regularPosts.map(post => (
-                                    <Card key={post.id} className="hover:shadow-md transition-shadow">
+                                    <Card key={post.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handlePostClick(post.id)}>
                                         <CardContent className="p-6">
                                             <div className="flex items-start gap-4">
-                                                <Avatar className="w-10 h-10">
+                                                <Avatar 
+                                                    className="w-10 h-10 cursor-pointer hover:scale-110 transition-transform"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        handleAuthorClick("1")
+                                                    }}
+                                                >
                                                     <AvatarImage src={post.author.avatar || "/images/Avatar.jpg"}/>
                                                     <AvatarFallback>
                                                         {post.author.name.split(" ").map(n => n[0]).join("")}
@@ -519,7 +541,7 @@ export default function ForumPage() {
                                                     <div className="flex items-start justify-between">
                                                         <div className="space-y-1">
                                                             <div className="flex items-center gap-2">
-                                                                <h3 className="font-semibold hover:text-primary cursor-pointer">
+                                                                <h3 className="font-semibold hover:text-primary cursor-pointer" onClick={() => handlePostClick(post.id)}>
                                                                     {post.title}
                                                                 </h3>
                                                                 {post.isAnswered && (
