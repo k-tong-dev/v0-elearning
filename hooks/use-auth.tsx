@@ -125,57 +125,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 },
                 body: JSON.stringify({ credential, role, preferences }),
                 credentials: 'include',
-                redirect: 'manual' // Crucial: tell fetch not to follow redirects automatically
+                redirect: 'follow' // Ensure fetch follows redirects
             })
 
-            console.log('Client-side fetch response object:', response); // Log the full response object
-            console.log('Client-side fetch response status:', response.status);
-            console.log('Client-side fetch response ok:', response.ok);
-
-            // Handle network errors where status might be 0
-            if (response.status === 0 && !response.ok) {
-                throw new Error('Network error or request blocked. Please check your internet connection or browser extensions.');
+            // If the server responded with a redirect, the browser will have already navigated.
+            // We don't need to parse JSON here if a redirect occurred.
+            if (response.redirected) {
+                // The browser has already navigated, so we just resolve.
+                // The `checkAuth` in the root layout's AuthProvider will eventually update the user state.
+                await refreshUser(); // Manually refresh user state after redirect
+                return;
             }
 
-            // If the server responded with a redirect, handle it manually
-            if (response.status === 307 || response.status === 302) { // 307 Temporary Redirect, 302 Found
-                const redirectUrl = response.headers.get('Location');
-                console.log('Redirect detected. Location:', redirectUrl);
-                if (redirectUrl) {
-                    window.location.href = redirectUrl; // Manually redirect the browser
-                    return; // Stop further processing in this function
-                } else {
-                    console.error('Redirect response received without a Location header.');
-                    throw new Error('Redirect response received without a Location header.');
-                }
-            }
-
-            // Attempt to parse JSON only if the response is not a redirect and has content
-            let data = null;
-            const contentType = response.headers.get('content-type');
-            console.log('Response content type:', contentType);
-            if (contentType && contentType.includes('application/json')) {
-                data = await response.json();
-                console.log('Response JSON data:', data);
-            } else {
-                // If not JSON, or empty, it might be a successful non-JSON response (e.g., 204 No Content)
-                // Or it could be an error that didn't return JSON.
-                // For now, if it's not JSON, we'll assume it's an error if response.ok is false.
-                if (!response.ok) {
-                    const textError = await response.text();
-                    console.error('Non-JSON error response:', textError);
-                    throw new Error(textError || `Google login failed with status: ${response.status}. Expected JSON or redirect.`);
-                }
-            }
+            // If it's not a redirect (e.g., an error response with JSON body), then parse JSON.
+            const data = await response.json()
 
             if (!response.ok) {
-                console.error('Response not OK, data:', data);
-                throw new Error(data?.error || 'Google login failed')
+                throw new Error(data.error || 'Google login failed')
             }
 
-            setUser(data.user)
+            setUser(data.user) // This line might not be reached if redirected
         } catch (error) {
-            console.error('Google login error in useAuth:', error)
+            console.error('Google login error:', error)
             throw error
         } finally {
             setIsLoading(false)

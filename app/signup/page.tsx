@@ -18,7 +18,7 @@ import { SignUpStepThree } from "@/components/signup/SignUpStepThree"
 
 export default function SignUpPage() {
     const router = useRouter()
-    const { register, isLoading: authLoading } = useAuth() // Removed loginWithGoogle
+    const { register, isLoading: authLoading, loginWithGoogle } = useAuth() // Re-added loginWithGoogle
     const [step, setStep] = useState(1)
     const [formData, setFormData] = useState({
         role: "" as UserRole,
@@ -103,15 +103,17 @@ export default function SignUpPage() {
         }
     }
 
-    // Google Auth is now handled by SignUpChoiceModal, so this function is no longer needed here.
-    // Keeping a placeholder to avoid immediate errors if still referenced, but it should be removed.
     const handleGoogleAuthSuccess = async (credential: string) => {
-        // This function should ideally not be called on this page anymore.
-        // If it is, it means the flow is incorrect.
-        console.warn("handleGoogleAuthSuccess called on email signup page. This should not happen.");
-        toast.error("Google signup initiated incorrectly. Please use the main signup options.");
-        // Optionally, redirect to home or show the choice modal again.
-        router.push("/");
+        setError("");
+        try {
+            // For Google signup, we use the role and preferences already selected in steps 1 and 2
+            await loginWithGoogle(credential, formData.role, formData.preferences);
+            toast.success("Account created successfully with Google! Welcome to CamEdu.");
+            router.push("/dashboard"); // Redirect to dashboard on success
+        } catch (err: any) {
+            console.error("Google sign up failed:", err);
+            setError(err.message || "Google sign up failed. Please try again.");
+        }
     };
 
     const renderStepContent = () => {
@@ -138,7 +140,7 @@ export default function SignUpPage() {
                         formData={formData}
                         handleInputChange={handleInputChange}
                         handleSignUp={handleSignUp}
-                        handleGoogleAuthSuccess={handleGoogleAuthSuccess} // This will now be a placeholder
+                        handleGoogleAuthSuccess={handleGoogleAuthSuccess} // This will now be passed
                         error={error}
                         authLoading={authLoading}
                         showPassword={showPassword}

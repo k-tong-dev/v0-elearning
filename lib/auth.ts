@@ -166,13 +166,14 @@ export class UserService {
         })
     }
 
-    static async findOrCreateGoogleUser(profile: any): Promise<{ user: User | null; isNewUser: boolean }> {
+    static async findOrCreateGoogleUser(profile: any, role?: UserRole, preferences?: UserPreferences): Promise<User | null> {
         let user = await this.findUserByEmail(profile.email)
-        let isNewUser = false;
 
         const updateFields: Partial<User> = {
             avatar: profile.picture, // Always update avatar from Google profile
             isVerified: true, // Always set to true for Google users
+            ...(role && { role: role as UserRole }), // Update role if provided
+            ...(preferences && { preferences: preferences as UserPreferences }), // Update preferences if provided
         };
 
         if (!user) {
@@ -182,15 +183,14 @@ export class UserService {
                 name: profile.name,
                 provider: 'google',
                 providerId: profile.sub,
-                ...updateFields, // Include role and preferences here
+                ...updateFields,
             })
-            isNewUser = true;
         } else if (user.provider !== 'google') {
             // Existing email user, update to Google provider
             user = await this.updateUser(user.id!, {
                 provider: 'google',
                 providerId: profile.sub,
-                ...updateFields, // Include role and preferences here
+                ...updateFields,
             })
         } else {
             // Existing Google user, update only if there are meaningful changes
@@ -201,15 +201,20 @@ export class UserService {
             if (updateFields.isVerified !== undefined && user.isVerified !== updateFields.isVerified) {
                 fieldsToUpdateForExistingGoogleUser.isVerified = updateFields.isVerified;
             }
-            // Note: Role and preferences are NOT updated here for existing Google users
-            // They will be handled by the dedicated /signup/google-preferences flow if needed.
+            // Also update role/preferences if explicitly provided, even for existing Google users
+            if (role && user.role !== role) {
+                fieldsToUpdateForExistingGoogleUser.role = role;
+            }
+            if (preferences && JSON.stringify(user.preferences) !== JSON.stringify(preferences)) {
+                fieldsToUpdateForExistingGoogleUser.preferences = preferences;
+            }
 
             if (Object.keys(fieldsToUpdateForExistingGoogleUser).length > 0) {
                 user = await this.updateUser(user.id!, fieldsToUpdateForExistingGoogleUser)
             }
         }
 
-        return { user, isNewUser };
+        return user;
     }
 }
 

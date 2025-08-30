@@ -30,17 +30,15 @@ import {
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
-import { SignUpChoiceModal } from "@/components/signup/SignUpChoiceModal" // Import the new modal
 
 export function Header() {
     const router = useRouter()
-    const { user, isAuthenticated, isLoading, logout, loginWithGoogle } = useAuth() // Added loginWithGoogle
+    const { user, isAuthenticated, isLoading, logout } = useAuth()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isScrolled, setIsScrolled] = useState(false)
     const [isExploreOpen, setIsExploreOpen] = useState(false)
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
     const [showAuthModal, setShowAuthModal] = useState(false)
-    const [showSignUpChoiceModal, setShowSignUpChoiceModal] = useState(false) // New state for choice modal
 
     useEffect(() => {
         const handleScroll = () => {
@@ -56,16 +54,12 @@ export function Header() {
     }
 
     const handleSignUp = () => {
-        setShowSignUpChoiceModal(true); // Open the choice modal
-        setIsMenuOpen(false);
+        router.push("/signup") // Direct navigation to signup page
+        setIsMenuOpen(false)
     }
 
     const handleCloseAuth = () => {
         setShowAuthModal(false)
-    }
-
-    const handleCloseSignUpChoiceModal = () => {
-        setShowSignUpChoiceModal(false);
     }
 
     const handleSignOut = async () => {
@@ -307,7 +301,7 @@ export function Header() {
                                         Login
                                     </Button>
                                     <Button
-                                        onClick={handleSignUp} // This now opens the choice modal
+                                        onClick={handleSignUp}
                                         className="rounded-full relative bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white px-6 py-2 transition-all duration-300 hover:shadow-lg hover:shadow-orange-400/25 overflow-hidden group"
                                     >
                                         <span className="relative z-10">Sign Up!</span>
@@ -428,7 +422,7 @@ export function Header() {
                                                 Login
                                             </Button>
                                             <Button
-                                                onClick={handleSignUp} // This now opens the choice modal
+                                                onClick={handleSignUp}
                                                 className="rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white"
                                             >
                                                 Sign Up!
@@ -447,12 +441,6 @@ export function Header() {
                 isOpen={showAuthModal}
                 onClose={handleCloseAuth}
                 onAuthSuccess={handleAuthSuccess}
-            />
-
-            {/* SignUpChoiceModal component */}
-            <SignUpChoiceModal
-                isOpen={showSignUpChoiceModal}
-                onClose={handleCloseSignUpChoiceModal}
             />
         </>
     )
