@@ -10,8 +10,8 @@ import { Separator } from "@/components/ui/separator"
 import { Eye, EyeOff, Mail, Lock, Sparkles } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { GoogleSignIn } from "@/components/auth/google-signin"
+import { SignUpChoiceModal } from "@/components/signup/SignUpChoiceModal" // Import SignUpChoiceModal
 import { useRouter } from "next/navigation"
-import { SignUpChoiceModal } from "@/components/signup/SignUpChoiceModal" // Import the new modal
 
 interface AuthModalProps {
     isOpen: boolean
@@ -20,7 +20,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
-    const { login, isLoading: authLoading, loginWithGoogle } = useAuth() // Added loginWithGoogle
+    const { login, isLoading: authLoading, loginWithGoogle } = useAuth()
     const router = useRouter();
     const [showPassword, setShowPassword] = useState(false)
     const [formData, setFormData] = useState({
@@ -28,11 +28,10 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
         password: "",
     })
     const [error, setError] = useState("")
-    const [showSignUpChoiceModal, setShowSignUpChoiceModal] = useState(false); // State for choice modal
+    const [showSignUpChoiceModal, setShowSignUpChoiceModal] = useState(false) // New state for choice modal
 
     const handleGoogleAuthSuccess = async (credential: string) => {
         try {
-            // For sign-in, we don't need role/preferences from the modal
             await loginWithGoogle(credential);
             onAuthSuccess?.();
             onClose();
@@ -62,8 +61,18 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
 
     const handleCreateAccountClick = () => {
         onClose(); // Close the login modal
-        setShowSignUpChoiceModal(true); // Open the signup choice modal
+        setShowSignUpChoiceModal(true); // Open the choice modal
     };
+
+    const handleSignUpWithEmail = () => {
+        router.push("/signup")
+        setShowSignUpChoiceModal(false)
+    }
+
+    const handleSignUpWithGoogle = async (credential: string) => {
+        await loginWithGoogle(credential);
+        setShowSignUpChoiceModal(false);
+    }
 
     return (
         <>
@@ -180,9 +189,14 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* SignUpChoiceModal component */}
             <SignUpChoiceModal
                 isOpen={showSignUpChoiceModal}
                 onClose={() => setShowSignUpChoiceModal(false)}
+                onSignUpWithEmail={handleSignUpWithEmail}
+                onSignUpWithGoogle={handleSignUpWithGoogle}
+                onAuthSuccess={onAuthSuccess}
             />
         </>
     )

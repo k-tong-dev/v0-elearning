@@ -166,25 +166,27 @@ export class UserService {
         })
     }
 
-    static async findOrCreateGoogleUser(profile: any, role?: UserRole, preferences?: UserPreferences): Promise<User | null> {
+    static async findOrCreateGoogleUser(profile: any): Promise<{ user: User | null, isNewUser: boolean }> {
         let user = await this.findUserByEmail(profile.email)
+        let isNewUser = false;
 
         const updateFields: Partial<User> = {
             avatar: profile.picture, // Always update avatar from Google profile
             isVerified: true, // Always set to true for Google users
-            ...(role && { role: role as UserRole }), // Update role if provided
-            ...(preferences && { preferences: preferences as UserPreferences }), // Update preferences if provided
         };
 
         if (!user) {
-            // User does not exist, create a new one
+            // User does not exist, create a new one with default role and preferences
             user = await this.createUser({
                 email: profile.email,
                 name: profile.name,
                 provider: 'google',
                 providerId: profile.sub,
                 ...updateFields,
+                role: 'student', // Default role for new Google users
+                preferences: { learningGoals: [], learningStyle: [], topicsOfInterest: [] }, // Default preferences
             })
+            isNewUser = true;
         } else if (user.provider !== 'google') {
             // Existing email user, update to Google provider
             user = await this.updateUser(user.id!, {
@@ -201,20 +203,13 @@ export class UserService {
             if (updateFields.isVerified !== undefined && user.isVerified !== updateFields.isVerified) {
                 fieldsToUpdateForExistingGoogleUser.isVerified = updateFields.isVerified;
             }
-            // Also update role/preferences if explicitly provided, even for existing Google users
-            if (role && user.role !== role) {
-                fieldsToUpdateForExistingGoogleUser.role = role;
-            }
-            if (preferences && JSON.stringify(user.preferences) !== JSON.stringify(preferences)) {
-                fieldsToUpdateForExistingGoogleUser.preferences = preferences;
-            }
 
             if (Object.keys(fieldsToUpdateForExistingGoogleUser).length > 0) {
                 user = await this.updateUser(user.id!, fieldsToUpdateForExistingGoogleUser)
             }
         }
 
-        return user;
+        return { user, isNewUser };
     }
 }
 

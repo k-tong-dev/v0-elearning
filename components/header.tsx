@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@heroui/react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AuthModal } from "@/components/auth-modal"
+import { SignUpChoiceModal } from "@/components/signup/SignUpChoiceModal" // Import SignUpChoiceModal
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/hooks/use-auth"
 import {
@@ -33,12 +34,13 @@ import { toast } from "sonner"
 
 export function Header() {
     const router = useRouter()
-    const { user, isAuthenticated, isLoading, logout } = useAuth()
+    const { user, isAuthenticated, isLoading, logout, loginWithGoogle } = useAuth() // Added loginWithGoogle
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isScrolled, setIsScrolled] = useState(false)
     const [isExploreOpen, setIsExploreOpen] = useState(false)
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
     const [showAuthModal, setShowAuthModal] = useState(false)
+    const [showSignUpChoiceModal, setShowSignUpChoiceModal] = useState(false) // New state for choice modal
 
     useEffect(() => {
         const handleScroll = () => {
@@ -53,9 +55,19 @@ export function Header() {
         setIsMenuOpen(false)
     }
 
-    const handleSignUp = () => {
-        router.push("/signup") // Direct navigation to signup page
+    const handleSignUpClick = () => { // Renamed to avoid conflict with modal prop
+        setShowSignUpChoiceModal(true)
         setIsMenuOpen(false)
+    }
+
+    const handleSignUpWithEmail = () => {
+        router.push("/signup")
+        setShowSignUpChoiceModal(false)
+    }
+
+    const handleSignUpWithGoogle = async (credential: string) => {
+        await loginWithGoogle(credential);
+        setShowSignUpChoiceModal(false);
     }
 
     const handleCloseAuth = () => {
@@ -301,7 +313,7 @@ export function Header() {
                                         Login
                                     </Button>
                                     <Button
-                                        onClick={handleSignUp}
+                                        onClick={handleSignUpClick} // Changed to open choice modal
                                         className="rounded-full relative bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white px-6 py-2 transition-all duration-300 hover:shadow-lg hover:shadow-orange-400/25 overflow-hidden group"
                                     >
                                         <span className="relative z-10">Sign Up!</span>
@@ -422,7 +434,7 @@ export function Header() {
                                                 Login
                                             </Button>
                                             <Button
-                                                onClick={handleSignUp}
+                                                onClick={handleSignUpClick} // Changed to open choice modal
                                                 className="rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white"
                                             >
                                                 Sign Up!
@@ -440,6 +452,15 @@ export function Header() {
             <AuthModal
                 isOpen={showAuthModal}
                 onClose={handleCloseAuth}
+                onAuthSuccess={handleAuthSuccess}
+            />
+
+            {/* SignUpChoiceModal component */}
+            <SignUpChoiceModal
+                isOpen={showSignUpChoiceModal}
+                onClose={() => setShowSignUpChoiceModal(false)}
+                onSignUpWithEmail={handleSignUpWithEmail}
+                onSignUpWithGoogle={handleSignUpWithGoogle}
                 onAuthSuccess={handleAuthSuccess}
             />
         </>

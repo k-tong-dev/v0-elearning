@@ -18,7 +18,7 @@ import { SignUpStepThree } from "@/components/signup/SignUpStepThree"
 
 export default function SignUpPage() {
     const router = useRouter()
-    const { register, isLoading: authLoading, loginWithGoogle } = useAuth() // Re-added loginWithGoogle
+    const { register, isLoading: authLoading } = useAuth() // Removed loginWithGoogle
     const [step, setStep] = useState(1)
     const [formData, setFormData] = useState({
         role: "" as UserRole,
@@ -103,18 +103,7 @@ export default function SignUpPage() {
         }
     }
 
-    const handleGoogleAuthSuccess = async (credential: string) => {
-        setError("");
-        try {
-            // For Google signup, we use the role and preferences already selected in steps 1 and 2
-            await loginWithGoogle(credential, formData.role, formData.preferences);
-            toast.success("Account created successfully with Google! Welcome to CamEdu.");
-            router.push("/dashboard"); // Redirect to dashboard on success
-        } catch (err: any) {
-            console.error("Google sign up failed:", err);
-            setError(err.message || "Google sign up failed. Please try again.");
-        }
-    };
+    // Removed handleGoogleAuthSuccess as it's no longer needed here
 
     const renderStepContent = () => {
         switch (step) {
@@ -140,7 +129,7 @@ export default function SignUpPage() {
                         formData={formData}
                         handleInputChange={handleInputChange}
                         handleSignUp={handleSignUp}
-                        handleGoogleAuthSuccess={handleGoogleAuthSuccess} // This will now be passed
+                        // Removed handleGoogleAuthSuccess prop
                         error={error}
                         authLoading={authLoading}
                         showPassword={showPassword}

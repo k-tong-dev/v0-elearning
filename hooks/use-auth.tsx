@@ -18,7 +18,7 @@ interface AuthContextType {
     isAuthenticated: boolean
     login: (email: string, password: string) => Promise<void>
     register: (name: string, email: string, password: string, role: UserRole, preferences: UserPreferences) => Promise<void>
-    loginWithGoogle: (credential: string, role?: UserRole, preferences?: UserPreferences) => Promise<void>
+    loginWithGoogle: (credential: string) => Promise<void> // Removed role and preferences from arguments
     logout: () => Promise<void>
     refreshUser: () => Promise<void>
 }
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }
 
-    const loginWithGoogle = async (credential: string, role?: UserRole, preferences?: UserPreferences) => {
+    const loginWithGoogle = async (credential: string) => { // Removed role and preferences from arguments
         setIsLoading(true)
         try {
             const response = await fetch('/api/auth/google-oauth', {
@@ -123,28 +123,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ credential, role, preferences }),
+                body: JSON.stringify({ credential }), // Only pass credential
                 credentials: 'include',
-                redirect: 'follow' // Ensure fetch follows redirects
+                redirect: 'follow'
             })
 
-            // If the server responded with a redirect, the browser will have already navigated.
-            // We don't need to parse JSON here if a redirect occurred.
             if (response.redirected) {
-                // The browser has already navigated, so we just resolve.
-                // The `checkAuth` in the root layout's AuthProvider will eventually update the user state.
-                await refreshUser(); // Manually refresh user state after redirect
+                await refreshUser();
                 return;
             }
 
-            // If it's not a redirect (e.g., an error response with JSON body), then parse JSON.
             const data = await response.json()
 
             if (!response.ok) {
                 throw new Error(data.error || 'Google login failed')
             }
 
-            setUser(data.user) // This line might not be reached if redirected
+            setUser(data.user)
         } catch (error) {
             console.error('Google login error:', error)
             throw error
@@ -163,7 +158,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(null)
         } catch (error) {
             console.error('Logout error:', error)
-            // Still clear user state even if request fails
             setUser(null)
         }
     }

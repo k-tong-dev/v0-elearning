@@ -2,12 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { UserService } from '@/lib/auth'
 import jwt from 'jsonwebtoken'
 import { UserRole, UserPreferences } from '@/types/auth'
-import {User} from "@/hooks/use-auth";
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { credential, role, preferences } = body
+        const { credential } = body // No longer expecting role and preferences directly here
 
         if (!credential) {
             return NextResponse.json(
@@ -26,39 +25,8 @@ export async function POST(request: NextRequest) {
             picture: payload.picture || ''
         }
 
-        let user = await UserService.findUserByEmail(googleProfile.email);
-        let isNewUser = false;
-
-        if (!user) {
-            user = await UserService.createUser({
-                email: googleProfile.email,
-                name: googleProfile.name,
-                avatar: googleProfile.picture,
-                provider: 'google',
-                providerId: googleProfile.sub,
-                isVerified: true,
-                role: role as UserRole,
-                preferences: preferences as UserPreferences,
-            });
-            isNewUser = true;
-        } else if (user.provider !== 'google') {
-            user = await UserService.updateUser(user.id!, {
-                provider: 'google',
-                providerId: googleProfile.sub,
-                avatar: googleProfile.picture,
-                isVerified: true,
-                ...(role && { role: role as UserRole }),
-                ...(preferences && { preferences: preferences as UserPreferences }),
-            });
-        } else {
-            const fieldsToUpdateForExistingGoogleUser: Partial<User> = {};
-            if (googleProfile.picture && user.avatar !== googleProfile.picture) {
-                fieldsToUpdateForExistingGoogleUser.avatar = googleProfile.picture;
-            }
-            if (Object.keys(fieldsToUpdateForExistingGoogleUser).length > 0) {
-                user = await UserService.updateUser(user.id!, fieldsToUpdateForExistingGoogleUser);
-            }
-        }
+        // Find or create user, and get the isNewUser flag
+        const { user, isNewUser } = await UserService.findOrCreateGoogleUser(googleProfile);
 
         if (!user) {
             return NextResponse.json(
@@ -79,9 +47,15 @@ export async function POST(request: NextRequest) {
             { expiresIn: '7d' }
         )
 
-        // Create a redirect response and set the cookie on it
-        const redirectUrl = new URL('/dashboard', request.url);
-        const response = NextResponse.redirect(redirectUrl, { status: 302 }); // Using 302 Found
+        // Determine redirect URL
+        let redirectPath = '/dashboard';
+        // If it's a new user and they haven't set role/preferences, redirect them to the preferences page
+        if (isNewUser && (!user.role || user.role === 'student' && (!user.preferences || (user.preferences.learningGoals?.length === 0 && user.preferences.learningStyle?.length === 0 && user.preferences.topicsOfInterest?.length === 0)))) {
+            redirectPath = `/signup/google-preferences?userId=${user.id}`;
+        }
+
+        const redirectUrl = new URL(redirectPath, request.url);
+        const response = NextResponse.redirect(redirectUrl, { status: 302 });
 
         response.cookies.set({
             name: 'auth-token',

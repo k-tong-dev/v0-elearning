@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { User, Lock, Mail, Eye, EyeOff } from "lucide-react"
 import { motion } from "framer-motion"
-import { GoogleSignIn } from "@/components/auth/google-signin" // Re-added GoogleSignIn import
+// Removed GoogleSignIn import
 
 interface SignUpStepThreeProps {
     formData: {
@@ -18,7 +18,7 @@ interface SignUpStepThreeProps {
     }
     handleInputChange: (field: string, value: string) => void
     handleSignUp: (e: React.FormEvent) => Promise<void>
-    handleGoogleAuthSuccess: (credential: string) => Promise<void> // Re-added GoogleSignIn success handler
+    // Removed handleGoogleAuthSuccess prop
     error: string
     authLoading: boolean
     showPassword: boolean
@@ -31,7 +31,7 @@ export function SignUpStepThree({
                                     formData,
                                     handleInputChange,
                                     handleSignUp,
-                                    handleGoogleAuthSuccess, // This prop is now used
+                                    // Removed handleGoogleAuthSuccess from destructuring
                                     error,
                                     authLoading,
                                     showPassword,
@@ -39,7 +39,7 @@ export function SignUpStepThree({
                                     showConfirmPassword,
                                     setShowConfirmPassword,
                                 }: SignUpStepThreeProps) {
-    const [googleError, setGoogleError] = React.useState(""); // State for GoogleSignIn errors
+    // Removed googleError state
 
     return (
         <motion.div
@@ -167,16 +167,7 @@ export function SignUpStepThree({
             <Separator className="my-8" />
             <div className="text-center space-y-4">
                 <p className="text-muted-foreground">Or sign up with your Google account</p>
-                {googleError && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600">
-                        {googleError}
-                    </div>
-                )}
-                <GoogleSignIn
-                    text="signup_with"
-                    onSuccess={handleGoogleAuthSuccess}
-                    onError={(err) => setGoogleError(err)}
-                />
+                {/* Removed GoogleSignIn component */}
             </div>
         </motion.div>
     );
