@@ -4,6 +4,7 @@ import type React from "react"
 import {useState, useMemo} from "react"
 import {useRouter} from "next/navigation"
 import {Breadcrumbs, BreadcrumbItem} from "@nextui-org/react"
+import {motion} from "framer-motion"
 // import { Button } from "@/components/ui/button"
 import {Button} from "@heroui/react"
 import {Input} from "@/components/ui/input"
@@ -227,8 +228,12 @@ export default function CoursesPage() {
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
             <Header/>
 
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24" data-aos="fade-up">
-                <div className="mb-8" data-aos="fade-up" data-aos-delay="100">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+                <motion.div 
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-8"
+                >
                     <Breadcrumbs size="lg" separator={<ChevronRight className="w-4 h-4"/>} className="mb-4">
                         <BreadcrumbItem href="/">Home</BreadcrumbItem>
                         <BreadcrumbItem>All Courses</BreadcrumbItem>
@@ -260,9 +265,14 @@ export default function CoursesPage() {
                             </Select>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
-                <div className="mb-8 space-y-6" data-aos="fade-up" data-aos-delay="200">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="mb-8 space-y-6"
+                >
                     <form onSubmit={handleSearch} className="flex gap-4">
                         <div className="flex-1 relative">
                             <Search
@@ -395,22 +405,21 @@ export default function CoursesPage() {
                             </div>
                         </div>
                     )}
-                </div>
+                </motion.div>
 
-                <div
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-12"
-                    data-aos="fade-up"
-                    data-aos-delay="300"
-                >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-12">
                     {isLoading
                         ? Array.from({length: 8}).map((_, index) => <CourseSkeleton key={index}/>)
                         : filteredCourses.map((course, index) => (
-                            <Card
+                            <motion.div
                                 key={course.id}
-                                className="group py-0 hover:shadow-2xl transition-all duration-500 hover:scale-101 border-2 hover:border-cyan-200 dark:hover:border-cyan-800 relative overflow-hidden bg-white/50 dark:bg-transparent backdrop-blur-sm cursor-pointer"
+                                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                transition={{ delay: 0.1 * (index % 4), duration: 0.3 }}
+                            >
+                            <Card
+                                className="group py-0 hover:shadow-2xl transition-all duration-500 hover:scale-101 border-2 hover:border-cyan-200 dark:hover:border-cyan-800 relative overflow-hidden bg-white/50 dark:bg-transparent backdrop-blur-sm cursor-pointer h-full"
                                 onClick={() => handleCourseClick(course.id)}
-                                data-aos="fade-up"
-                                data-aos-delay={100 * (index % 4)}
                             >
                                 {(course.trending || course.bestseller) && (
                                     <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
@@ -535,6 +544,7 @@ export default function CoursesPage() {
                                     </div>
                                 </CardFooter>
                             </Card>
+                            </motion.div>
                         ))}
                 </div>
 

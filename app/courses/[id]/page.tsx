@@ -3,6 +3,7 @@
 import React, {useState} from "react"
 import {useParams, useRouter} from "next/navigation"
 import {Breadcrumbs, BreadcrumbItem} from "@nextui-org/react"
+import {motion} from "framer-motion"
 import {Badge} from "@/components/ui/badge"
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card"
 import {Separator} from "@/components/ui/separator"
@@ -198,19 +199,27 @@ export default function CourseDetailPage() {
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
                 {/* Breadcrumbs */}
-                <div className="mb-8" data-aos="fade-up">
+                <motion.div 
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-8"
+                >
                     <Breadcrumbs size="lg" separator={<ChevronRight className="w-4 h-4"/>} className="mb-4">
                         <BreadcrumbItem href="/">Home</BreadcrumbItem>
                         <BreadcrumbItem href="/courses">Courses</BreadcrumbItem>
                         <BreadcrumbItem>{course.title}</BreadcrumbItem>
                     </Breadcrumbs>
-                </div>
+                </motion.div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Main Content */}
                     <div className="lg:col-span-2 space-y-8">
                         {/* Course Header */}
-                        <div data-aos="fade-up" data-aos-delay="100">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                        >
                             <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
                                 {course.title}
                             </h1>
@@ -253,10 +262,15 @@ export default function CourseDetailPage() {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
 
                         {/* Course Structure */}
-                        <Card data-aos="fade-up" data-aos-delay="200">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                        >
+                        <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <BookOpen className="w-5 h-5"/>
@@ -320,9 +334,15 @@ export default function CourseDetailPage() {
                                 ))}
                             </CardContent>
                         </Card>
+                        </motion.div>
 
                         {/* Course Description */}
-                        <Card data-aos="fade-up" data-aos-delay="300">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                        >
+                        <Card>
                             <CardHeader>
                                 <CardTitle>Course Description</CardTitle>
                             </CardHeader>
@@ -330,9 +350,15 @@ export default function CourseDetailPage() {
                                 <p className="text-muted-foreground leading-relaxed">{course.description_full}</p>
                             </CardContent>
                         </Card>
+                        </motion.div>
 
                         {/* Comments Section */}
-                        <Card data-aos="fade-up" data-aos-delay="400">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                        >
+                        <Card>
                             <CardHeader>
                                 <CardTitle>Comments</CardTitle>
                             </CardHeader>
@@ -375,12 +401,18 @@ export default function CourseDetailPage() {
                                 </div>
                             </CardContent>
                         </Card>
+                        </motion.div>
                     </div>
 
                     {/* Sidebar */}
                     <div className="space-y-6">
                         {/* Course Preview Card */}
-                        <Card className="sticky top-24" data-aos="fade-up" data-aos-delay="500">
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.5 }}
+                        >
+                        <Card className="sticky top-24">
                             <CardHeader className="p-0">
                                 <div className="relative">
                                     <img
@@ -476,6 +508,7 @@ export default function CourseDetailPage() {
                                 </div>
                             </CardContent>
                         </Card>
+                        </motion.div>
                     </div>
                 </div>
             </div>

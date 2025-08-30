@@ -1,3 +1,6 @@
-// hero.ts
+// hero.ts - HeroUI configuration
 import { heroui } from "@heroui/react";
-export default heroui();
+
+const heroConfig = heroui();
+
+export default heroConfig;

@@ -3,9 +3,11 @@ import type {Metadata} from "next"
 import {GeistSans} from "geist/font/sans"
 import {GeistMono} from "geist/font/mono"
 import {ThemeProvider} from "@/components/theme-provider"
+import {AuthProvider} from "@/hooks/use-auth"
 import "./globals.css"
 
 import {ToastProvider} from "@heroui/toast";
+import { Toaster } from "sonner"
 
 
 export const metadata: Metadata = {
@@ -40,9 +42,11 @@ export default function RootLayout({
         <html lang="en" suppressHydrationWarning>
         <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange={false}>
-            <ToastProvider />
-
-            {children}
+            <AuthProvider>
+                <ToastProvider />
+                <Toaster position="top-right" richColors closeButton />
+                {children}
+            </AuthProvider>
         </ThemeProvider>
         </body>
         </html>

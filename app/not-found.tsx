@@ -3,6 +3,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Home, ArrowLeft, Search, BookOpen, Users, Award } from "lucide-react"
 import { DotLottieReact } from "@lottiefiles/dotlottie-react"
+import { motion } from "framer-motion"
 
 export default function NotFound() {
   return (
@@ -13,7 +14,12 @@ export default function NotFound() {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-purple-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
 
-      <div className="text-center space-y-8 px-4 max-w-4xl mx-auto relative z-10">
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="text-center space-y-8 px-4 max-w-4xl mx-auto relative z-10"
+      >
         {/*<div className="relative">*/}
         {/*  <div className="w-80 h-80 mx-auto relative">*/}
         {/*    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 rounded-full blur-2xl animate-pulse"></div>*/}
@@ -26,25 +32,50 @@ export default function NotFound() {
         {/*  </div>*/}
         {/*</div>*/}
 
-        <div className="space-y-6">
-          <div className="space-y-2">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="space-y-6"
+        >
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="space-y-2"
+          >
             <h1 className="text-8xl md:text-9xl font-black bg-gradient-to-r from-cyan-600 via-emerald-600 to-orange-500 bg-clip-text text-transparent animate-gradient-x">
               404
             </h1>
             <div className="w-24 h-1 bg-gradient-to-r from-cyan-500 to-emerald-500 mx-auto rounded-full"></div>
-          </div>
+          </motion.div>
 
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="text-3xl md:text-4xl font-bold text-foreground mb-4"
+          >
             Oops! This Page Got Lost in Cyberspace
-          </h2>
+          </motion.h2>
 
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+          >
             Don't worry! Even the best explorers sometimes take a wrong turn. Let's get you back on track to your
             learning journey.
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8"
+        >
           <Link href="/courses" className="group">
             <div className="p-6 rounded-xl bg-gradient-to-br from-cyan-50 to-emerald-50 dark:from-cyan-950/30 dark:to-emerald-950/30 border border-cyan-200/50 dark:border-cyan-800/50 hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 hover:scale-105">
               <BookOpen className="w-8 h-8 text-cyan-600 mb-3 mx-auto" />
@@ -66,9 +97,14 @@ export default function NotFound() {
             <h3 className="font-semibold text-foreground mb-2">Get Certified</h3>
             <p className="text-sm text-muted-foreground">Earn valuable credentials</p>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.5 }}
+          className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+        >
           <Button
             asChild
             size="lg"
@@ -89,9 +125,14 @@ export default function NotFound() {
             <ArrowLeft className="w-5 h-5 mr-3" />
             Go Back
           </Button>
-        </div>
+        </motion.div>
 
-        <div className="mt-8 p-4 rounded-xl bg-muted/50 border border-border/50 max-w-md mx-auto">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+          className="mt-8 p-4 rounded-xl bg-muted/50 border border-border/50 max-w-md mx-auto"
+        >
           <p className="text-sm text-muted-foreground mb-3">Looking for something specific?</p>
           <div className="flex gap-2">
             <div className="flex-1 relative">
@@ -106,8 +147,8 @@ export default function NotFound() {
               Search
             </Button>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -77,6 +78,7 @@ interface Feature {
 }
 
 export default function PricingPage() {
+  const router = useRouter()
   const [isYearly, setIsYearly] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null)
 
@@ -247,9 +249,18 @@ export default function PricingPage() {
   }
 
   const handleSelectPlan = (plan: PricingPlan) => {
-    setSelectedPlan(plan)
-    // In real app, this would redirect to payment processor
-    console.log("Selected plan:", plan)
+    if (plan.id === 'free') {
+      // Handle free plan signup
+      console.log("Free plan selected")
+      setSelectedPlan(plan)
+    } else {
+      // Redirect to payment page with plan details
+      const params = new URLSearchParams({
+        plan: plan.id,
+        billing: isYearly ? 'yearly' : 'monthly'
+      })
+      router.push(`/payment?${params.toString()}`)
+    }
   }
 
   const renderFeatureValue = (value: boolean | string) => {
@@ -622,7 +633,17 @@ export default function PricingPage() {
                     </Button>
                   ) : (
                     <>
-                      <Button className="w-full mb-2 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600">
+                      <Button 
+                        className="w-full mb-2 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
+                        onClick={() => {
+                          const params = new URLSearchParams({
+                            plan: selectedPlan.id,
+                            billing: isYearly ? 'yearly' : 'monthly'
+                          })
+                          router.push(`/payment?${params.toString()}`)
+                          setSelectedPlan(null)
+                        }}
+                      >
                         <CreditCard className="w-4 h-4 mr-2" />
                         Continue to Payment
                       </Button>

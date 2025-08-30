@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -62,6 +63,12 @@ const courses = [
 ]
 
 export function CoursesSection() {
+  const router = useRouter()
+  
+  const handleCourseClick = (courseId: number) => {
+    router.push(`/courses/${courseId}`)
+  }
+  
   return (
     <section className="py-20 bg-muted/30">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -82,8 +89,9 @@ export function CoursesSection() {
           {courses.map((course, index) => (
             <Card
               key={course.id}
-              className="group card-3d hover:shadow-xl transition-all duration-300 border-0 bg-card/50 backdrop-blur-sm animate-slide-in-up"
+              className="group card-3d hover:shadow-xl transition-all duration-300 border-0 bg-card/50 backdrop-blur-sm animate-slide-in-up cursor-pointer"
               style={{ animationDelay: `${index * 0.1}s` }}
+              onClick={() => handleCourseClick(course.id)}
             >
               <CardHeader className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
@@ -141,6 +149,10 @@ export function CoursesSection() {
                   <Button
                     size="sm"
                     className="bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 hover:shadow-lg hover:shadow-primary/25"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleCourseClick(course.id)
+                    }}
                   >
                     Enroll Now
                   </Button>

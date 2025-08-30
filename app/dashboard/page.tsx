@@ -573,10 +573,20 @@ export default function DashboardPage() {
                           )}
                           
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm" className="flex-1">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1"
+                              onClick={() => router.push(`/courses/${course.id}/edit`)}
+                            >
                               Edit
                             </Button>
-                            <Button variant="outline" size="sm" className="flex-1">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1"
+                              onClick={() => router.push(`/courses/${course.id}`)}
+                            >
                               View
                             </Button>
                           </div>

@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 // import { Button } from "@/components/ui/button"
 import { Button } from "@heroui/react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AuthModal } from "@/components/auth-modal"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useAuth } from "@/hooks/use-auth"
 import {
   Menu,
   X,
@@ -19,13 +22,22 @@ import {
   Briefcase,
   HelpCircle,
   Phone,
+  Settings,
+  LogOut,
+  Share2,
+  Copy,
+  Loader2,
 } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
+import { toast } from "sonner"
 
 export function Header() {
+  const router = useRouter()
+  const { user, isAuthenticated, isLoading, logout } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isExploreOpen, setIsExploreOpen] = useState(false)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [authModal, setAuthModal] = useState({ isOpen: false, mode: "signin" as "signin" | "signup" })
 
   useEffect(() => {
@@ -38,10 +50,12 @@ export function Header() {
 
   const handleSignIn = () => {
     setAuthModal({ isOpen: true, mode: "signin" })
+    setIsMenuOpen(false)
   }
 
   const handleSignUp = () => {
     setAuthModal({ isOpen: true, mode: "signup" })
+    setIsMenuOpen(false)
   }
 
   const handleCloseAuth = () => {
@@ -53,6 +67,61 @@ export function Header() {
       ...prev,
       mode: prev.mode === "signin" ? "signup" : "signin",
     }))
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await logout()
+      toast.success('Signed out successfully')
+      setIsUserMenuOpen(false)
+      setIsMenuOpen(false)
+      router.push('/')
+    } catch (error) {
+      console.error('Sign out failed:', error)
+      toast.error('Failed to sign out')
+    }
+  }
+
+  const handleProfileClick = () => {
+    router.push('/dashboard')
+    setIsUserMenuOpen(false)
+    setIsMenuOpen(false)
+  }
+
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'CamEducation',
+          text: 'Check out CamEducation - the best online learning platform!',
+          url: window.location.origin,
+        })
+        toast.success('Shared successfully!')
+      } else {
+        await navigator.clipboard.writeText(window.location.origin)
+        toast.success('Link copied to clipboard!')
+      }
+    } catch (error) {
+      console.error('Share failed:', error)
+      toast.error('Failed to share')
+    }
+    setIsUserMenuOpen(false)
+  }
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.origin)
+      toast.success('Link copied to clipboard!')
+    } catch (error) {
+      console.error('Copy failed:', error)
+      toast.error('Failed to copy link')
+    }
+    setIsUserMenuOpen(false)
+  }
+
+  const handleAuthSuccess = () => {
+    toast.success('Welcome to CamEducation!')
+    handleCloseAuth()
   }
 
   const handleSearch = () => {
@@ -181,17 +250,72 @@ export function Header() {
               <Button variant="ghost" className="min-w-0 p-2 border-none rounded-lg bg-transparent hover:bg-transparent" onClick={handleSearch}>
                 <Search className="w-5 h-5" />
               </Button>
-              <Button variant="ghost" className="rounded-full hover:bg-accent/20" onClick={handleSignIn}>
-                <User className="w-4 h-4 mr-2" />
-                Login
-              </Button>
-              <Button
-                onClick={handleSignUp}
-                className="rounded-full relative bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white px-6 py-2 transition-all duration-300 hover:shadow-lg hover:shadow-orange-400/25 overflow-hidden group"
-              >
-                <span className="relative z-10">Sign Up!</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </Button>
+              
+              {isLoading ? (
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-accent/20" disabled>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                </Button>
+              ) : isAuthenticated && user ? (
+                <DropdownMenu open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-accent/20">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarFallback>
+                          {user.name.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 mt-2" align="end" side="bottom">
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-1 leading-none">
+                        <p className="font-medium">{user.name}</p>
+                        <p className="w-[200px] truncate text-sm text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleProfileClick}>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => console.log('Settings clicked')}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleShare}>
+                      <Share2 className="mr-2 h-4 w-4" />
+                      <span>Share</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleCopy}>
+                      <Copy className="mr-2 h-4 w-4" />
+                      <span>Copy Link</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Sign Out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <Button variant="ghost" className="rounded-full hover:bg-accent/20" onClick={handleSignIn}>
+                    <User className="w-4 h-4 mr-2" />
+                    Login
+                  </Button>
+                  <Button
+                    onClick={handleSignUp}
+                    className="rounded-full relative bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white px-6 py-2 transition-all duration-300 hover:shadow-lg hover:shadow-orange-400/25 overflow-hidden group"
+                  >
+                    <span className="relative z-10">Sign Up!</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -251,16 +375,67 @@ export function Header() {
                   Contact
                 </Link>
                 <div className="flex flex-col space-y-2 pt-4 border-t border-border">
-                  <Button variant="ghost" className="rounded-full justify-start hover:bg-accent/20" onClick={handleSignIn}>
-                    <User className="w-4 h-4 mr-2" />
-                    Login
-                  </Button>
-                  <Button
-                    onClick={handleSignUp}
-                    className="rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white"
-                  >
-                    Sign Up!
-                  </Button>
+                  {isLoading ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+                    </div>
+                  ) : isAuthenticated && user ? (
+                    <>
+                      <div className="flex items-center gap-3 p-2 mb-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={user.avatar} alt={user.name} />
+                          <AvatarFallback className="text-xs">
+                            {user.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <p className="font-medium text-sm">{user.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        className="rounded-full justify-start hover:bg-accent/20" 
+                        onClick={handleProfileClick}
+                      >
+                        <User className="w-4 h-4 mr-2" />
+                        Dashboard
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="rounded-full justify-start hover:bg-accent/20" 
+                        onClick={() => {
+                          setIsMenuOpen(false)
+                          // Add settings navigation
+                        }}
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Settings
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="rounded-full justify-start hover:bg-red-50 text-red-600" 
+                        onClick={handleSignOut}
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Sign Out
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button variant="ghost" className="rounded-full justify-start hover:bg-accent/20" onClick={handleSignIn}>
+                        <User className="w-4 h-4 mr-2" />
+                        Login
+                      </Button>
+                      <Button
+                        onClick={handleSignUp}
+                        className="rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white"
+                      >
+                        Sign Up!
+                      </Button>
+                    </>
+                  )}
                 </div>
               </nav>
             </div>
@@ -274,6 +449,7 @@ export function Header() {
         onClose={handleCloseAuth}
         mode={authModal.mode}
         onToggleMode={handleToggleAuthMode}
+        onAuthSuccess={handleAuthSuccess}
       />
     </>
   )
