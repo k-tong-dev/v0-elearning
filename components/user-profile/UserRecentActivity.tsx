@@ -1,0 +1,48 @@
+"use client"
+
+import React from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { TrendingUp, MessageCircle, Heart, Users, Star } from "lucide-react"
+import { motion } from "framer-motion"
+
+interface UserRecentActivityProps {
+    recentActivity: Array<{
+        action: string
+        target: string
+        time: string
+        icon: React.ElementType
+    }>
+}
+
+export function UserRecentActivity({ recentActivity }: UserRecentActivityProps) {
+    return (
+        <Card className="border-2 shadow-md">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-green-500" />
+                    Recent Activity
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {recentActivity.map((activity, index) => (
+                    <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors border border-transparent hover:border-accent/30"
+                    >
+                        <activity.icon className="w-5 h-5 text-muted-foreground shrink-0" />
+                        <div className="flex-1">
+              <span className="text-sm">
+                <span className="text-muted-foreground">{activity.action}</span>{" "}
+                  <span className="font-medium">{activity.target}</span>
+              </span>
+                            <div className="text-xs text-muted-foreground">{activity.time}</div>
+                        </div>
+                    </motion.div>
+                ))}
+            </CardContent>
+        </Card>
+    )
+}

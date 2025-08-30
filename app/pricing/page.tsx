@@ -300,7 +300,7 @@ export default function PricingPage() {
             <Switch
               checked={isYearly}
               onCheckedChange={setIsYearly}
-              className="data-[state=unchecked]:bg-gray-300 data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-cyan-500 data-[state=checked]:to-emerald-500"
+              className="data-[state=unchecked]:bg-gray-400 data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-cyan-500 data-[state=checked]:to-emerald-500"
             />
             <span className={`text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>
               Annual

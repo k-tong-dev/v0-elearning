@@ -317,7 +317,8 @@ export default function CourseEditPage() {
                               />
                             </div>
                             <div className="flex items-center gap-2">
-                              <Switch 
+                              <Switch
+                                className="data-[state=unchecked]:bg-gray-400"
                                 checked={lesson.isPublished}
                                 onCheckedChange={(checked) => updateLesson(lesson.id, { isPublished: checked })}
                               />
@@ -394,7 +395,7 @@ export default function CourseEditPage() {
                         <Label>Auto-approve enrollments</Label>
                         <p className="text-sm text-muted-foreground">Automatically approve new student enrollments</p>
                       </div>
-                      <Switch />
+                      <Switch className="data-[state=unchecked]:bg-gray-400"/>
                     </div>
                     
                     <div className="flex items-center justify-between">
@@ -402,7 +403,7 @@ export default function CourseEditPage() {
                         <Label>Allow reviews</Label>
                         <p className="text-sm text-muted-foreground">Allow students to leave reviews and ratings</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch defaultChecked className="data-[state=unchecked]:bg-gray-400"/>
                     </div>
                   </CardContent>
                 </Card>
