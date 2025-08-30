@@ -258,7 +258,7 @@ export function Header() {
               ) : isAuthenticated && user ? (
                 <DropdownMenu open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-accent/20">
+                    <Button variant="ghost" className="min-w-0 relative h-10 w-10 rounded-full hover:bg-accent/20">
                       <Avatar className="h-9 w-9">
                         <AvatarImage src={user.avatar} alt={user.name} />
                         <AvatarFallback>

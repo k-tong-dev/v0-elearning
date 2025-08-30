@@ -775,7 +775,7 @@ export default function DashboardPage() {
                         <div className="font-medium">{setting.label}</div>
                         <div className="text-sm text-muted-foreground">{setting.description}</div>
                       </div>
-                      <Switch />
+                      <Switch className="data-[state=unchecked]:bg-gray-400"/>
                     </div>
                   ))}
                 </CardContent>
