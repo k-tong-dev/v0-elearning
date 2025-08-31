@@ -17,7 +17,7 @@ export function UserFollowStats({ followers, following }: UserFollowStatsProps) 
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
         >
-            <Card className="border-2 shadow-md">
+            <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
                 <CardContent className="p-4">
                     <div className="flex items-center justify-around">
                         <div className="text-center cursor-pointer hover:bg-accent/50 p-2 rounded-lg transition-colors">

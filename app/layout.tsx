@@ -6,7 +6,6 @@ import {ThemeProvider} from "@/components/theme-provider"
 import {AuthProvider} from "@/hooks/use-auth"
 import "./globals.css"
 
-import {ToastProvider} from "@heroui/toast";
 import { Toaster } from "sonner"
 
 
@@ -43,7 +42,6 @@ export default function RootLayout({
         <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange={false}>
             <AuthProvider>
-                <ToastProvider />
                 <Toaster position="top-right" richColors closeButton />
                 {children}
             </AuthProvider>

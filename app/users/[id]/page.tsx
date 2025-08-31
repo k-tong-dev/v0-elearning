@@ -17,6 +17,8 @@ import { UserRecentActivity } from "@/components/user-profile/UserRecentActivity
 import { UserRecentPosts } from "@/components/user-profile/UserRecentPosts"
 import { UserAchievements } from "@/components/user-profile/UserAchievements"
 import { UserCoursesOverview } from "@/components/user-profile/UserCoursesOverview"
+import { BadgeDefinition } from '@/types/db';
+import {toast} from "sonner"; // Import BadgeDefinition from types/db
 
 interface UserProfile {
     id: string
@@ -42,13 +44,7 @@ interface UserProfile {
         followers: number
         following: number
     }
-    badges: Array<{
-        id: string
-        name: string
-        description: string
-        icon: string
-        color: string
-    }>
+    badgeIds: string[] // Changed to store only badge IDs
     socialLinks: {
         twitter?: string
         github?: string
@@ -81,121 +77,116 @@ export default function UserProfilePage() {
     const [isLoading, setIsLoading] = useState(true)
     const [isFollowing, setIsFollowing] = useState(false)
     const [activeTab, setActiveTab] = useState("overview")
+    const [allBadges, setAllBadges] = useState<BadgeDefinition[]>([]);
 
     useEffect(() => {
-        const mockUser: UserProfile = {
-            id: id as string,
-            name: "Sarah Johnson",
-            username: "@sarahjohnson",
-            avatar: "/images/Avatar.jpg",
-            coverImage: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&h=300&fit=crop",
-            role: "Student",
-            bio: "Passionate web developer learning React and Node.js. Love building user-friendly applications and helping fellow developers in the community.",
-            location: "San Francisco, CA",
-            website: "https://sarahjohnson.dev",
-            joinDate: "March 2024",
-            lastActive: "2 hours ago",
-            isOnline: true,
-            stats: {
-                posts: 15,
-                replies: 48,
-                likes: 245,
-                views: 1250,
-                reputation: 485,
-                coursesCreated: 0,
-                coursesEnrolled: 5,
-                followers: 23,
-                following: 15
-            },
-            badges: [
-                {
-                    id: "1",
-                    name: "First Post",
-                    description: "Created your first forum post",
-                    icon: "🎉",
-                    color: "bg-blue-500"
-                },
-                {
-                    id: "2",
-                    name: "Helper",
-                    description: "Received 10+ likes on replies",
-                    icon: "🤝",
-                    color: "bg-green-500"
-                },
-                {
-                    id: "3",
-                    name: "Active Member",
-                    description: "Posted 10+ discussions",
-                    icon: "⚡",
-                    color: "bg-purple-500"
-                }
-            ],
-            socialLinks: {
-                twitter: "https://twitter.com/sarahjohnson",
-                github: "https://github.com/sarahjohnson",
-                linkedin: "https://linkedin.com/in/sarahjohnson",
-                website: "https://sarahjohnson.dev"
-            },
-            recentPosts: [
-                {
-                    id: "1",
-                    title: "How to deploy React app to production?",
-                    excerpt: "I'm having trouble deploying my React application to production. Can someone help with best practices?",
-                    createdAt: "2 hours ago",
-                    likes: 18,
-                    replies: 12,
-                    category: "Technical"
-                },
-                {
-                    id: "2",
-                    title: "Best VS Code extensions for React development?",
-                    excerpt: "Looking for recommendations on VS Code extensions that can improve my React development workflow.",
-                    createdAt: "1 week ago",
-                    likes: 25,
-                    replies: 8,
-                    category: "Tools"
-                },
-                {
-                    id: "3",
-                    title: "Understanding React Hooks - useEffect cleanup",
-                    excerpt: "Can someone explain when and how to properly cleanup effects in React hooks?",
-                    createdAt: "2 weeks ago",
-                    likes: 12,
-                    replies: 6,
-                    category: "Learning"
-                }
-            ],
-            achievements: [
-                {
-                    id: "1",
-                    title: "First Steps",
-                    description: "Completed your profile and made your first post",
-                    unlockedAt: "March 2024",
-                    icon: "🌟"
-                },
-                {
-                    id: "2",
-                    title: "Community Helper",
-                    description: "Helped 5+ community members with their questions",
-                    unlockedAt: "April 2024",
-                    icon: "🤝"
-                },
-                {
-                    id: "3",
-                    title: "Learning Enthusiast",
-                    description: "Enrolled in 5+ courses",
-                    unlockedAt: "May 2024",
-                    icon: "📚"
-                }
-            ],
-            skills: ["React", "Node.js", "TypeScript", "Tailwind CSS", "MongoDB", "Git"]
-        }
+        const fetchProfileData = async () => {
+            setIsLoading(true);
+            try {
+                // Fetch all badge definitions from the API
+                const badgesResponse = await fetch('/api/badges');
+                if (!badgesResponse.ok) throw new Error('Failed to fetch badge definitions');
+                const fetchedBadges: BadgeDefinition[] = await badgesResponse.json();
+                setAllBadges(fetchedBadges);
 
-        setTimeout(() => {
-            setUser(mockUser)
-            setIsLoading(false)
-        }, 1000)
-    }, [id])
+                // Mock user data - in a real app, fetch from /api/users/[id]
+                const mockUser: UserProfile = {
+                    id: id as string,
+                    name: "Sarah Johnson",
+                    username: "@sarahjohnson",
+                    avatar: "/images/Avatar.jpg",
+                    coverImage: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&h=300&fit=crop",
+                    role: "Student",
+                    bio: "Passionate web developer learning React and Node.js. Love building user-friendly applications and helping fellow developers in the community.",
+                    location: "San Francisco, CA",
+                    website: "https://sarahjohnson.dev",
+                    joinDate: "March 2024",
+                    lastActive: "2 hours ago",
+                    isOnline: true,
+                    stats: {
+                        posts: 15,
+                        replies: 48,
+                        likes: 245,
+                        views: 1250,
+                        reputation: 485,
+                        coursesCreated: 0,
+                        coursesEnrolled: 5,
+                        followers: 23,
+                        following: 15
+                    },
+                    badgeIds: ["first-post", "helper", "active-member"], // Store only IDs
+                    socialLinks: {
+                        twitter: "https://twitter.com/sarahjohnson",
+                        github: "https://github.com/sarahjohnson",
+                        linkedin: "https://linkedin.com/in/sarahjohnson",
+                        website: "https://sarahjohnson.dev"
+                    },
+                    recentPosts: [
+                        {
+                            id: "1",
+                            title: "How to deploy React app to production?",
+                            excerpt: "I'm having trouble deploying my React application to production. Can someone help with best practices?",
+                            createdAt: "2 hours ago",
+                            likes: 18,
+                            replies: 12,
+                            category: "Technical"
+                        },
+                        {
+                            id: "2",
+                            title: "Best VS Code extensions for React development?",
+                            excerpt: "Looking for recommendations on VS Code extensions that can improve my React development workflow.",
+                            createdAt: "1 week ago",
+                            likes: 25,
+                            replies: 8,
+                            category: "Tools"
+                        },
+                        {
+                            id: "3",
+                            title: "Understanding React Hooks - useEffect cleanup",
+                            excerpt: "Can someone explain when and how to properly cleanup effects in React hooks?",
+                            createdAt: "2 weeks ago",
+                            likes: 12,
+                            replies: 6,
+                            category: "Learning"
+                        }
+                    ],
+                    achievements: [
+                        {
+                            id: "1",
+                            title: "First Steps",
+                            description: "Completed your profile and made your first post",
+                            unlockedAt: "March 2024",
+                            icon: "🌟"
+                        },
+                        {
+                            id: "2",
+                            title: "Community Helper",
+                            description: "Helped 5+ community members with their questions",
+                            unlockedAt: "April 2024",
+                            icon: "🤝"
+                        },
+                        {
+                            id: "3",
+                            title: "Learning Enthusiast",
+                            description: "Enrolled in 5+ courses",
+                            unlockedAt: "May 2024",
+                            icon: "📚"
+                        }
+                    ],
+                    skills: ["React", "Node.js", "TypeScript", "Tailwind CSS", "MongoDB", "Git"]
+                }
+
+                setUser(mockUser);
+            } catch (error) {
+                console.error("Failed to fetch user profile or badges:", error);
+                toast.error("Failed to load user profile.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchProfileData();
+    }, [id]);
 
     if (isLoading) {
         return (
@@ -224,6 +215,11 @@ export default function UserProfilePage() {
         { action: "Started following", target: "Mike Chen", time: "1 day ago", icon: Users },
         { action: "Posted", target: "VS Code extensions for React development", time: "1 week ago", icon: Star }
     ];
+
+    // Map user's badgeIds to full badge objects
+    const userBadges = user.badgeIds
+        .map(badgeId => allBadges.find(badge => badge.id === badgeId))
+        .filter((badge): badge is BadgeDefinition => badge !== undefined);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
@@ -281,7 +277,7 @@ export default function UserProfilePage() {
                                 </TabsList>
 
                                 <TabsContent value="overview" className="space-y-6 mt-6">
-                                    <UserBadges badges={user.badges} />
+                                    <UserBadges badges={userBadges} /> {/* Pass mapped badges */}
                                     <UserRecentActivity recentActivity={recentActivityData} />
                                 </TabsContent>
 

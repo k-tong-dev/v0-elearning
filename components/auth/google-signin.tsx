@@ -38,7 +38,8 @@ export function GoogleSignIn({ onSuccess, onError, text = 'signin_with', classNa
         setInternalError(null); // Clear previous errors
         try {
             if (!response.credential) {
-                throw new Error('Google did not return a credential.');
+                // IMPORTANT: Add a check here to ensure credential exists
+                throw new Error('Google did not return a credential. Please try again.');
             }
             await onSuccess?.(response.credential);
         } catch (error: any) {

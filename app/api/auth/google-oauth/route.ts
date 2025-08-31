@@ -47,10 +47,9 @@ export async function POST(request: NextRequest) {
             { expiresIn: '7d' }
         )
 
-        // Determine redirect URL
+        // Determine redirect URL based on whether it's a new user
         let redirectPath = '/dashboard';
-        // If it's a new user and they haven't set role/preferences, redirect them to the preferences page
-        if (isNewUser && (!user.role || user.role === 'student' && (!user.preferences || (user.preferences.learningGoals?.length === 0 && user.preferences.learningStyle?.length === 0 && user.preferences.topicsOfInterest?.length === 0)))) {
+        if (isNewUser) {
             redirectPath = `/signup/google-preferences?userId=${user.id}`;
         }
 

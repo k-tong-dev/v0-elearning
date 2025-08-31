@@ -18,7 +18,7 @@ export function UserCoursesOverview({ coursesEnrolled, coursesCreated }: UserCou
     return (
         <div className="space-y-6 mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="border-2 shadow-md">
+                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <BookOpen className="w-5 h-5 text-blue-500" />
@@ -34,7 +34,7 @@ export function UserCoursesOverview({ coursesEnrolled, coursesCreated }: UserCou
                     </CardContent>
                 </Card>
 
-                <Card className="border-2 shadow-md">
+                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Award className="w-5 h-5 text-purple-500" />

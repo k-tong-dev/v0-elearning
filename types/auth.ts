@@ -5,3 +5,15 @@ export interface UserPreferences {
     learningStyle?: string[]
     topicsOfInterest?: string[]
 }
+
+export interface UserSettings {
+    theme?: 'light' | 'dark' | 'system'
+    notifications?: {
+        newEnrollments?: boolean
+        courseReviews?: boolean
+        paymentNotifications?: boolean
+        weeklyAnalytics?: boolean
+    }
+    newsletter?: boolean
+    skills?: string[] // Added skills field
+}

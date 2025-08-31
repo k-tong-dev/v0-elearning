@@ -1,109 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { UserService } from '@/lib/auth'
+import { UserService, hashPassword } from '@/lib/auth'
+import { createAuthResponse } from '@/lib/auth-middleware'
 import jwt from 'jsonwebtoken'
 import { UserRole, UserPreferences } from '@/types/auth' // Import from new types file
 
 export async function POST(request: NextRequest) {
-    console.log('--- HITTING /api/auth/google-oauth POST endpoint ---');
+    console.log('--- HITTING /api/auth/register POST endpoint ---'); // Added for debugging
     try {
         const body = await request.json()
-        const { credential, clientId, role, preferences } = body // Destructure new fields
+        const { email, password, name, role, preferences } = body // Destructure new fields
 
-        if (!credential) {
-            console.log('--- /api/auth/google-oauth: Missing credential ---');
+        // Validate required fields
+        if (!email || !password || !name || !role || !preferences) { // Ensure new fields are present
+            console.log('--- /api/auth/register: Missing fields ---');
             return NextResponse.json(
-                { error: 'Google credential is required for Google OAuth registration.' },
+                { error: 'Email, password, name, role, and preferences are required for email registration.' },
                 { status: 400 }
             )
         }
 
-        // Verify Google JWT token
-        // In a real implementation, you would verify the token with Google
-        // For now, we'll decode it (NOT SECURE - just for demo)
-        const base64Payload = credential.split('.')[1]
-        const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString())
-
-        // Mock Google profile (replace with actual Google token verification)
-        const googleProfile = {
-            sub: payload.sub || 'mock-google-id',
-            email: payload.email || 'user@example.com',
-            name: payload.name || 'Google User',
-            picture: payload.picture || ''
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(email)) {
+            return NextResponse.json(
+                { error: 'Invalid email format' },
+                { status: 400 }
+            )
         }
 
-        // Find or create user, passing role and preferences if available
-        const user = await UserService.findOrCreateGoogleUser(googleProfile, role, preferences)
+        // Validate password strength
+        if (password.length < 6) {
+            return NextResponse.json(
+                { error: 'Password must be at least 6 characters long' },
+                { status: 400 }
+            )
+        }
 
-        // Generate JWT token
+        // Hash password
+        const hashedPassword = await hashPassword(password)
+
+        // Create user with new fields
+        const user = await UserService.createUser({
+            email: email.toLowerCase(),
+            name,
+            provider: 'email',
+            isVerified: false,
+            password: hashedPassword,
+            role, // Pass role
+            preferences // Pass preferences
+        } as any)
+
+        // Generate JWT token to automatically log user in
         const token = jwt.sign(
             {
                 userId: user.id,
                 email: user.email,
                 name: user.name,
-                provider: 'google',
+                provider: user.provider || 'email',
                 role: user.role // Include role in JWT
             },
             process.env.NEXTAUTH_SECRET || 'fallback-secret',
             { expiresIn: '7d' }
         )
 
-        // Set cookie and return response
-        const response = NextResponse.json({
-            message: 'Google authentication successful',
-            user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                avatar: user.avatar,
-                provider: user.provider,
-                role: user.role // Include role in user response
-            },
-            token
-        })
+        // Remove password from response
+        const { password: _, ...userResponse } = user as any
 
-        response.cookies.set({
-            name: 'auth-token',
-            value: token,
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 24 * 7 // 7 days
-        })
-
-        return response
+        return createAuthResponse(userResponse, token)
 
     } catch (error: any) {
-        console.error('Google authentication error:', error)
-        // Return the actual error message from the server
+        console.error('--- /api/auth/register: Error in handler ---', error);
+
+        if (error.message === 'User already exists with this email') {
+            return NextResponse.json(
+                { error: 'User already exists with this email' },
+                { status: 409 }
+            )
+        }
+
         return NextResponse.json(
-            { error: error.message || 'Failed to authenticate with Google due to an unexpected server error.' },
+            { error: 'Internal server error' },
             { status: 500 }
         )
-    }
-}
-
-// Handle Google OAuth redirect
-export async function GET(request: NextRequest) {
-    console.log('--- HITTING /api/auth/google-oauth GET endpoint ---');
-    const searchParams = request.nextUrl.searchParams
-    const code = searchParams.get('code')
-    const error = searchParams.get('error')
-
-    if (error) {
-        return NextResponse.redirect(new URL('/?error=google_auth_failed', request.url))
-    }
-
-    if (!code) {
-        return NextResponse.redirect(new URL('/?error=missing_code', request.url))
-    }
-
-    try {
-        // Exchange code for tokens (implement based on your Google OAuth setup)
-        // This is a placeholder - implement actual Google OAuth flow
-
-        return NextResponse.redirect(new URL('/dashboard?success=google_auth', request.url))
-    } catch (error) {
-        console.error('Google OAuth callback error:', error)
-        return NextResponse.redirect(new URL('/?error=google_auth_callback_failed', request.url))
     }
 }

@@ -60,6 +60,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
     }
 
     const handleCreateAccountClick = () => {
+        console.log("handleCreateAccountClick triggered. Closing AuthModal and setting showSignUpChoiceModal to true."); // Debug log
         onClose(); // Close the login modal
         setShowSignUpChoiceModal(true); // Open the choice modal
     };

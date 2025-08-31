@@ -1,12 +1,13 @@
 {
-  "name": "my-v0-project",
+  "name": "v0-elearning",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "build": "next build",
     "dev": "next dev",
-    "lint": "next lint",
-    "start": "next start"
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
     "@clerk/clerk-react": "latest",
@@ -63,7 +64,7 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.454.0",
     "mongodb": "^6.19.0",
-    "next": "^15.5.2",
+    "next": "15.2.4",
     "next-themes": "latest",
     "react": "^19",
     "react-day-picker": "9.8.0",

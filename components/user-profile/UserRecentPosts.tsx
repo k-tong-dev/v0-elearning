@@ -32,7 +32,7 @@ export function UserRecentPosts({ posts }: UserRecentPostsProps) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                 >
-                    <Card className="hover:shadow-md transition-all hover:scale-[1.01] border-2 shadow-sm">
+                    <Card className="glass-enhanced hover:scale-[1.01] hover:shadow-xl transition-all duration-300">
                         <CardContent className="p-6">
                             <div className="space-y-3">
                                 <div className="flex items-start justify-between">

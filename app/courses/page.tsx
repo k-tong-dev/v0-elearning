@@ -229,7 +229,7 @@ export default function CoursesPage() {
             <Header/>
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-8"
@@ -267,7 +267,7 @@ export default function CoursesPage() {
                     </div>
                 </motion.div>
 
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
@@ -391,7 +391,7 @@ export default function CoursesPage() {
                                     <Checkbox
                                         id="favorites"
                                         checked={showFavorites}
-                                        onCheckedChange={setShowFavorites}
+                                        onCheckedChange={(checked: boolean) => setShowFavorites(checked)} // Corrected type
                                         className="border-2 data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-cyan-500 data-[state=checked]:to-emerald-500"
                                     />
                                     <label
@@ -417,133 +417,133 @@ export default function CoursesPage() {
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 transition={{ delay: 0.1 * (index % 4), duration: 0.3 }}
                             >
-                            <Card
-                                className="group py-0 hover:shadow-2xl transition-all duration-500 hover:scale-101 border-2 hover:border-cyan-200 dark:hover:border-cyan-800 relative overflow-hidden bg-white/50 dark:bg-transparent backdrop-blur-sm cursor-pointer h-full"
-                                onClick={() => handleCourseClick(course.id)}
-                            >
-                                {(course.trending || course.bestseller) && (
-                                    <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-                                        {course.trending && (
-                                            <Badge
-                                                className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-lg">
-                                                <TrendingUp className="w-3 h-3 mr-1"/>
-                                                Trending
-                                            </Badge>
-                                        )}
-                                        {course.bestseller && (
-                                            <Badge
-                                                className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-lg">
-                                                <Award className="w-3 h-3 mr-1"/>
-                                                Bestseller
-                                            </Badge>
-                                        )}
-                                    </div>
-                                )}
-
-                                <CardHeader className="p-0">
-                                    <div className="relative overflow-hidden rounded-t-lg">
-                                        <img
-                                            src={course.image || "/placeholder.svg"}
-                                            alt={course.title}
-                                            className="w-full h-52 object-cover group-hover:scale-110 transition-transform duration-500"
-                                        />
-                                        <div
-                                            className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="absolute top-4 left-4 bg-white/90 hover:bg-white text-gray-700 rounded-full p-2 shadow-lg"
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                toggleFavorite(course.id)
-                                            }}
-                                        >
-                                            <Heart
-                                                className={`w-4 h-4 transition-colors ${favorites.includes(course.id) ? "fill-red-500 text-red-500" : ""}`}
-                                            />
-                                        </Button>
-
-                                        <div className="absolute bottom-4 left-4 flex gap-2">
-                                            <Badge
-                                                className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white font-semibold px-3 py-1 rounded-full">
-                                                {course.level}
-                                            </Badge>
-                                            {course.discount && (
+                                <Card
+                                    className="group py-0 hover:shadow-2xl transition-all duration-500 hover:scale-101 border-2 hover:border-cyan-200 dark:hover:border-cyan-800 relative overflow-hidden bg-white/50 dark:bg-transparent backdrop-blur-sm cursor-pointer h-full"
+                                    onClick={() => handleCourseClick(course.id)}
+                                >
+                                    {(course.trending || course.bestseller) && (
+                                        <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+                                            {course.trending && (
                                                 <Badge
-                                                    className="bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold px-3 py-1 rounded-full">
-                                                    {course.discount}
+                                                    className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-lg">
+                                                    <TrendingUp className="w-3 h-3 mr-1"/>
+                                                    Trending
+                                                </Badge>
+                                            )}
+                                            {course.bestseller && (
+                                                <Badge
+                                                    className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-lg">
+                                                    <Award className="w-3 h-3 mr-1"/>
+                                                    Bestseller
                                                 </Badge>
                                             )}
                                         </div>
-                                    </div>
-                                </CardHeader>
+                                    )}
 
-                                <CardContent className="p-6">
-                                    <div className="mb-4 flex items-center justify-between">
-                                        <Badge variant="outline"
-                                               className="text-xs font-medium border-cyan-200 text-cyan-700">
-                                            {course.category}
-                                        </Badge>
-                                        <span
-                                            className="text-xs text-muted-foreground font-medium">by {course.educator}</span>
-                                    </div>
+                                    <CardHeader className="p-0">
+                                        <div className="relative overflow-hidden rounded-t-lg">
+                                            <img
+                                                src={course.image || "/placeholder.svg"}
+                                                alt={course.title}
+                                                className="w-full h-52 object-cover group-hover:scale-110 transition-transform duration-500"
+                                            />
+                                            <div
+                                                className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                                    <CardTitle
-                                        className="text-lg mb-3 group-hover:text-cyan-600 transition-colors duration-200 line-clamp-2 font-bold">
-                                        {course.title}
-                                    </CardTitle>
-
-                                    <CardDescription
-                                        className="text-sm mb-4 line-clamp-2 text-muted-foreground leading-relaxed">
-                                        {course.description}
-                                    </CardDescription>
-
-                                    <div className="flex flex-wrap gap-2 mb-4">
-                                        {course.tags.slice(0, 3).map((tag) => (
-                                            <Badge
-                                                key={tag}
-                                                variant="secondary"
-                                                className="text-xs bg-gradient-to-r from-cyan-50 to-emerald-50 text-cyan-700 border-cyan-200"
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="absolute top-4 left-4 bg-white/90 hover:bg-white text-gray-700 rounded-full p-2 shadow-lg"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    toggleFavorite(course.id)
+                                                }}
                                             >
-                                                {tag}
+                                                <Heart
+                                                    className={`w-4 h-4 transition-colors ${favorites.includes(course.id) ? "fill-red-500 text-red-500" : ""}`}
+                                                />
+                                            </Button>
+
+                                            <div className="absolute bottom-4 left-4 flex gap-2">
+                                                <Badge
+                                                    className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white font-semibold px-3 py-1 rounded-full">
+                                                    {course.level}
+                                                </Badge>
+                                                {course.discount && (
+                                                    <Badge
+                                                        className="bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold px-3 py-1 rounded-full">
+                                                        {course.discount}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </CardHeader>
+
+                                    <CardContent className="p-6">
+                                        <div className="mb-4 flex items-center justify-between">
+                                            <Badge variant="outline"
+                                                   className="text-xs font-medium border-cyan-200 text-cyan-700">
+                                                {course.category}
                                             </Badge>
-                                        ))}
-                                    </div>
-
-                                    <div className="grid grid-cols-3 gap-3 text-sm text-muted-foreground mb-4">
-                                        <div className="flex items-center gap-1">
-                                            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400"/>
-                                            <span className="font-medium">{course.rating}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <Users className="w-4 h-4"/>
-                                            <span className="font-medium">{course.students.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <Clock className="w-4 h-4"/>
-                                            <span className="font-medium">{course.duration}</span>
-                                        </div>
-                                    </div>
-                                </CardContent>
-
-                                <CardFooter className="p-6 pb-10 pt-0">
-                                    <div className="flex flex-col gap-4 items-center justify-between w-full">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-3xl font-bold text-cyan-600">{course.price}</span>
                                             <span
-                                                className="text-sm text-muted-foreground line-through">{course.originalPrice}</span>
+                                                className="text-xs text-muted-foreground font-medium">by {course.educator}</span>
                                         </div>
-                                        {/*<Button*/}
-                                        {/*    className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25 rounded-lg font-semibold"*/}
-                                        {/*    onClick={(e) => e.stopPropagation()}*/}
-                                        {/*>*/}
-                                        {/*    <BookOpen className="w-4 h-4 mr-2"/>*/}
-                                        {/*    Enroll Now*/}
-                                        {/*</Button>*/}
-                                    </div>
-                                </CardFooter>
-                            </Card>
+
+                                        <CardTitle
+                                            className="text-lg mb-3 group-hover:text-cyan-600 transition-colors duration-200 line-clamp-2 font-bold">
+                                            {course.title}
+                                        </CardTitle>
+
+                                        <CardDescription
+                                            className="text-sm mb-4 line-clamp-2 text-muted-foreground leading-relaxed">
+                                            {course.description}
+                                        </CardDescription>
+
+                                        <div className="flex flex-wrap gap-2 mb-4">
+                                            {course.tags.slice(0, 3).map((tag) => (
+                                                <Badge
+                                                    key={tag}
+                                                    variant="secondary"
+                                                    className="text-xs bg-gradient-to-r from-cyan-50 to-emerald-50 text-cyan-700 border-cyan-200"
+                                                >
+                                                    {tag}
+                                                </Badge>
+                                            ))}
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-3 text-sm text-muted-foreground mb-4">
+                                            <div className="flex items-center gap-1">
+                                                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400"/>
+                                                <span className="font-medium">{course.rating}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <Users className="w-4 h-4"/>
+                                                <span className="font-medium">{course.students.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <Clock className="w-4 h-4"/>
+                                                <span className="font-medium">{course.duration}</span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+
+                                    <CardFooter className="p-6 pb-10 pt-0">
+                                        <div className="flex flex-col gap-4 items-center justify-between w-full">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-3xl font-bold text-cyan-600">{course.price}</span>
+                                                <span
+                                                    className="text-sm text-muted-foreground line-through">{course.originalPrice}</span>
+                                            </div>
+                                            {/*<Button*/}
+                                            {/*    className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25 rounded-lg font-semibold"*/}
+                                            {/*    onClick={(e) => e.stopPropagation()}*/}
+                                            {/*>*/}
+                                            {/*    <BookOpen className="w-4 h-4 mr-2"/>*/}
+                                            {/*    Enroll Now*/}
+                                            {/*</Button>*/}
+                                        </div>
+                                    </CardFooter>
+                                </Card>
                             </motion.div>
                         ))}
                 </div>

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@heroui/react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AuthModal } from "@/components/auth-modal"
-import { SignUpChoiceModal } from "@/components/signup/SignUpChoiceModal" // Import SignUpChoiceModal
+import { SignUpChoiceModal } from "@/components/signup/SignUpChoiceModal"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/hooks/use-auth"
 import {
@@ -27,20 +27,21 @@ import {
     Share2,
     Copy,
     Loader2,
-    Cloud
+    Cloud,
+    PlusCircle
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
 
 export function Header() {
     const router = useRouter()
-    const { user, isAuthenticated, isLoading, logout, loginWithGoogle } = useAuth() // Added loginWithGoogle
+    const { user, isAuthenticated, isLoading, logout, loginWithGoogle } = useAuth()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isScrolled, setIsScrolled] = useState(false)
     const [isExploreOpen, setIsExploreOpen] = useState(false)
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
     const [showAuthModal, setShowAuthModal] = useState(false)
-    const [showSignUpChoiceModal, setShowSignUpChoiceModal] = useState(false) // New state for choice modal
+    const [showSignUpChoiceModal, setShowSignUpChoiceModal] = useState(false)
 
     useEffect(() => {
         const handleScroll = () => {
@@ -55,7 +56,7 @@ export function Header() {
         setIsMenuOpen(false)
     }
 
-    const handleSignUpClick = () => { // Renamed to avoid conflict with modal prop
+    const handleSignUpClick = () => {
         setShowSignUpChoiceModal(true)
         setIsMenuOpen(false)
     }
@@ -91,6 +92,12 @@ export function Header() {
         router.push('/dashboard')
         setIsUserMenuOpen(false)
         setIsMenuOpen(false)
+    }
+
+    const handleCreateCourseClick = () => {
+        router.push('/dashboard?tab=my-courses&create=true'); // Add a query param to signal creation
+        setIsUserMenuOpen(false);
+        setIsMenuOpen(false);
     }
 
     const handleShare = async () => {
@@ -264,7 +271,7 @@ export function Header() {
                                 <DropdownMenu open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" className="min-w-0 relative h-10 w-10 rounded-full hover:bg-accent/20">
-                                            <Avatar className="h-9 w-9">
+                                            <Avatar className="h-9 w-9 border-2 border-primary shadow-md avatar-border-gradient"> {/* Applied avatar-border-gradient */}
                                                 <AvatarImage src={user.avatar} alt={user.name} />
                                                 <AvatarFallback>
                                                     {user.name.split(' ').map(n => n[0]).join('')}
@@ -272,7 +279,7 @@ export function Header() {
                                             </Avatar>
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-56 mt-2" align="end" side="bottom">
+                                    <DropdownMenuContent className="w-56 mt-2 glass-enhanced" align="end" side="bottom"> {/* Glass effect applied */}
                                         <div className="flex items-center justify-start gap-2 p-2">
                                             <div className="flex flex-col space-y-1 leading-none">
                                                 <p className="font-medium">{user.name}</p>
@@ -282,25 +289,31 @@ export function Header() {
                                             </div>
                                         </div>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={handleProfileClick}>
+                                        <DropdownMenuItem onClick={handleProfileClick} className="hover:bg-accent/20"> {/* Refined hover */}
                                             <User className="mr-2 h-4 w-4" />
                                             <span>Profile</span>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => console.log('Settings clicked')}>
+                                        {user.role === 'instructor' && (
+                                            <DropdownMenuItem onClick={handleCreateCourseClick} className="hover:bg-accent/20"> {/* Refined hover */}
+                                                <PlusCircle className="mr-2 h-4 w-4" />
+                                                <span>Create Course</span>
+                                            </DropdownMenuItem>
+                                        )}
+                                        <DropdownMenuItem onClick={() => console.log('Settings clicked')} className="hover:bg-accent/20"> {/* Refined hover */}
                                             <Settings className="mr-2 h-4 w-4" />
                                             <span>Settings</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={handleShare}>
+                                        <DropdownMenuItem onClick={handleShare} className="hover:bg-accent/20"> {/* Refined hover */}
                                             <Share2 className="mr-2 h-4 w-4" />
                                             <span>Share</span>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={handleCopy}>
+                                        <DropdownMenuItem onClick={handleCopy} className="hover:bg-accent/20"> {/* Refined hover */}
                                             <Copy className="mr-2 h-4 w-4" />
                                             <span>Copy Link</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={handleSignOut}>
+                                        <DropdownMenuItem onClick={handleSignOut} className="hover:bg-red-50 text-red-600"> {/* Refined hover */}
                                             <LogOut className="mr-2 h-4 w-4" />
                                             <span>Sign Out</span>
                                         </DropdownMenuItem>
@@ -313,7 +326,7 @@ export function Header() {
                                         Login
                                     </Button>
                                     <Button
-                                        onClick={handleSignUpClick} // Changed to open choice modal
+                                        onClick={handleSignUpClick}
                                         className="rounded-full relative bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white px-6 py-2 transition-all duration-300 hover:shadow-lg hover:shadow-orange-400/25 overflow-hidden group"
                                     >
                                         <span className="relative z-10">Sign Up!</span>
@@ -339,26 +352,26 @@ export function Header() {
                     {/* Mobile Menu */}
                     {isMenuOpen && (
                         <div className="md:hidden absolute top-16 left-0 right-0 bg-background/95 backdrop-blur-md border-b border-border animate-slide-in-up">
-                            <nav className="flex flex-col space-y-4 p-4">
-                                <Link href="/" className="text-foreground hover:text-primary transition-colors duration-200 py-2">
+                            <nav className="flex flex-col space-y-1 p-4">
+                                <Link href="/" className="text-foreground hover:text-primary transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20">
                                     Home
                                 </Link>
                                 <Link
                                     href="/courses"
-                                    className="text-foreground hover:text-primary transition-colors duration-200 py-2"
+                                    className="text-foreground hover:text-primary transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
                                 >
                                     Courses
                                 </Link>
-                                <div className="space-y-2">
-                                    <span className="text-foreground font-medium py-2">Explore</span>
-                                    <div className="pl-4 space-y-2">
+                                <div className="space-y-1">
+                                    <span className="text-foreground font-medium py-2 px-3">Explore</span>
+                                    <div className="pl-4 space-y-1">
                                         {exploreItems.map((item) => {
                                             const IconComponent = item.icon
                                             return (
                                                 <Link
                                                     key={item.title}
                                                     href={item.href}
-                                                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors duration-200 py-2 hover:pl-2 transition-all duration-200"
+                                                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
                                                 >
                                                     <IconComponent className={`w-4 h-4 ${item.color}`} />
                                                     {item.title}
@@ -369,13 +382,13 @@ export function Header() {
                                 </div>
                                 <Link
                                     href="/pricing"
-                                    className="text-foreground hover:text-primary transition-colors duration-200 py-2"
+                                    className="text-foreground hover:text-primary transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
                                 >
                                     Partner & Price
                                 </Link>
                                 <Link
                                     href="/contact"
-                                    className="text-foreground hover:text-primary transition-colors duration-200 py-2"
+                                    className="text-foreground hover:text-primary transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
                                 >
                                     Contact
                                 </Link>
@@ -388,7 +401,7 @@ export function Header() {
                                     ) : isAuthenticated && user ? (
                                         <>
                                             <div className="flex items-center gap-3 p-2 mb-2">
-                                                <Avatar className="h-8 w-8">
+                                                <Avatar className="h-8 w-8 border-2 border-primary shadow-md avatar-border-gradient"> {/* Applied avatar-border-gradient */}
                                                     <AvatarImage src={user.avatar} alt={user.name} />
                                                     <AvatarFallback className="text-xs">
                                                         {user.name.split(' ').map(n => n[0]).join('')}
@@ -407,6 +420,16 @@ export function Header() {
                                                 <User className="w-4 h-4 mr-2" />
                                                 Dashboard
                                             </Button>
+                                            {user.role === 'instructor' && (
+                                                <Button
+                                                    variant="ghost"
+                                                    className="rounded-full justify-start hover:bg-accent/20"
+                                                    onClick={handleCreateCourseClick}
+                                                >
+                                                    <PlusCircle className="w-4 h-4 mr-2" />
+                                                    Create Course
+                                                </Button>
+                                            )}
                                             <Button
                                                 variant="ghost"
                                                 className="rounded-full justify-start hover:bg-accent/20"
@@ -434,7 +457,7 @@ export function Header() {
                                                 Login
                                             </Button>
                                             <Button
-                                                onClick={handleSignUpClick} // Changed to open choice modal
+                                                onClick={handleSignUpClick}
                                                 className="rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white"
                                             >
                                                 Sign Up!

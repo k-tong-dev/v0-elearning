@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
+// Removed: import { AnimatedShape } from "@/components/dashboard/AnimatedShape" // No longer needed
 
 interface UserProfileHeaderProps {
     user: {
@@ -72,22 +73,49 @@ export function UserProfileHeader({ user, isFollowing, setIsFollowing }: UserPro
             transition={{ delay: 0.1 }}
         >
             <div className="relative overflow-hidden mb-8 border-2 shadow-lg rounded-xl">
-                {/* Cover Image */}
+                {/* Cover Image / Animated Background */}
                 <div
-                    className="h-48 md:h-64 bg-gradient-to-r from-cyan-500 via-emerald-500 to-purple-500 relative"
-                    style={{
-                        backgroundImage: user.coverImage ? `url(${user.coverImage})` : undefined,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center'
-                    }}
+                    className="h-48 md:h-64 bg-gradient-to-r from-primary/5 to-accent/5 relative overflow-hidden" // Subtler base gradient
                 >
-                    <div className="absolute inset-0 bg-black/30" />
+                    <div className="absolute inset-0 " /> {/* Dark overlay */}
+
+                    {/* Organic, pulsating blobs for 3D effect - Refined colors and opacity */}
+                    <motion.div
+                        className="absolute w-64 h-64 bg-cyan-400/10 animate-organic-blob-pulse"
+                        style={{ top: '10%', left: '5%' }}
+                        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div
+                        className="absolute w-80 h-80 bg-emerald-400/10 animate-organic-blob-pulse"
+                        style={{ top: '30%', left: '50%', transform: 'translateX(-50%)', animationDelay: '5s' }}
+                        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div
+                        className="absolute w-56 h-56 bg-purple-400/10 animate-organic-blob-pulse"
+                        style={{ top: '50%', left: '70%', animationDelay: '10s' }}
+                        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div
+                        className="absolute w-72 h-72 bg-cyan-400/10 animate-organic-blob-pulse"
+                        style={{ top: '0%', left: '30%', animationDelay: '15s' }}
+                        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div
+                        className="absolute w-48 h-48 bg-emerald-400/10 animate-organic-blob-pulse"
+                        style={{ top: '70%', left: '15%', animationDelay: '20s' }}
+                        transition={{ duration: 23, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div
+                        className="absolute w-60 h-60 bg-purple-400/10 animate-organic-blob-pulse"
+                        style={{ top: '20%', left: '85%', animationDelay: '25s' }}
+                        transition={{ duration: 19, repeat: Infinity, ease: "easeInOut" }}
+                    />
                 </div>
 
                 <div className="relative p-6 md:p-8">
                     <div className="flex flex-col md:flex-row items-center md:items-end gap-6 -mt-24 md:-mt-20 pb-6">
                         <div className="relative">
-                            <Avatar className="w-28 h-28 md:w-36 md:h-36 border-4 border-background shadow-xl">
+                            <Avatar className="w-28 h-28 md:w-36 md:h-36 border-4 border-primary shadow-xl avatar-border-gradient">
                                 <AvatarImage src={user.avatar} />
                                 <AvatarFallback className="text-3xl md:text-4xl font-bold">
                                     {user.name.split(" ").map(n => n[0]).join("")}

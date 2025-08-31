@@ -1,6 +1,7 @@
 import clientPromise from './mongodb'
 import { ObjectId } from 'mongodb'
-import { UserRole, UserPreferences } from '@/types/auth' // Import from new types file
+import { UserRole, UserPreferences, UserSettings } from '@/types/auth' // Import from new types file
+import { BadgeDefinition } from '@/types/db' // Import BadgeDefinition
 
 export interface User {
     _id?: ObjectId
@@ -13,16 +14,14 @@ export interface User {
     password?: string // Only for email auth
     isVerified?: boolean
     role?: UserRole // New field
-    preferences?: UserPreferences // New field
+    preferences?: UserPreferences // New field for onboarding choices
+    settings?: UserSettings // New field for user-configurable settings
+    badgeIds?: string[] // Add this field
     createdAt: Date
     updatedAt: Date
-    userPreferences?: {
-        theme?: 'light' | 'dark' | 'system'
-        notifications?: boolean
-        newsletter?: boolean
-    }
-    profile?: {
+    profile?: { // Existing profile fields
         bio?: string
+        location?: string
         website?: string
         social?: {
             twitter?: string
@@ -58,13 +57,30 @@ export class UserService {
             isVerified: userData.provider === 'google' ? true : false,
             role: userData.role || 'student', // Default role
             preferences: userData.preferences || { learningGoals: [], learningStyle: [], topicsOfInterest: [] }, // Default preferences
+            settings: userData.settings || { // Default settings
+                theme: 'system',
+                notifications: {
+                    newEnrollments: true,
+                    courseReviews: true,
+                    paymentNotifications: true,
+                    weeklyAnalytics: true,
+                },
+                newsletter: false,
+                skills: []
+            },
+            badgeIds: userData.badgeIds || [], // Initialize badgeIds
             createdAt: now,
             updatedAt: now,
-            userPreferences: { // Renamed from 'preferences' to 'userPreferences' to avoid conflict with new 'preferences' field
-                theme: 'system',
-                notifications: true,
-                newsletter: false,
-                ...userData.userPreferences
+            profile: { // Initialize profile
+                bio: '',
+                location: '',
+                website: '',
+                social: {
+                    twitter: '',
+                    github: '',
+                    linkedin: '',
+                },
+                ...userData.profile
             },
             subscription: {
                 plan: 'free',
@@ -114,7 +130,7 @@ export class UserService {
                 }
             }
         } catch (error) {
-            console.error('Error finding user by ID:', error)
+            console.error('[UserService] Error finding user by ID:', error)
         }
         return null
     }
@@ -123,15 +139,26 @@ export class UserService {
         const db = await this.getDatabase()
         const users = db.collection<User>('users')
 
-        // If no meaningful data to update, return current user or null
+        console.log(`[UserService] Attempting to update user ID: ${id}`);
+        console.log(`[UserService] Update data:`, updateData);
+
         if (Object.keys(updateData).length === 0) {
-            console.log(`No update data provided for user ID: ${id}. Skipping update.`);
+            console.log(`[UserService] No update data provided for user ID: ${id}. Skipping update.`);
             return this.findUserById(id);
         }
 
         try {
+            let objectId;
+            try {
+                objectId = new ObjectId(id);
+                console.log(`[UserService] Converted ID to ObjectId: ${objectId}`);
+            } catch (idError) {
+                console.error(`[UserService] Error converting ID "${id}" to ObjectId:`, idError);
+                return null; // Invalid ID format
+            }
+
             const result = await users.findOneAndUpdate(
-                { _id: new ObjectId(id) },
+                { _id: objectId },
                 {
                     $set: {
                         ...updateData,
@@ -141,14 +168,19 @@ export class UserService {
                 { returnDocument: 'after' }
             )
 
+            console.log(`[UserService] findOneAndUpdate result:`, result);
+
             if (result.value) {
+                console.log(`[UserService] User found and updated:`, result.value);
                 return {
                     ...result.value,
                     id: result.value._id?.toString()
                 }
+            } else {
+                console.log(`[UserService] User with ID ${id} not found for update.`);
             }
         } catch (error) {
-            console.error('Error updating user:', error)
+            console.error(`[UserService] Database error during update for ID ${id}:`, error);
         }
         return null
     }

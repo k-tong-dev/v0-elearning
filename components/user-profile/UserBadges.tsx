@@ -5,19 +5,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Trophy } from "lucide-react"
 import { motion } from "framer-motion"
 
+interface BadgeDefinition { // Define the interface here for clarity
+    id: string
+    name: string
+    description: string
+    icon: string
+    color: string
+}
+
 interface UserBadgesProps {
-    badges: Array<{
-        id: string
-        name: string
-        description: string
-        icon: string
-        color: string
-    }>
+    badges: BadgeDefinition[] // Changed to BadgeDefinition[]
 }
 
 export function UserBadges({ badges }: UserBadgesProps) {
     return (
-        <Card className="border-2 shadow-md">
+        <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
             <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-yellow-500" />

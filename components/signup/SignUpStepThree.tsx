@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { User, Lock, Mail, Eye, EyeOff } from "lucide-react"
 import { motion } from "framer-motion"
-// Removed GoogleSignIn import
 
 interface SignUpStepThreeProps {
     formData: {
@@ -18,7 +17,6 @@ interface SignUpStepThreeProps {
     }
     handleInputChange: (field: string, value: string) => void
     handleSignUp: (e: React.FormEvent) => Promise<void>
-    // Removed handleGoogleAuthSuccess prop
     error: string
     authLoading: boolean
     showPassword: boolean
@@ -31,7 +29,6 @@ export function SignUpStepThree({
                                     formData,
                                     handleInputChange,
                                     handleSignUp,
-                                    // Removed handleGoogleAuthSuccess from destructuring
                                     error,
                                     authLoading,
                                     showPassword,
@@ -39,8 +36,6 @@ export function SignUpStepThree({
                                     showConfirmPassword,
                                     setShowConfirmPassword,
                                 }: SignUpStepThreeProps) {
-    // Removed googleError state
-
     return (
         <motion.div
             key="step3"
@@ -148,6 +143,16 @@ export function SignUpStepThree({
                     </div>
                 </div>
 
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600 mb-4"
+                    >
+                        {error}
+                    </motion.div>
+                )}
+
                 <Button
                     type="submit"
                     disabled={authLoading}
@@ -163,12 +168,6 @@ export function SignUpStepThree({
                     )}
                 </Button>
             </form>
-
-            <Separator className="my-8" />
-            <div className="text-center space-y-4">
-                <p className="text-muted-foreground">Or sign up with your Google account</p>
-                {/* Removed GoogleSignIn component */}
-            </div>
         </motion.div>
     );
 }

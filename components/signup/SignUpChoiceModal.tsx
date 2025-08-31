@@ -47,8 +47,8 @@ export function SignUpChoiceModal({
                     <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-cyan-600 via-emerald-600 to-cyan-600 bg-clip-text text-transparent animate-gradient">
                         Join CamEdu!
                     </DialogTitle>
-                    <DialogDescription className="text-center text-muted-foreground text-lg">
-                        Choose how you'd like to create your account
+                    <DialogDescription className="text-center text-muted-foreground text-lg light:text-black">
+                        Choose how you would like to create your account
                     </DialogDescription>
                 </DialogHeader>
 

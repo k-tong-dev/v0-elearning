@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
-import { UserRole, UserPreferences } from '@/types/auth' // Import new types from shared file
+import { UserRole, UserPreferences, UserSettings } from '@/types/auth' // Import new types from shared file
 
 export interface User {
     id: string
@@ -10,6 +10,8 @@ export interface User {
     avatar?: string
     provider: 'google' | 'email'
     role?: UserRole // Include role in User interface
+    settings?: UserSettings // Include settings in User interface
+    badgeIds?: string[] // Add this field
 }
 
 interface AuthContextType {

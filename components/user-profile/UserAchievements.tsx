@@ -25,7 +25,7 @@ export function UserAchievements({ achievements }: UserAchievementsProps) {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.1 }}
                     >
-                        <Card className="hover:shadow-md transition-all hover:scale-105 border-2 shadow-sm">
+                        <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
                             <CardContent className="p-6">
                                 <div className="flex items-start gap-4">
                                     <div className="text-4xl">{achievement.icon}</div>
