@@ -320,14 +320,14 @@ export default function DashboardPage() {
                     >
                         <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
                             {/* Desktop TabsList */}
-                            <TabsList className="hidden md:grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 h-auto p-1 bg-muted/50 rounded-xl shadow-inner mb-6">
+                            <TabsList className="hidden md:flex md:flex-nowrap md:overflow-x-auto w-full h-auto p-1 bg-muted/50 rounded-xl shadow-inner mb-6 px-4">
                                 {tabsConfig.map((tab) => {
                                     const IconComponent = tab.icon;
                                     return (
                                         <TabsTrigger
                                             key={tab.value}
                                             value={tab.value}
-                                            className="data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-lg transition-all duration-200 hover:scale-[1.02] flex items-center gap-2 data-[state=active]:dark:bg-gradient-to-r data-[state=active]:dark:from-cyan-500 data-[state=active]:dark:to-emerald-500 data-[state=active]:dark:text-white"
+                                            className="flex-shrink-0 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-lg transition-all duration-200 hover:scale-[1.02] flex items-center gap-3 data-[state=active]:dark:bg-gradient-to-r data-[state=active]:dark:from-cyan-500 data-[state=active]:dark:to-emerald-500 data-[state=active]:dark:text-white"
                                         >
                                             <IconComponent className="w-4 h-4" />
                                             {tab.label}
