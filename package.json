@@ -4,10 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "pnpm install --force",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
   },
   "dependencies": {
     "@clerk/clerk-react": "latest",
