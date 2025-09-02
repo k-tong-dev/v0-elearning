@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BookOpen, Target, Search, Filter, SortAsc, Clock, TrendingUp, CheckCircle, Play } from "lucide-react"
+import { BookOpen, Target, Search, Filter, SortAsc, Clock, TrendingUp, CheckCircle, Play, Video, FileText, Link as LinkIcon } from "lucide-react"
 import { motion } from "framer-motion"
+import {Badge} from "@heroui/badge";
 
 interface CourseEnrollment {
     id: string
@@ -75,6 +76,16 @@ export function DashboardMyLearning({ myLearningProgress }: DashboardMyLearningP
         return courses;
     }, [myLearningProgress, searchQuery, filterStatus, sortBy]);
 
+    const getTypeIcon = (type: string) => {
+        switch (type) {
+            case "Video": return Video
+            case "PDF": return FileText
+            case "Link": return LinkIcon
+            case "Interactive": return Target
+            default: return BookOpen
+        }
+    }
+
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-bold">My Learning Progress</h2>
@@ -83,7 +94,7 @@ export function DashboardMyLearning({ myLearningProgress }: DashboardMyLearningP
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <BookOpen className="w-5 h-5 text-blue-500" />
-                        Courses I'm Enrolled In
+                        Courses I am Enrolled In
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -135,49 +146,74 @@ export function DashboardMyLearning({ myLearningProgress }: DashboardMyLearningP
                             </Button>
                         </div>
                     ) : (
-                        <div className="space-y-4">
-                            {filteredAndSortedCourses.map((course, index) => (
-                                <motion.div
-                                    key={course.id}
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.05 * index }}
-                                    className="space-y-2 p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-                                    onClick={() => router.push(`/courses/${course.id}`)}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <h4 className="font-medium line-clamp-1 text-lg">{course.title}</h4>
-                                        <span className="text-sm text-muted-foreground">
-                      {course.completedLessons ?? 0}/{course.totalLessons ?? 0} Lessons
-                    </span>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground line-clamp-2">{course.description}</p>
-
-                                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                                        <div
-                                            className="h-2 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full transition-all"
-                                            style={{ width: `${course.progress ?? 0}%` }}
-                                        />
-                                    </div>
-                                    <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
-                                        <span>{course.progress ?? 0}% complete</span>
-                                        <div className="flex items-center gap-2">
-                                            {course.progress === 100 ? (
-                                                <CheckCircle className="w-4 h-4 text-green-500" />
-                                            ) : (
-                                                <Button variant="ghost" size="sm" className="h-6 p-1">
-                                                    <Play className="w-3 h-3 mr-1" />
-                                                    Continue
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
-                                        <Clock className="w-3 h-3" />
-                                        <span>Last updated: {new Date(course.lastUpdated).toLocaleDateString()}</span>
-                                    </div>
-                                </motion.div>
-                            ))}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {filteredAndSortedCourses.map((course, index) => {
+                                const TypeIcon = getTypeIcon(course.type);
+                                const progressColor = course.progress === 100 ? 'bg-green-500' : 'bg-gradient-to-r from-cyan-500 to-emerald-500';
+                                return (
+                                    <motion.div
+                                        key={course.id}
+                                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        transition={{ delay: 0.05 * index, duration: 0.3 }}
+                                        className="group"
+                                    >
+                                        <Card
+                                            className="h-full flex flex-col justify-between glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden"
+                                            onClick={() => router.push(`/courses/${course.id}`)}
+                                        >
+                                            <div className="relative">
+                                                <img
+                                                    src={course.thumbnailUrl}
+                                                    alt={course.title}
+                                                    className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-500"
+                                                />
+                                                <div className="absolute top-2 right-2">
+                                                    <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm text-foreground">
+                                                        <TypeIcon className="w-3 h-3 mr-1" />
+                                                        {course.type}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                            <CardContent className="p-4 flex-1 flex flex-col justify-between">
+                                                <div>
+                                                    <h4 className="font-semibold line-clamp-2 text-lg mb-1 group-hover:text-primary transition-colors">
+                                                        {course.title}
+                                                    </h4>
+                                                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                                                        {course.description}
+                                                    </p>
+                                                </div>
+                                                <div className="mt-auto">
+                                                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                                                        <div
+                                                            className={`h-2 rounded-full transition-all ${progressColor}`}
+                                                            style={{ width: `${course.progress ?? 0}%` }}
+                                                        />
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                                                        <span>{course.progress ?? 0}% complete</span>
+                                                        <div className="flex items-center gap-2">
+                                                            {course.progress === 100 ? (
+                                                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                                            ) : (
+                                                                <Button variant="ghost" size="sm" className="h-6 p-1 text-primary hover:text-primary/80">
+                                                                    <Play className="w-3 h-3 mr-1" />
+                                                                    Continue
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                                                        <Clock className="w-3 h-3" />
+                                                        <span>Last updated: {new Date(course.lastUpdated).toLocaleDateString()}</span>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                );
+                            })}
                         </div>
                     )}
                 </CardContent>

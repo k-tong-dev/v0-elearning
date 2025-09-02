@@ -18,6 +18,7 @@ import { LocationWebsiteFields } from "./profile-settings/LocationWebsiteFields"
 import { SocialLinksFields } from "./profile-settings/SocialLinksFields"
 import { SkillsManagement } from "./profile-settings/SkillsManagement"
 import { BadgesManagement } from "./profile-settings/BadgesManagement"
+import { FollowStatsDisplay } from "./profile-settings/FollowStatsDisplay"
 
 interface ProfileSettingsFormProps {
     currentUser: {
@@ -38,6 +39,8 @@ interface ProfileSettingsFormProps {
             skills?: string[];
         }
         badgeIds?: string[]
+        followers?: number; // Add followers count
+        following?: number; // Add following count
     }
 }
 
@@ -99,7 +102,7 @@ export function ProfileSettingsForm({ currentUser }: ProfileSettingsFormProps) {
     const handleAvatarChange = async (file: File) => {
         setIsUploadingAvatar(true);
         try {
-            // In a real app, this would be an API call to upload the file
+            // In a real app, this would be an new API call to upload the file
             // and return a permanent URL. For now, we'll just update the preview.
             const imageUrl = URL.createObjectURL(file);
             setFormData((prev) => ({ ...prev, avatar: imageUrl }));
@@ -194,6 +197,12 @@ export function ProfileSettingsForm({ currentUser }: ProfileSettingsFormProps) {
                             name={formData.name}
                             email={formData.email}
                             onInputChange={handleInputChange}
+                        />
+
+                        {/* New: Follower/Following Stats Display */}
+                        <FollowStatsDisplay
+                            followers={currentUser.followers ?? 0}
+                            following={currentUser.following ?? 0}
                         />
 
                         <RoleSelectionField

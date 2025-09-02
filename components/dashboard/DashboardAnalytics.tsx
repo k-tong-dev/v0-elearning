@@ -10,11 +10,13 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
+    LineChart,
+    Line,
 } from "recharts"
 import {
     TrendingUp,
     BarChart3,
-    PieChart as PieChartIcon,
+    BookOpen, // Added for lessons completed
     DollarSign,
     Users,
 } from "lucide-react"
@@ -37,12 +39,18 @@ interface EnrollmentDataPoint {
     revenue: number
 }
 
+interface LessonsCompletedDataPoint {
+    month: string;
+    lessons: number;
+}
+
 interface DashboardAnalyticsProps {
     stats: DashboardStats
     enrollmentData: EnrollmentDataPoint[]
+    lessonsCompletedData: LessonsCompletedDataPoint[]; // New prop for lessons completed
 }
 
-export function DashboardAnalytics({ stats, enrollmentData }: DashboardAnalyticsProps) {
+export function DashboardAnalytics({ stats, enrollmentData, lessonsCompletedData }: DashboardAnalyticsProps) {
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
@@ -66,9 +74,36 @@ export function DashboardAnalytics({ stats, enrollmentData }: DashboardAnalytics
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="month" />
                                 <YAxis />
-                                <Tooltip />
+                                <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
                                 <Bar dataKey="revenue" fill="#10B981" />
                             </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            {/* Lessons Completed Chart */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+            >
+                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <BookOpen className="w-5 h-5 text-blue-500" />
+                            Lessons Completed Over Time
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <LineChart data={lessonsCompletedData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="month" />
+                                <YAxis />
+                                <Tooltip />
+                                <Line type="monotone" dataKey="lessons" stroke="#3B82F6" strokeWidth={2} name="Lessons Completed" />
+                            </LineChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>

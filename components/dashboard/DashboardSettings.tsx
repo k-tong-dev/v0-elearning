@@ -32,6 +32,8 @@ interface CurrentUser {
     settings?: UserSettings // Include settings here
     skills?: string[] // Added skills here
     badgeIds?: string[] // Add badgeIds here
+    followers?: number; // Add followers count
+    following?: number; // Add following count
 }
 
 interface DashboardSettingsProps {
@@ -128,6 +130,8 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                     ...currentUser,
                     skills: currentUser.settings?.skills || [], // Pass skills from settings
                     badgeIds: (user as any)?.badgeIds || [], // Pass badgeIds from the authenticated user
+                    followers: currentUser.followers, // Pass followers
+                    following: currentUser.following, // Pass following
                 }}
             />
 

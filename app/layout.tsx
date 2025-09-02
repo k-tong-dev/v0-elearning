@@ -7,6 +7,7 @@ import {AuthProvider} from "@/hooks/use-auth"
 import "./globals.css"
 
 import { Toaster } from "sonner"
+import { ChatWidget } from "@/components/chat-widget" // Import ChatWidget
 
 
 export const metadata: Metadata = {
@@ -44,6 +45,7 @@ export default function RootLayout({
             <AuthProvider>
                 <Toaster position="top-right" richColors closeButton />
                 {children}
+                <ChatWidget />
             </AuthProvider>
         </ThemeProvider>
         </body>

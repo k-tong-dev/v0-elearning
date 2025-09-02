@@ -152,7 +152,7 @@ export function Header() {
         {
             title: "About Us",
             description: "Learn about our mission and team",
-            href: "/about",
+            href: "/about", // Link to new About Us page
             icon: Info,
             color: "text-green-500",
         },

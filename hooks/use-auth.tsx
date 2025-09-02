@@ -12,6 +12,8 @@ export interface User {
     role?: UserRole // Include role in User interface
     settings?: UserSettings // Include settings in User interface
     badgeIds?: string[] // Add this field
+    followers?: number; // Add followers count
+    following?: number; // Add following count
 }
 
 interface AuthContextType {

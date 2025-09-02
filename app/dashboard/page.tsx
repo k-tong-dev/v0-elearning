@@ -15,6 +15,7 @@ import { DashboardAnalytics } from "@/components/dashboard/DashboardAnalytics"
 import { DashboardSettings } from "@/components/dashboard/DashboardSettings"
 import CreateCourseForm from "@/components/dashboard/CreateCourseForm"
 import { DashboardMyLearning } from "@/components/dashboard/DashboardMyLearning"
+import { DashboardExpenditure } from "@/components/dashboard/DashboardExpenditure" // Import new component
 import {
     Users,
     BookOpen,
@@ -28,6 +29,7 @@ import {
     BarChart3,
     Settings,
     GraduationCap,
+    CreditCard, // New icon for expenditure
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -106,6 +108,7 @@ function DashboardContent() {
         { value: "my-learning", label: "My Learning", icon: GraduationCap },
         { value: "my-courses", label: "My Courses", icon: BookOpen },
         { value: "enrollments", label: "Enrollments", icon: Users },
+        { value: "expenditure", label: "Expenditure", icon: CreditCard }, // New tab for expenditure
         { value: "analytics", label: "Analytics", icon: BarChart3 },
         { value: "settings", label: "Settings", icon: Settings },
     ]
@@ -147,6 +150,16 @@ function DashboardContent() {
         { name: "Interactive", value: 20, color: "#8B5CF6" },
         { name: "Link", value: 10, color: "#F59E0B" },
     ]
+
+    // New mock data for lessons completed over time
+    const lessonsCompletedData = [
+        { month: "Jan", lessons: 10 },
+        { month: "Feb", lessons: 15 },
+        { month: "Mar", lessons: 22 },
+        { month: "Apr", lessons: 18 },
+        { month: "May", lessons: 25 },
+        { month: "Jun", lessons: 30 },
+    ];
 
     const myCourses: Course[] = [
         {
@@ -408,8 +421,12 @@ function DashboardContent() {
                             <DashboardEnrollments recentEnrollments={recentEnrollments} myLearningProgress={myLearningProgress} />
                         </TabsContent>
 
+                        <TabsContent value="expenditure" className="mt-0">
+                            <DashboardExpenditure />
+                        </TabsContent>
+
                         <TabsContent value="analytics" className="mt-0">
-                            <DashboardAnalytics stats={stats} enrollmentData={enrollmentData} />
+                            <DashboardAnalytics stats={stats} enrollmentData={enrollmentData} lessonsCompletedData={lessonsCompletedData} />
                         </TabsContent>
 
                         <TabsContent value="settings" className="mt-0">
@@ -427,6 +444,8 @@ function DashboardContent() {
                                     settings: (user as any).settings || {},
                                     skills: (user as any).settings?.skills || [],
                                     badgeIds: (user as any)?.badgeIds || [],
+                                    followers: user.followers, // Pass followers
+                                    following: user.following, // Pass following
                                 }}
                                 stats={stats}
                             />
