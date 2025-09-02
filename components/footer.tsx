@@ -13,7 +13,7 @@ export function Footer() {
                 <BookOpen className="w-5 h-5 text-primary-foreground" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                EduVerse
+                CanEdu
               </span>
             </Link>
             <p className="text-muted-foreground mb-4 max-w-sm">
@@ -121,7 +121,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-muted-foreground text-sm">Copyright 2024 © EduVerse. All Rights Reserved.</p>
+          <p className="text-muted-foreground text-sm">Copyright 2024 © CanEdu. All Rights Reserved.</p>
           <p className="text-muted-foreground text-sm mt-2 md:mt-0">Made with ❤️ for learners worldwide</p>
         </div>
       </div>

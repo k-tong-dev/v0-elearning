@@ -10,11 +10,10 @@ import { useAuth } from "@/hooks/use-auth"
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader"
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview"
 import { DashboardMyCourses } from "@/components/dashboard/DashboardMyCourses"
-import { DashboardEnrollments } from "@/components/dashboard/DashboardEnrollments"
+import { DashboardCombinedEnrollments } from "@/components/dashboard/DashboardCombinedEnrollments" // Import new combined component
 import { DashboardAnalytics } from "@/components/dashboard/DashboardAnalytics"
 import { DashboardSettings } from "@/components/dashboard/DashboardSettings"
 import CreateCourseForm from "@/components/dashboard/CreateCourseForm"
-import { DashboardMyLearning } from "@/components/dashboard/DashboardMyLearning"
 import { DashboardExpenditure } from "@/components/dashboard/DashboardExpenditure" // Import new component
 import {
     Users,
@@ -72,6 +71,7 @@ interface Enrollment {
     id: string
     courseId: string
     courseTitle: string
+    studentId: string // Added studentId for linking
     studentName: string
     studentAvatar: string
     enrolledAt: string
@@ -105,10 +105,9 @@ function DashboardContent() {
     // Define tabs configuration with icons
     const tabsConfig = [
         { value: "overview", label: "Overview", icon: LayoutDashboard },
-        { value: "my-learning", label: "My Learning", icon: GraduationCap },
+        { value: "enrollments", label: "My Enrollments", icon: GraduationCap }, // Changed label and icon
         { value: "my-courses", label: "My Courses", icon: BookOpen },
-        { value: "enrollments", label: "Enrollments", icon: Users },
-        { value: "expenditure", label: "Expenditure", icon: CreditCard }, // New tab for expenditure
+        { value: "expenditure", label: "Expenditure", icon: CreditCard },
         { value: "analytics", label: "Analytics", icon: BarChart3 },
         { value: "settings", label: "Settings", icon: Settings },
     ]
@@ -259,6 +258,7 @@ function DashboardContent() {
             id: "1",
             courseId: "1",
             courseTitle: "React Fundamentals for Beginners",
+            studentId: "user-john-smith", // Added studentId
             studentName: "John Smith",
             studentAvatar: "/images/Avatar.jpg",
             enrolledAt: "2024-01-28",
@@ -270,6 +270,7 @@ function DashboardContent() {
             id: "2",
             courseId: "2",
             courseTitle: "JavaScript ES6+ Complete Guide",
+            studentId: "user-maria-garcia", // Added studentId
             studentName: "Maria Garcia",
             studentAvatar: "/images/Avatar.jpg",
             enrolledAt: "2024-01-27",
@@ -281,6 +282,7 @@ function DashboardContent() {
             id: "3",
             courseId: "1",
             courseTitle: "React Fundamentals for Beginners",
+            studentId: "user-alex-johnson", // Added studentId
             studentName: "Alex Johnson",
             studentAvatar: "/images/Avatar.jpg",
             enrolledAt: "2024-01-26",
@@ -398,8 +400,8 @@ function DashboardContent() {
                             />
                         </TabsContent>
 
-                        <TabsContent value="my-learning" className="mt-0">
-                            <DashboardMyLearning myLearningProgress={myLearningProgress} />
+                        <TabsContent value="enrollments" className="mt-0">
+                            <DashboardCombinedEnrollments recentEnrollments={recentEnrollments} myLearningProgress={myLearningProgress} />
                         </TabsContent>
 
                         <TabsContent value="my-courses" className="mt-0">
@@ -415,10 +417,6 @@ function DashboardContent() {
                                     showCreateButton={true}
                                 />
                             )}
-                        </TabsContent>
-
-                        <TabsContent value="enrollments" className="mt-0">
-                            <DashboardEnrollments recentEnrollments={recentEnrollments} myLearningProgress={myLearningProgress} />
                         </TabsContent>
 
                         <TabsContent value="expenditure" className="mt-0">

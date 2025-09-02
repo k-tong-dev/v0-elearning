@@ -13,7 +13,7 @@ const testimonials = [
     avatar: "/professional-man.png",
     rating: 5,
     content:
-        "I've been using EduVerse for nearly two years growing my skills and I've found it to be an excellent resource for learning new technologies and staying up to date with trends.",
+        "I've been using CanEdu for nearly two years growing my skills and I've found it to be an excellent resource for learning new technologies and staying up to date with trends.",
   },
   {
     id: 2,
@@ -22,7 +22,7 @@ const testimonials = [
     avatar: "/professional-man-glasses.png",
     rating: 5,
     content:
-        "The quality of courses on EduVerse is outstanding. The instructors are industry experts and the content is always up-to-date with the latest best practices.",
+        "The quality of courses on CanEdu is outstanding. The instructors are industry experts and the content is always up-to-date with the latest best practices.",
   },
   {
     id: 3,
@@ -31,7 +31,7 @@ const testimonials = [
     avatar: "/professional-woman-diverse.png",
     rating: 5,
     content:
-        "EduVerse has transformed my career. The practical projects and real-world applications helped me land my dream job in tech. Highly recommended!",
+        "CanEdu has transformed my career. The practical projects and real-world applications helped me land my dream job in tech. Highly recommended!",
   },
 ]
 
