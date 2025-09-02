@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -14,7 +14,7 @@ import { DashboardEnrollments } from "@/components/dashboard/DashboardEnrollment
 import { DashboardAnalytics } from "@/components/dashboard/DashboardAnalytics"
 import { DashboardSettings } from "@/components/dashboard/DashboardSettings"
 import CreateCourseForm from "@/components/dashboard/CreateCourseForm"
-import { DashboardMyLearning } from "@/components/dashboard/DashboardMyLearning" // New import
+import { DashboardMyLearning } from "@/components/dashboard/DashboardMyLearning"
 import {
     Users,
     BookOpen,
@@ -24,10 +24,10 @@ import {
     ThumbsUp,
     Menu,
     ChevronDown,
-    LayoutDashboard, // New import
-    BarChart3, // New import
-    Settings, // Already imported, but explicitly listed for clarity
-    GraduationCap, // New import for enrollments
+    LayoutDashboard,
+    BarChart3,
+    Settings,
+    GraduationCap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -79,6 +79,18 @@ interface Enrollment {
 }
 
 export default function DashboardPage() {
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
+            <Header />
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading dashboard...</div>}>
+                <DashboardContent />
+            </Suspense>
+            <Footer />
+        </div>
+    )
+}
+
+function DashboardContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { user, isLoading: authLoading } = useAuth()
@@ -91,12 +103,12 @@ export default function DashboardPage() {
     // Define tabs configuration with icons
     const tabsConfig = [
         { value: "overview", label: "Overview", icon: LayoutDashboard },
-        { value: "my-learning", label: "My Learning", icon: GraduationCap }, // New tab
+        { value: "my-learning", label: "My Learning", icon: GraduationCap },
         { value: "my-courses", label: "My Courses", icon: BookOpen },
-        { value: "enrollments", label: "Enrollments", icon: Users }, // Changed icon to Users for clarity (students in my courses)
+        { value: "enrollments", label: "Enrollments", icon: Users },
         { value: "analytics", label: "Analytics", icon: BarChart3 },
         { value: "settings", label: "Settings", icon: Settings },
-    ];
+    ]
 
     useEffect(() => {
         const tab = searchParams?.get("tab")
@@ -178,7 +190,7 @@ export default function DashboardPage() {
         },
     ]
 
-    const myLearningProgress: Course[] = [ // Renamed from myEnrollments to match DashboardMyLearning prop
+    const myLearningProgress: Course[] = [
         {
             id: "e1",
             title: "Advanced React Patterns",
@@ -304,130 +316,124 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-            <Header />
+        <main className="pt-24 pb-8 px-4 sm:px-6 lg:px-8">
+            <div className="container mx-auto">
+                <DashboardHeader userName={user.name} onCreateCourse={handleCreateCourseClick} />
 
-            <main className="pt-24 pb-8 px-4 sm:px-6 lg:px-8"> {/* Adjusted padding-top to clear fixed header */}
-                <div className="container mx-auto">
-                    <DashboardHeader userName={user.name} onCreateCourse={handleCreateCourseClick} />
+                <motion.div
+                    key={selectedTab + (showCreateCourseForm ? '-create' : '-list')}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-6"
+                >
+                    <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
+                        {/* Desktop TabsList */}
+                        <TabsList className="hidden md:flex md:flex-nowrap md:overflow-x-auto w-full h-auto p-1 bg-muted/50 rounded-xl shadow-inner mb-6 px-4">
+                            {tabsConfig.map((tab) => {
+                                const IconComponent = tab.icon
+                                return (
+                                    <TabsTrigger
+                                        key={tab.value}
+                                        value={tab.value}
+                                        className="flex-shrink-0 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-lg transition-all duration-200 hover:scale-[1.02] flex items-center gap-3 data-[state=active]:dark:bg-gradient-to-r data-[state=active]:dark:from-cyan-500 data-[state=active]:dark:to-emerald-500 data-[state=active]:dark:text-white"
+                                    >
+                                        <IconComponent className="w-4 h-4" />
+                                        {tab.label}
+                                    </TabsTrigger>
+                                )
+                            })}
+                        </TabsList>
 
-                    <motion.div
-                        key={selectedTab + (showCreateCourseForm ? '-create' : '-list')}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="space-y-6"
-                    >
-                        <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
-                            {/* Desktop TabsList */}
-                            <TabsList className="hidden md:flex md:flex-nowrap md:overflow-x-auto w-full h-auto p-1 bg-muted/50 rounded-xl shadow-inner mb-6 px-4">
-                                {tabsConfig.map((tab) => {
-                                    const IconComponent = tab.icon;
-                                    return (
-                                        <TabsTrigger
-                                            key={tab.value}
-                                            value={tab.value}
-                                            className="flex-shrink-0 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-lg transition-all duration-200 hover:scale-[1.02] flex items-center gap-3 data-[state=active]:dark:bg-gradient-to-r data-[state=active]:dark:from-cyan-500 data-[state=active]:dark:to-emerald-500 data-[state=active]:dark:text-white"
-                                        >
-                                            <IconComponent className="w-4 h-4" />
-                                            {tab.label}
-                                        </TabsTrigger>
-                                    );
-                                })}
-                            </TabsList>
+                        {/* Mobile Dropdown for Tabs */}
+                        <div className="md:hidden mb-6">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full justify-between bg-gradient-to-r from-cyan-500 to-emerald-500 text-white border-transparent hover:from-cyan-600 hover:to-emerald-600 dark:from-cyan-700 dark:to-emerald-700 dark:hover:from-cyan-800 dark:hover:to-emerald-800 transition-all duration-300 hover:shadow-lg hover:shadow-primary/25"
+                                    >
+                                        <Menu className="w-4 h-4 mr-2" />
+                                        {tabsConfig.find((tab) => tab.value === selectedTab)?.label || "Select Tab"}
+                                        <ChevronDown className="w-4 h-4 ml-2" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] glass-enhanced border border-primary/30 text-foreground dark:border-primary/50 shadow-lg">
+                                    {tabsConfig.map((tab) => {
+                                        const IconComponent = tab.icon
+                                        return (
+                                            <DropdownMenuItem
+                                                key={tab.value}
+                                                onClick={() => handleTabChange(tab.value)}
+                                                className="hover:bg-primary/10 dark:hover:bg-primary/20 text-foreground dark:text-foreground hover:text-primary dark:hover:text-primary transition-colors duration-200 flex items-center gap-2"
+                                            >
+                                                <IconComponent className="w-4 h-4" />
+                                                {tab.label}
+                                            </DropdownMenuItem>
+                                        )
+                                    })}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
 
-                            {/* Mobile Dropdown for Tabs */}
-                            <div className="md:hidden mb-6">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full justify-between bg-gradient-to-r from-cyan-500 to-emerald-500 text-white border-transparent hover:from-cyan-600 hover:to-emerald-600 dark:from-cyan-700 dark:to-emerald-700 dark:hover:from-cyan-800 dark:hover:to-emerald-800 transition-all duration-300 hover:shadow-lg hover:shadow-primary/25"
-                                        >
-                                            <Menu className="w-4 h-4 mr-2" />
-                                            {tabsConfig.find(tab => tab.value === selectedTab)?.label || "Select Tab"}
-                                            <ChevronDown className="w-4 h-4 ml-2" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] glass-enhanced border border-primary/30 text-foreground dark:border-primary/50 shadow-lg">
-                                        {tabsConfig.map((tab) => {
-                                            const IconComponent = tab.icon;
-                                            return (
-                                                <DropdownMenuItem
-                                                    key={tab.value}
-                                                    onClick={() => handleTabChange(tab.value)}
-                                                    className="hover:bg-primary/10 dark:hover:bg-primary/20 text-foreground dark:text-foreground hover:text-primary dark:hover:text-primary transition-colors duration-200 flex items-center gap-2"
-                                                >
-                                                    <IconComponent className="w-4 h-4" />
-                                                    {tab.label}
-                                                </DropdownMenuItem>
-                                            );
-                                        })}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
+                        <TabsContent value="overview" className="mt-0">
+                            <DashboardOverview
+                                stats={stats}
+                                enrollmentData={enrollmentData}
+                                courseTypeData={courseTypeData}
+                                recentActivity={recentActivityData}
+                            />
+                        </TabsContent>
 
-                            <TabsContent value="overview" className="mt-0">
-                                <DashboardOverview
-                                    stats={stats}
-                                    enrollmentData={enrollmentData}
-                                    courseTypeData={courseTypeData}
-                                    recentActivity={recentActivityData}
+                        <TabsContent value="my-learning" className="mt-0">
+                            <DashboardMyLearning myLearningProgress={myLearningProgress} />
+                        </TabsContent>
+
+                        <TabsContent value="my-courses" className="mt-0">
+                            {showCreateCourseForm ? (
+                                <CreateCourseForm
+                                    onCancel={handleCancelCreateCourse}
+                                    onSuccess={handleCourseCreatedSuccess}
                                 />
-                            </TabsContent>
-
-                            <TabsContent value="my-learning" className="mt-0"> {/* New TabsContent for My Learning */}
-                                <DashboardMyLearning myLearningProgress={myLearningProgress} />
-                            </TabsContent>
-
-                            <TabsContent value="my-courses" className="mt-0">
-                                {showCreateCourseForm ? (
-                                    <CreateCourseForm
-                                        onCancel={handleCancelCreateCourse}
-                                        onSuccess={handleCourseCreatedSuccess}
-                                    />
-                                ) : (
-                                    <DashboardMyCourses
-                                        myCourses={myCourses}
-                                        onCreateCourse={handleCreateCourseClick}
-                                        showCreateButton={true}
-                                    />
-                                )}
-                            </TabsContent>
-
-                            <TabsContent value="enrollments" className="mt-0">
-                                <DashboardEnrollments recentEnrollments={recentEnrollments} myLearningProgress={myLearningProgress} />
-                            </TabsContent>
-
-                            <TabsContent value="analytics" className="mt-0">
-                                <DashboardAnalytics stats={stats} enrollmentData={enrollmentData} />
-                            </TabsContent>
-
-                            <TabsContent value="settings" className="mt-0">
-                                <DashboardSettings
-                                    currentUser={{
-                                        id: user.id,
-                                        name: user.name,
-                                        email: user.email,
-                                        avatar: user.avatar,
-                                        bio: (user as any).profile?.bio,
-                                        location: (user as any).profile?.location,
-                                        website: (user as any).profile?.website,
-                                        socialLinks: (user as any).profile?.social,
-                                        role: user.role,
-                                        settings: (user as any).settings || {},
-                                        skills: (user as any).settings?.skills || [],
-                                        badgeIds: (user as any)?.badgeIds || [],
-                                    }}
-                                    stats={stats}
+                            ) : (
+                                <DashboardMyCourses
+                                    myCourses={myCourses}
+                                    onCreateCourse={handleCreateCourseClick}
+                                    showCreateButton={true}
                                 />
-                            </TabsContent>
-                        </Tabs>
-                    </motion.div>
-                </div>
-            </main>
+                            )}
+                        </TabsContent>
 
-            <Footer />
-        </div>
+                        <TabsContent value="enrollments" className="mt-0">
+                            <DashboardEnrollments recentEnrollments={recentEnrollments} myLearningProgress={myLearningProgress} />
+                        </TabsContent>
+
+                        <TabsContent value="analytics" className="mt-0">
+                            <DashboardAnalytics stats={stats} enrollmentData={enrollmentData} />
+                        </TabsContent>
+
+                        <TabsContent value="settings" className="mt-0">
+                            <DashboardSettings
+                                currentUser={{
+                                    id: user.id,
+                                    name: user.name,
+                                    email: user.email,
+                                    avatar: user.avatar,
+                                    bio: (user as any).profile?.bio,
+                                    location: (user as any).profile?.location,
+                                    website: (user as any).profile?.website,
+                                    socialLinks: (user as any).profile?.social,
+                                    role: user.role,
+                                    settings: (user as any).settings || {},
+                                    skills: (user as any).settings?.skills || [],
+                                    badgeIds: (user as any)?.badgeIds || [],
+                                }}
+                                stats={stats}
+                            />
+                        </TabsContent>
+                    </Tabs>
+                </motion.div>
+            </div>
+        </main>
     )
 }
