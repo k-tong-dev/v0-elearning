@@ -5,7 +5,6 @@ import {useState, useMemo} from "react"
 import {useRouter} from "next/navigation"
 import {Breadcrumbs, BreadcrumbItem} from "@nextui-org/react"
 import {motion} from "framer-motion"
-// import { Button } from "@/components/ui/button"
 import {Button} from "@heroui/react"
 import {Input} from "@/components/ui/input"
 import {Badge} from "@/components/ui/badge"
@@ -26,10 +25,14 @@ import {
     X,
     Sparkles,
     Zap,
+    ChevronLeft,
+    ChevronDown,
+    ChevronUp,
 } from "lucide-react"
 import {CourseSkeleton} from "@/components/course-skeleton"
 import {Header} from "@/components/header"
 import {Footer} from "@/components/footer"
+import Link from "next/link";
 
 export default function CoursesPage() {
     const router = useRouter()
@@ -42,6 +45,10 @@ export default function CoursesPage() {
     const [sortBy, setSortBy] = useState("popular")
     const [showFilters, setShowFilters] = useState(false)
     const [favorites, setFavorites] = useState<number[]>([])
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1)
+    const coursesPerPage = 12 // Display 12 courses per page
 
     const courses = [
         {
@@ -57,6 +64,7 @@ export default function CoursesPage() {
             level: "Intermediate",
             category: "Web Development",
             educator: "John Smith",
+            educatorId: "1", // Added educatorId
             tags: ["React", "JavaScript", "Frontend"],
             trending: true,
             bestseller: false,
@@ -77,6 +85,7 @@ export default function CoursesPage() {
             level: "Beginner",
             category: "Artificial Intelligence",
             educator: "Dr. Sarah Johnson",
+            educatorId: "2", // Added educatorId
             tags: ["Python", "AI", "Machine Learning"],
             trending: false,
             bestseller: true,
@@ -94,6 +103,7 @@ export default function CoursesPage() {
             level: "Advanced",
             category: "Web Development",
             educator: "Mike Chen",
+            educatorId: "3", // Added educatorId
             tags: ["Full-Stack", "Node.js", "Database"],
             trending: true,
             bestseller: true,
@@ -111,6 +121,7 @@ export default function CoursesPage() {
             level: "Intermediate",
             category: "Mobile Development",
             educator: "Lisa Wang",
+            educatorId: "6", // Added educatorId
             tags: ["React Native", "Mobile", "Cross-platform"],
             trending: false,
             bestseller: false,
@@ -128,6 +139,7 @@ export default function CoursesPage() {
             level: "Intermediate",
             category: "Data Science",
             educator: "Dr. Sarah Johnson",
+            educatorId: "2", // Added educatorId
             tags: ["Python", "Data Analysis", "Statistics"],
             trending: true,
             bestseller: false,
@@ -145,9 +157,334 @@ export default function CoursesPage() {
             level: "Beginner",
             category: "Design",
             educator: "Emma Rodriguez",
+            educatorId: "3", // Added educatorId
             tags: ["UI/UX", "Figma", "Design Thinking"],
             trending: false,
             bestseller: true,
+        },
+        {
+            id: 7,
+            title: "Advanced TypeScript for Developers",
+            description: "Deep dive into advanced TypeScript features and patterns for robust applications.",
+            image: "https://images.unsplash.com/photo-1617042375876-a13e36732a04?w=800&h=400&fit=crop",
+            price: "$99.99",
+            originalPrice: "$149.99",
+            rating: 4.9,
+            students: 6500,
+            duration: "30 hours",
+            level: "Advanced",
+            category: "Web Development",
+            educator: "John Smith",
+            educatorId: "1", // Added educatorId
+            tags: ["TypeScript", "Frontend", "Backend"],
+            trending: true,
+            bestseller: false,
+        },
+        {
+            id: 8,
+            title: "Cloud Computing with AWS",
+            description: "Learn to deploy, manage, and scale applications on Amazon Web Services.",
+            image: "https://images.unsplash.com/photo-1581092336000-3e2f2b2f2b2f?w=800&h=400&fit=crop",
+            price: "$129.99",
+            originalPrice: "$199.99",
+            rating: 4.8,
+            students: 7200,
+            duration: "50 hours",
+            level: "Intermediate",
+            category: "Cloud Computing",
+            educator: "Dr. Sarah Johnson",
+            educatorId: "2", // Added educatorId
+            tags: ["AWS", "Cloud", "DevOps"],
+            trending: false,
+            bestseller: true,
+        },
+        {
+            id: 9,
+            title: "Cybersecurity Fundamentals",
+            description: "An introduction to cybersecurity concepts, threats, and protective measures.",
+            image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&h=400&fit=crop",
+            price: "$79.99",
+            originalPrice: "$119.99",
+            rating: 4.6,
+            students: 9100,
+            duration: "25 hours",
+            level: "Beginner",
+            category: "Cybersecurity",
+            educator: "Mike Chen",
+            educatorId: "3", // Added educatorId
+            tags: ["Security", "Networking", "Privacy"],
+            trending: true,
+            bestseller: false,
+        },
+        {
+            id: 10,
+            title: "Game Development with Unity",
+            description: "Create 2D and 3D games using the Unity engine and C#.",
+            image: "https://images.unsplash.com/photo-1542744095-291d1f67b221?w=800&h=400&fit=crop",
+            price: "$109.99",
+            originalPrice: "$169.99",
+            rating: 4.7,
+            students: 5800,
+            duration: "40 hours",
+            level: "Intermediate",
+            category: "Game Development",
+            educator: "Lisa Wang",
+            educatorId: "6", // Added educatorId
+            tags: ["Unity", "C#", "Game Design"],
+            trending: false,
+            bestseller: false,
+        },
+        {
+            id: 11,
+            title: "Blockchain Development with Ethereum",
+            description: "Learn to build decentralized applications (dApps) on the Ethereum blockchain.",
+            image: "https://images.unsplash.com/photo-1639322537228-f710d846310a?w=800&h=400&fit=crop",
+            price: "$139.99",
+            originalPrice: "$209.99",
+            rating: 4.8,
+            students: 4200,
+            duration: "45 hours",
+            level: "Advanced",
+            category: "Blockchain",
+            educator: "Emma Rodriguez",
+            educatorId: "3", // Added educatorId
+            tags: ["Blockchain", "Ethereum", "Solidity"],
+            trending: true,
+            bestseller: true,
+        },
+        {
+            id: 12,
+            title: "Digital Marketing Fundamentals",
+            description: "An essential guide to digital marketing strategies and tools.",
+            image: "https://images.unsplash.com/photo-1557804506-669a67965da0?w=800&h=400&fit=crop",
+            price: "$69.99",
+            originalPrice: "$99.99",
+            rating: 4.5,
+            students: 10500,
+            duration: "20 hours",
+            level: "Beginner",
+            category: "Business",
+            educator: "David Park",
+            educatorId: "5", // Added educatorId
+            tags: ["Marketing", "SEO", "Social Media"],
+            trending: false,
+            bestseller: false,
+        },
+        {
+            id: 13,
+            title: "Python for Data Analysis",
+            description: "Master data manipulation and analysis using Python, Pandas, and NumPy.",
+            image: "https://images.unsplash.com/photo-1526374965328-7f66d40afb53?w=800&h=400&fit=crop",
+            price: "$84.99",
+            originalPrice: "$124.99",
+            rating: 4.7,
+            students: 9800,
+            duration: "32 hours",
+            level: "Intermediate",
+            category: "Data Science",
+            educator: "Dr. Sarah Johnson",
+            educatorId: "2", // Added educatorId
+            tags: ["Python", "Data Analysis", "Pandas"],
+            trending: true,
+            bestseller: false,
+        },
+        {
+            id: 14,
+            title: "Frontend Development with Vue.js",
+            description: "Build modern and reactive user interfaces with Vue.js.",
+            image: "https://images.unsplash.com/photo-1610563166150-b34df4f3dd69?w=800&h=400&fit=crop",
+            price: "$89.99",
+            originalPrice: "$139.99",
+            rating: 4.6,
+            students: 7100,
+            duration: "35 hours",
+            level: "Intermediate",
+            category: "Web Development",
+            educator: "John Smith",
+            educatorId: "1", // Added educatorId
+            tags: ["Vue.js", "Frontend", "JavaScript"],
+            trending: false,
+            bestseller: true,
+        },
+        {
+            id: 15,
+            title: "Backend with Node.js and GraphQL",
+            description: "Develop powerful and flexible APIs using Node.js, Express, and GraphQL.",
+            image: "https://images.unsplash.com/photo-1599305445671-ac291c9a87d9?w=800&h=400&fit=crop",
+            price: "$114.99",
+            originalPrice: "$174.99",
+            rating: 4.8,
+            students: 6200,
+            duration: "40 hours",
+            level: "Advanced",
+            category: "Web Development",
+            educator: "Mike Chen",
+            educatorId: "3", // Added educatorId
+            tags: ["Node.js", "GraphQL", "Backend"],
+            trending: true,
+            bestseller: false,
+        },
+        {
+            id: 16,
+            title: "Mobile UI/UX Design with Figma",
+            description: "Design stunning mobile app interfaces from scratch using Figma.",
+            image: "https://images.unsplash.com/photo-1616763355548-f4993bb4f0d4?w=800&h=400&fit=crop",
+            price: "$74.99",
+            originalPrice: "$109.99",
+            rating: 4.7,
+            students: 8300,
+            duration: "28 hours",
+            level: "Beginner",
+            category: "Design",
+            educator: "Emma Rodriguez",
+            educatorId: "3", // Added educatorId
+            tags: ["Figma", "UI/UX", "Mobile Design"],
+            trending: false,
+            bestseller: true,
+        },
+        {
+            id: 17,
+            title: "Introduction to Quantum Computing",
+            description: "Explore the fascinating world of quantum mechanics and quantum computing.",
+            image: "https://images.unsplash.com/photo-1626786926530-2f2f2f2f2f2f?w=800&h=400&fit=crop",
+            price: "$149.99",
+            originalPrice: "$229.99",
+            rating: 4.9,
+            students: 3100,
+            duration: "35 hours",
+            level: "Advanced",
+            category: "Science & Tech",
+            educator: "Dr. Sarah Johnson",
+            educatorId: "2", // Added educatorId
+            tags: ["Quantum", "Physics", "Computing"],
+            trending: true,
+            bestseller: false,
+        },
+        {
+            id: 18,
+            title: "Mastering SQL for Data Science",
+            description: "Learn SQL from basic queries to advanced database management for data analysis.",
+            image: "https://images.unsplash.com/photo-1542744095-291d1f67b221?w=800&h=400&fit=crop",
+            price: "$79.99",
+            originalPrice: "$119.99",
+            rating: 4.6,
+            students: 11800,
+            duration: "25 hours",
+            level: "Beginner",
+            category: "Data Science",
+            educator: "David Park",
+            educatorId: "5", // Added educatorId
+            tags: ["SQL", "Databases", "Data Analysis"],
+            trending: false,
+            bestseller: false,
+        },
+        {
+            id: 19,
+            title: "DevOps Fundamentals with Docker & Kubernetes",
+            description: "Understand and implement DevOps practices using Docker and Kubernetes.",
+            image: "https://images.unsplash.com/photo-1605792657620-f6e2f2f2f2f2?w=800&h=400&fit=crop",
+            price: "$129.99",
+            originalPrice: "$189.99",
+            rating: 4.8,
+            students: 5500,
+            duration: "48 hours",
+            level: "Advanced",
+            category: "DevOps",
+            educator: "Lisa Wang",
+            educatorId: "6", // Added educatorId
+            tags: ["DevOps", "Docker", "Kubernetes"],
+            trending: true,
+            bestseller: true,
+        },
+        {
+            id: 20,
+            title: "Introduction to Ethical Hacking",
+            description: "Learn the basics of ethical hacking and penetration testing.",
+            image: "https://images.unsplash.com/photo-1581092336000-3e2f2b2f2b2f?w=800&h=400&fit=crop",
+            price: "$99.99",
+            originalPrice: "$149.99",
+            rating: 4.7,
+            students: 8900,
+            duration: "30 hours",
+            level: "Intermediate",
+            category: "Cybersecurity",
+            educator: "Mike Chen",
+            educatorId: "3", // Added educatorId
+            tags: ["Hacking", "Security", "Penetration Testing"],
+            trending: false,
+            bestseller: false,
+        },
+        {
+            id: 21,
+            title: "Machine Learning with TensorFlow",
+            description: "Build and train machine learning models using Google's TensorFlow library.",
+            image: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&h=400&fit=crop",
+            price: "$119.99",
+            originalPrice: "$179.99",
+            rating: 4.9,
+            students: 7300,
+            duration: "40 hours",
+            level: "Advanced",
+            category: "Artificial Intelligence",
+            educator: "Dr. Sarah Johnson",
+            educatorId: "2", // Added educatorId
+            tags: ["Machine Learning", "TensorFlow", "AI"],
+            trending: true,
+            bestseller: true,
+        },
+        {
+            id: 22,
+            title: "Web Accessibility Masterclass",
+            description: "Learn to build inclusive web experiences for all users.",
+            image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&h=400&fit=crop",
+            price: "$79.99",
+            originalPrice: "$119.99",
+            rating: 4.7,
+            students: 4500,
+            duration: "25 hours",
+            level: "Intermediate",
+            category: "Web Development",
+            educator: "Emma Rodriguez",
+            educatorId: "3", // Added educatorId
+            tags: ["Accessibility", "Frontend", "UX"],
+            trending: false,
+            bestseller: false,
+        },
+        {
+            id: 23,
+            title: "Introduction to Data Structures & Algorithms",
+            description: "Fundamental concepts of data structures and algorithms for problem-solving.",
+            image: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=800&h=400&fit=crop",
+            price: "$69.99",
+            originalPrice: "$99.99",
+            rating: 4.8,
+            students: 13000,
+            duration: "30 hours",
+            level: "Beginner",
+            category: "Computer Science",
+            educator: "John Smith",
+            educatorId: "1", // Added educatorId
+            tags: ["Algorithms", "Data Structures", "Programming"],
+            trending: true,
+            bestseller: true,
+        },
+        {
+            id: 24,
+            title: "Full-Stack with Django & React",
+            description: "Build robust full-stack applications using Django REST Framework and React.",
+            image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=400&fit=crop",
+            price: "$129.99",
+            originalPrice: "$189.99",
+            rating: 4.7,
+            students: 5900,
+            duration: "55 hours",
+            level: "Advanced",
+            category: "Web Development",
+            educator: "Mike Chen",
+            educatorId: "3", // Added educatorId
+            tags: ["Django", "React", "Python", "Full-Stack"],
+            trending: false,
+            bestseller: false,
         },
     ]
 
@@ -158,6 +495,14 @@ export default function CoursesPage() {
         "Mobile Development",
         "Data Science",
         "Design",
+        "Cloud Computing",
+        "Cybersecurity",
+        "Game Development",
+        "Blockchain",
+        "Business",
+        "Science & Tech",
+        "DevOps",
+        "Computer Science",
     ]
     const levels = ["all", "Beginner", "Intermediate", "Advanced"]
     const educators = ["all", ...Array.from(new Set(courses.map((course) => course.educator)))]
@@ -194,16 +539,26 @@ export default function CoursesPage() {
                 )
                 break
             case "newest":
-                // Keep original order for newest
-                break
+                // For mock data, we'll just reverse the order for 'newest'
+                filtered.reverse();
+                break;
         }
 
         return filtered
     }, [courses, searchQuery, selectedCategory, selectedLevel, selectedEducator, showFavorites, sortBy, favorites])
 
+    // Pagination logic
+    const indexOfLastCourse = currentPage * coursesPerPage
+    const indexOfFirstCourse = indexOfLastCourse - coursesPerPage
+    const currentCourses = filteredCourses.slice(indexOfFirstCourse, indexOfLastCourse)
+    const totalPages = Math.ceil(filteredCourses.length / coursesPerPage)
+
+    const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
+
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault()
         setIsLoading(true)
+        setCurrentPage(1) // Reset to first page on new search
         console.log("[v0] Searching for courses:", searchQuery)
         setTimeout(() => setIsLoading(false), 1000)
     }
@@ -218,6 +573,7 @@ export default function CoursesPage() {
         setSelectedEducator("all")
         setShowFavorites(false)
         setSearchQuery("")
+        setCurrentPage(1) // Reset to first page on clear filters
     }
 
     const handleCourseClick = (courseId: number) => {
@@ -252,7 +608,7 @@ export default function CoursesPage() {
                         <div className="flex items-center gap-4">
                             <Select value={sortBy} onValueChange={setSortBy}>
                                 <SelectTrigger
-                                    className="w-48 bg-white/50 backdrop-blur-sm border-2 hover:border-cyan-300 transition-colors dark:border-cyan-300">
+                                    className="w-48 glass-enhanced border-2 hover:border-cyan-300 transition-colors">
                                     <SelectValue placeholder="Sort by"/>
                                 </SelectTrigger>
                                 <SelectContent>
@@ -273,7 +629,7 @@ export default function CoursesPage() {
                     transition={{ delay: 0.1 }}
                     className="mb-8 space-y-6"
                 >
-                    <form onSubmit={handleSearch} className="flex gap-4">
+                    <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
                         <div className="flex-1 relative">
                             <Search
                                 className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5"/>
@@ -282,31 +638,37 @@ export default function CoursesPage() {
                                 placeholder="Search courses, topics, or instructors..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-12 py-5 text-base border-2 border-cyan-500 bg-white/50 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+                                onKeyPress={() => setCurrentPage(1)} // Reset page on search input
+                                className="pl-12 py-5 text-base glass-enhanced rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
                             />
                         </div>
                         <Button
                             type="submit"
                             disabled={isLoading}
-                            className="py-5 px-8 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                            className="py-5 px-8 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-lg font-semibold"
                         >
                             <Search className="w-5 h-5 mr-1"/>
                             {isLoading ? "Searching..." : "Search"}
                         </Button>
                         <Button
                             type="button"
-                            className="py-5 px-6 bg-white/50 backdrop-blur-sm border-1 hover:border-cyan-300 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 dark:border-cyan-300 dark:hover:text-white dark:bg-transparent"
+                            className="py-5 px-6 glass-enhanced border-2 hover:border-cyan-300 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                             onClick={() => setShowFilters(!showFilters)}
                         >
                             <Filter className="w-4 h-4 mr-2"/>
                             Filters
-                            <Sparkles className="w-4 h-4 ml-2"/>
+                            {showFilters ? <ChevronUp className="w-4 h-4 ml-2" /> : <ChevronDown className="w-4 h-4 ml-2" />}
                         </Button>
                     </form>
 
                     {showFilters && (
-                        <div
-                            className="p-8 rounded-2xl bg-white/5 backdrop-blur-lg border border-white/20 shadow-2xl space-y-6 animate-in slide-in-from-top-4 duration-300">
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="p-8 rounded-2xl glass-enhanced shadow-2xl space-y-6"
+                        >
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-500">
@@ -317,7 +679,7 @@ export default function CoursesPage() {
                                     </h3>
                                 </div>
                                 <Button variant="ghost" size="sm" onClick={clearFilters}
-                                        className="hover:bg-white/20 rounded-lg">
+                                        className="hover:bg-accent/20 rounded-lg">
                                     <X className="w-4 h-4 mr-2"/>
                                     Clear All
                                 </Button>
@@ -330,9 +692,9 @@ export default function CoursesPage() {
                                             className="w-2 h-2 rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500"></div>
                                         Category
                                     </label>
-                                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                    <Select value={selectedCategory} onValueChange={(value) => {setSelectedCategory(value); setCurrentPage(1);}}>
                                         <SelectTrigger
-                                            className="bg-white/50 backdrop-blur-sm border-2 hover:border-cyan-300 rounded-lg">
+                                            className="glass-enhanced border-2 hover:border-cyan-300 rounded-lg">
                                             <SelectValue/>
                                         </SelectTrigger>
                                         <SelectContent>
@@ -351,9 +713,9 @@ export default function CoursesPage() {
                                             className="w-2 h-2 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500"></div>
                                         Level
                                     </label>
-                                    <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+                                    <Select value={selectedLevel} onValueChange={(value) => {setSelectedLevel(value); setCurrentPage(1);}}>
                                         <SelectTrigger
-                                            className="bg-white/50 backdrop-blur-sm border-2 hover:border-cyan-300 rounded-lg">
+                                            className="glass-enhanced border-2 hover:border-cyan-300 rounded-lg">
                                             <SelectValue/>
                                         </SelectTrigger>
                                         <SelectContent>
@@ -372,9 +734,9 @@ export default function CoursesPage() {
                                             className="w-2 h-2 rounded-full bg-gradient-to-r from-orange-500 to-red-500"></div>
                                         Educator
                                     </label>
-                                    <Select value={selectedEducator} onValueChange={setSelectedEducator}>
+                                    <Select value={selectedEducator} onValueChange={(value) => {setSelectedEducator(value); setCurrentPage(1);}}>
                                         <SelectTrigger
-                                            className="bg-white/50 backdrop-blur-sm border-2 hover:border-cyan-300 rounded-lg">
+                                            className="glass-enhanced border-2 hover:border-cyan-300 rounded-lg">
                                             <SelectValue/>
                                         </SelectTrigger>
                                         <SelectContent>
@@ -388,29 +750,24 @@ export default function CoursesPage() {
                                 </div>
 
                                 <div className="flex items-center space-x-3 pt-8">
-                                    <Checkbox
-                                        id="favorites"
-                                        checked={showFavorites}
-                                        onCheckedChange={(checked: boolean) => setShowFavorites(checked)} // Corrected type
-                                        className="border-2 data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-cyan-500 data-[state=checked]:to-emerald-500"
-                                    />
-                                    <label
-                                        htmlFor="favorites"
-                                        className="text-sm font-semibold text-foreground/80 flex items-center gap-2"
+                                    <Button
+                                        variant={showFavorites ? "default" : "outline"}
+                                        onClick={() => {setShowFavorites(!showFavorites); setCurrentPage(1);}}
+                                        className={`flex items-center gap-2 ${showFavorites ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white' : 'hover:bg-accent/20'}`}
                                     >
-                                        <Heart className="w-4 h-4 text-red-500"/>
+                                        <Heart className={`w-4 h-4 ${showFavorites ? 'fill-white' : 'text-red-500'}`} />
                                         Favorites
-                                    </label>
+                                    </Button>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
                     )}
                 </motion.div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-12">
                     {isLoading
-                        ? Array.from({length: 8}).map((_, index) => <CourseSkeleton key={index}/>)
-                        : filteredCourses.map((course, index) => (
+                        ? Array.from({length: coursesPerPage}).map((_, index) => <CourseSkeleton key={index}/>)
+                        : currentCourses.map((course, index) => (
                             <motion.div
                                 key={course.id}
                                 initial={{ opacity: 0, y: 20, scale: 0.9 }}
@@ -418,7 +775,7 @@ export default function CoursesPage() {
                                 transition={{ delay: 0.1 * (index % 4), duration: 0.3 }}
                             >
                                 <Card
-                                    className="group py-0 hover:shadow-2xl transition-all duration-500 hover:scale-101 border-2 hover:border-cyan-200 dark:hover:border-cyan-800 relative overflow-hidden bg-white/50 dark:bg-transparent backdrop-blur-sm cursor-pointer h-full"
+                                    className="group py-0 hover:shadow-2xl transition-all duration-500 hover:scale-101 border-2 hover:border-cyan-200 dark:hover:border-cyan-800 relative overflow-hidden glass-enhanced cursor-pointer h-full"
                                     onClick={() => handleCourseClick(course.id)}
                                 >
                                     {(course.trending || course.bestseller) && (
@@ -485,8 +842,14 @@ export default function CoursesPage() {
                                                    className="text-xs font-medium border-cyan-200 text-cyan-700">
                                                 {course.category}
                                             </Badge>
-                                            <span
-                                                className="text-xs text-muted-foreground font-medium">by {course.educator}</span>
+                                            {/* Link to educator profile */}
+                                            <Link
+                                                href={`/users/${course.educatorId}`}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="text-xs text-muted-foreground font-medium hover:text-primary transition-colors duration-200"
+                                            >
+                                                by {course.educator}
+                                            </Link>
                                         </div>
 
                                         <CardTitle
@@ -534,13 +897,13 @@ export default function CoursesPage() {
                                                 <span
                                                     className="text-sm text-muted-foreground line-through">{course.originalPrice}</span>
                                             </div>
-                                            {/*<Button*/}
-                                            {/*    className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25 rounded-lg font-semibold"*/}
-                                            {/*    onClick={(e) => e.stopPropagation()}*/}
-                                            {/*>*/}
-                                            {/*    <BookOpen className="w-4 h-4 mr-2"/>*/}
-                                            {/*    Enroll Now*/}
-                                            {/*</Button>*/}
+                                            <Button
+                                                className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25 rounded-lg font-semibold"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <BookOpen className="w-4 h-4 mr-2"/>
+                                                Enroll Now
+                                            </Button>
                                         </div>
                                     </CardFooter>
                                 </Card>
@@ -557,6 +920,43 @@ export default function CoursesPage() {
                             Clear all filters
                         </Button>
                     </div>
+                )}
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        className="flex justify-center items-center gap-2 mt-8"
+                    >
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => paginate(currentPage - 1)}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        {Array.from({ length: totalPages }, (_, i) => (
+                            <Button
+                                key={i + 1}
+                                variant={currentPage === i + 1 ? "default" : "outline"}
+                                onClick={() => paginate(i + 1)}
+                                className={currentPage === i + 1 ? "bg-gradient-to-r from-cyan-500 to-emerald-500 text-white" : ""}
+                            >
+                                {i + 1}
+                            </Button>
+                        ))}
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => paginate(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </Button>
+                    </motion.div>
                 )}
             </div>
 
