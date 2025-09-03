@@ -9,6 +9,8 @@ import { MessageCircle, Send, X, Bot, User, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area" // Assuming you have a ScrollArea component
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
 
 interface ChatMessage {
     id: string
@@ -89,18 +91,21 @@ export function ChatWidget() {
 
     return (
         <>
-            {/* Floating Chat Button */}
-            <div
-                className="fixed bottom-6 right-6 z-[1000]"
-            >
-                <Button
-                    size="lg" // Keep size="lg" for consistent padding, but override w/h
-                    className="rounded-[2.5rem] w-14 h-14 shadow-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white hover:scale-110 transition-transform duration-300 flex items-center justify-center"
-                    onClick={() => setIsOpen(true)}
+            {/* Floating Chat Button - Only render if chat is NOT open */}
+            {!isOpen && (
+                <div
+                    className="fixed bottom-6 right-6 z-[1000]"
                 >
-                    <Bot className="w-6 h-6" /> {/* Adjusted icon size */}
-                </Button>
-            </div>
+                    <DotLottieReact
+                        width={"70"}
+                        height={"70"}
+                        src="https://lottie.host/83e91835-85ea-4739-93c9-230aefc094f0/UcS899GXoa.lottie"
+                        loop
+                        autoplay
+                        onClick={() => setIsOpen(true)}
+                    />
+                </div>
+            )}
 
             {/* Chat Dialog */}
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -116,7 +121,7 @@ export function ChatWidget() {
                             <div className="w-3 h-3 rounded-full bg-yellow-500" />
                             <div className="w-3 h-3 rounded-full bg-green-500" />
                         </div>
-                        <Bot className="ml-4 w-6 h-6" />
+                        {/*<Bot className="ml-4 w-6 h-6" />*/}
                         <DialogTitle className="ml-4 text-lg font-semibold flex-1 text-left gap-3 ">
                             Bot Support
                         </DialogTitle>
@@ -153,10 +158,12 @@ export function ChatWidget() {
                                             }`}
                                         >
                                             {msg.sender !== "user" && (
-                                                <Avatar className="w-7 h-7 shrink-0">
-                                                    <AvatarFallback className="bg-accent text-accent-foreground">
-                                                        <Bot className="w-4 h-4" />
-                                                    </AvatarFallback>
+                                                <Avatar className="w-12 h-12 shrink-0">
+                                                    <DotLottieReact
+                                                        src="https://lottie.host/ca28f67e-40b3-4a93-a89b-43e22c768eca/3Bdr1kIW3G.lottie"
+                                                        loop
+                                                        autoplay
+                                                    />
                                                 </Avatar>
                                             )}
                                             <div>
@@ -176,10 +183,12 @@ export function ChatWidget() {
                                 {isTyping && (
                                     <div className="flex justify-start">
                                         <div className="flex items-center gap-2 max-w-[80%] p-3.5 rounded-2xl shadow-sm bg-muted/50 text-muted-foreground"> {/* Consistent rounded and shadow */}
-                                            <Avatar className="w-7 h-7 shrink-0">
-                                                <AvatarFallback className="bg-accent text-accent-foreground">
-                                                    <Bot className="w-4 h-4" />
-                                                </AvatarFallback>
+                                            <Avatar className="w-12 h-12 shrink-0">
+                                                <DotLottieReact
+                                                    src="https://lottie.host/2fcd5a23-b86e-4928-92e1-37823429859f/D07zrPadBJ.lottie"
+                                                    loop
+                                                    autoplay
+                                                />
                                             </Avatar>
                                             <Loader2 className="w-5 h-5 animate-spin" />
                                             <span className="text-sm">Typing...</span>
