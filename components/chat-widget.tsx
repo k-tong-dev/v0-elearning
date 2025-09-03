@@ -94,7 +94,7 @@ export function ChatWidget() {
             {/* Floating Chat Button - Only render if chat is NOT open */}
             {!isOpen && (
                 <div
-                    className="fixed bottom-6 right-6 z-[1000] w-30 h-30"
+                    className="fixed bottom-2 right-2 z-[1000] w-20 h-20 rounded-full"
                 >
                     <DotLottieReact
                         src="https://lottie.host/83e91835-85ea-4739-93c9-230aefc094f0/UcS899GXoa.lottie"
