@@ -97,8 +97,8 @@ export function ChatWidget() {
                     className="fixed bottom-6 right-6 z-[1000]"
                 >
                     <DotLottieReact
-                        width={"70"}
-                        height={"70"}
+                        width={"40"}
+                        height={"40"}
                         src="https://lottie.host/83e91835-85ea-4739-93c9-230aefc094f0/UcS899GXoa.lottie"
                         loop
                         autoplay
