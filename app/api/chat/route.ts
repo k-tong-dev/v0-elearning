@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
             model: 'gpt-3.5-turbo', // You can choose other models like 'gpt-4' if available and preferred
             messages: conversation,
             temperature: 0.7, // Controls randomness: lower for more focused, higher for more creative
-            max_tokens: 500, // Max tokens for the AI's response
+            max_tokens: 500,
         });
 
         const botMessage = completion.choices[0].message.content;

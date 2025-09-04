@@ -24,13 +24,33 @@ interface ChatMessage {
     role: "user" | "assistant"
 }
 
+const SESSION_STORAGE_KEY = "camedu_chat_messages";
+
 export function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<ChatMessage[]>([])
-    const [inputMessage, setInputMessage] = useState("")
+    const [inputMessage, setInputMessage] = useState("") // Fixed: Correctly initialize useState
     const [isTyping, setIsTyping] = useState(false)
     const [isSending, setIsSending] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
+
+    // Load messages from session storage on component mount
+    useEffect(() => {
+        const storedMessages = sessionStorage.getItem(SESSION_STORAGE_KEY);
+        if (storedMessages) {
+            try {
+                setMessages(JSON.parse(storedMessages));
+            } catch (e) {
+                console.error("Failed to parse stored messages:", e);
+                sessionStorage.removeItem(SESSION_STORAGE_KEY); // Clear invalid data
+            }
+        }
+    }, []);
+
+    // Save messages to session storage whenever messages state changes
+    useEffect(() => {
+        sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(messages));
+    }, [messages]);
 
     useEffect(() => {
         if (messagesEndRef.current) {
@@ -109,6 +129,7 @@ export function ChatWidget() {
         setInputMessage("");
         setIsTyping(false);
         setIsSending(false);
+        sessionStorage.removeItem(SESSION_STORAGE_KEY); // Clear session storage for new chat
         toast.info("Started a new chat session!");
     }
 
@@ -131,7 +152,7 @@ export function ChatWidget() {
             {/* Chat Dialog */}
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent
-                    className="gap-0 fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[90vw] max-w-md h-[80vh] max-h-[600px] p-0 flex flex-col rounded-xl overflow-hidden shadow-2xl border border-border bg-background
+                    className="gap-0 fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[90vw] max-w-md lg:max-w-xl h-[80vh] max-h-[600px] p-0 flex flex-col rounded-xl overflow-hidden shadow-2xl border border-border bg-background
                     data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-bottom-full
                     data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:slide-out-to-bottom-full"
                 >
@@ -190,18 +211,20 @@ export function ChatWidget() {
                                     >
                                         {msg.sender === "bot" && (
                                             <Avatar className="w-8 h-8 shrink-0 border border-border">
-                                                <DotLottieReact
-                                                    src="https://lottie.host/ca28f67e-40b3-4a93-a89b-43e22c768eca/3Bdr1kIW3G.lottie"
-                                                    loop
-                                                    autoplay
-                                                />
+                                                <AvatarFallback className="bg-muted/70 text-foreground">
+                                                    <DotLottieReact
+                                                        src="https://lottie.host/ca28f67e-40b3-4a93-a89b-43e22c768eca/3Bdr1kIW3G.lottie"
+                                                        loop
+                                                        autoplay
+                                                    />
+                                                </AvatarFallback>
                                             </Avatar>
                                         )}
                                         <div
-                                            className={`max-w-[75%] p-3 shadow-sm transition-all duration-200 prose dark:prose-invert text-sm leading-relaxed ${ // Moved prose classes here
+                                            className={`max-w-[75%] shadow-sm transition-all duration-200 prose dark:prose-invert text-sm leading-relaxed break-words overflow-hidden ${ // Added overflow-hidden and changed p-3 to p-4
                                                 msg.sender === "user"
-                                                    ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-tl-xl rounded-tr-xl rounded-bl-xl rounded-br-none"
-                                                    : "bg-muted/70 text-foreground rounded-tl-xl rounded-tr-xl rounded-br-xl rounded-bl-none"
+                                                    ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-tl-xl rounded-tr-xl rounded-bl-xl rounded-br-none p-4" // Changed p-3 to p-4
+                                                    : "bg-muted/70 text-foreground rounded-tl-xl rounded-tr-xl rounded-br-xl rounded-bl-none p-4" // Changed p-3 to p-4
                                             }`}
                                         >
                                             <ReactMarkdown
@@ -211,7 +234,7 @@ export function ChatWidget() {
                                                         const match = /language-(\w+)/.exec(className || '');
                                                         return !inline && match ? (
                                                             <SyntaxHighlighter
-                                                                style={atomDark} // You can choose other styles from 'react-syntax-highlighter/dist/esm/styles/prism'
+                                                                style={atomDark}
                                                                 language={match[1]}
                                                                 PreTag="div"
                                                                 {...props}
@@ -246,7 +269,7 @@ export function ChatWidget() {
                                         <div className="flex items-center gap-3 max-w-[75%] p-3 rounded-xl shadow-sm bg-muted/70 text-muted-foreground rounded-bl-none">
                                             <Avatar className="w-8 h-8 shrink-0 border border-border">
                                                 <DotLottieReact
-                                                    src="https://lottie.host/ca28f67e-40b3-4a93-a89b-43e22c768eca/3Bdr1kIW3G.lottie"
+                                                    src="https://lottie.host/2fcd5a23-b86e-4928-92e1-37823429859f/D07zrPadBJ.lottie"
                                                     loop
                                                     autoplay
                                                 />
