@@ -86,7 +86,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                         <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-cyan-600 via-emerald-600 to-cyan-600 bg-clip-text text-transparent animate-gradient">
                             Welcome Back!
                         </DialogTitle>
-                        <DialogDescription className="text-center text-muted-foreground text-lg">
+                        <DialogDescription className="text-left  text-lg text-white">
                             Continue your amazing learning journey
                         </DialogDescription>
                     </DialogHeader>
@@ -99,6 +99,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                         )}
 
                         <GoogleSignIn
+                            className={"flex items-center justify-center"}
                             text="signin_with"
                             onSuccess={handleGoogleAuthSuccess}
                             onError={(error) => setError(error)}
@@ -115,7 +116,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
 
                         <form onSubmit={handleEmailAuth} className="space-y-5">
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium">
+                                <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium text-white">
                                     <Mail className="w-4 h-4 text-emerald-500" />
                                     Email Address
                                 </Label>
@@ -131,7 +132,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password" className="flex items-center gap-2 text-sm font-medium">
+                                <Label htmlFor="password" className="flex items-center gap-2 text-sm font-medium text-white">
                                     <Lock className="w-4 h-4 text-orange-500" />
                                     Password
                                 </Label>
@@ -177,7 +178,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                             </Button>
                         </form>
 
-                        <p className="text-center text-sm text-muted-foreground">
+                        <p className="text-center text-sm text-white">
                             New to CamEdu?{" "}
                             <button
                                 type="button"

@@ -435,3 +435,33 @@
     pointer-events: none;
     z-index: 2; /* Ensure it's above other background elements but below text */
 }
+
+/* New keyframes for organic blob animation */
+@keyframes organic-blob-pulse {
+    0% {
+        transform: scale(1) translate(0, 0) rotate(0deg);
+        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    }
+    25% {
+        transform: scale(1.05) translate(10px, -10px) rotate(15deg);
+        border-radius: 40% 60% 70% 30% / 30% 70% 40% 60%;
+    }
+    50% {
+        transform: scale(1) translate(0, 0) rotate(0deg);
+        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    }
+    75% {
+        transform: scale(0.95) translate(-10px, 10px) rotate(-15deg);
+        border-radius: 70% 30% 40% 60% / 70% 40% 60% 30%;
+    }
+    100% {
+        transform: scale(1) translate(0, 0) rotate(0deg);
+        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    }
+}
+
+.animate-organic-blob-pulse {
+    animation: organic-blob-pulse 20s ease-in-out infinite;
+    filter: blur(30px); /* Apply blur for a softer, glowing effect */
+    opacity: 0.3; /* Make them subtle */
+}

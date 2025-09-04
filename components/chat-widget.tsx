@@ -5,19 +5,23 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { MessageCircle, Send, X, Bot, User, Loader2 } from "lucide-react"
+import { MessageCircle, Send, X, Bot, User, Loader2, Sparkles, PlusCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ScrollArea } from "@/components/ui/scroll-area" // Assuming you have a ScrollArea component
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-
+import { toast } from "sonner"
+import ReactMarkdown from 'react-markdown'; // Import ReactMarkdown
+import remarkGfm from 'remark-gfm'; // Import remarkGfm for GitHub Flavored Markdown
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'; // Import SyntaxHighlighter
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism'; // Import a style for highlighting
 
 interface ChatMessage {
     id: string
-    sender: "user" | "bot" | "support"
-    senderName?: string; // New: Optional sender name
-    text: string
+    sender: "user" | "bot"
+    content: string
     timestamp: string
+    role: "user" | "assistant"
 }
 
 export function ChatWidget() {
@@ -25,22 +29,8 @@ export function ChatWidget() {
     const [messages, setMessages] = useState<ChatMessage[]>([])
     const [inputMessage, setInputMessage] = useState("")
     const [isTyping, setIsTyping] = useState(false)
-    const [isSending, setIsSending] = useState(false); // New state for rate limiting
+    const [isSending, setIsSending] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
-
-    const botResponses = [
-        "Hello there! How can I assist you on your learning journey today?",
-        "I'm here to help with any questions about our courses, platform features, or general inquiries.",
-        "To give you the best answer, could you please elaborate a bit more on your question?",
-        "If you need more in-depth assistance, I can connect you with our human support team. Would you like me to do that?",
-        "I'm constantly learning and improving! What can I help you with right now?",
-        "Welcome to CamEdu! What's on your mind?",
-        "I'm ready to help you find information or troubleshoot issues. What's your query?",
-        "Thinking about a course? I can provide details or help you navigate our catalog.",
-        "Is there anything specific you're looking for, or just browsing for help?",
-        "I'm designed to make your experience smoother. How can I be of service?",
-        "Feel free to ask me anything about CamEdu. I'll do my best to provide a helpful response!",
-    ]
 
     useEffect(() => {
         if (messagesEndRef.current) {
@@ -49,37 +39,62 @@ export function ChatWidget() {
     }, [messages])
 
     const handleSendMessage = async () => {
-        if (inputMessage.trim() === "" || isSending) return // Prevent sending if input is empty or already sending
+        if (inputMessage.trim() === "" || isSending) return
 
-        const newMessage: ChatMessage = {
+        const userMessage: ChatMessage = {
             id: Date.now().toString(),
             sender: "user",
-            senderName: "You", // Set sender name for user
-            text: inputMessage,
+            content: inputMessage,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            role: "user",
         }
 
-        setMessages((prev) => [...prev, newMessage])
+        setMessages((prev) => [...prev, userMessage])
         setInputMessage("")
-        setIsSending(true); // Disable sending
-
-        // Simulate bot response
+        setIsSending(true)
         setIsTyping(true)
-        await new Promise((resolve) => setTimeout(resolve, 1500))
-        const botResponse: ChatMessage = {
-            id: Date.now().toString() + "-bot",
-            sender: "bot",
-            senderName: "CamEdu AI", // Set sender name for bot
-            text: botResponses[Math.floor(Math.random() * botResponses.length)],
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        }
-        setMessages((prev) => [...prev, botResponse])
-        setIsTyping(false)
 
-        // Re-enable sending after a short delay
-        setTimeout(() => {
-            setIsSending(false);
-        }, 1000); // 1 second delay before allowing another message
+        try {
+            const apiMessages = messages.map(msg => ({ role: msg.role, content: msg.content }));
+            apiMessages.push({ role: userMessage.role, content: userMessage.content });
+
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ messages: apiMessages }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to get response from AI.');
+            }
+
+            const data = await response.json();
+            const botResponse: ChatMessage = {
+                id: Date.now().toString() + "-bot",
+                sender: "bot",
+                content: data.response,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                role: "assistant",
+            }
+            setMessages((prev) => [...prev, botResponse])
+        } catch (error: any) {
+            console.error('Chatbot error:', error);
+            toast.error(error.message || "Failed to connect to the AI. Please try again.");
+            const errorMessage: ChatMessage = {
+                id: Date.now().toString() + "-error",
+                sender: "bot",
+                content: "Oops! I encountered an error. Please try again or contact support if the issue persists.",
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                role: "assistant",
+            };
+            setMessages((prev) => [...prev, errorMessage]);
+        } finally {
+            setIsTyping(false)
+            setIsSending(false)
+        }
     }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -89,18 +104,26 @@ export function ChatWidget() {
         }
     }
 
+    const handleNewChat = () => {
+        setMessages([]);
+        setInputMessage("");
+        setIsTyping(false);
+        setIsSending(false);
+        toast.info("Started a new chat session!");
+    }
+
     return (
         <>
             {/* Floating Chat Button - Only render if chat is NOT open */}
             {!isOpen && (
                 <div
-                    className="fixed bottom-2 right-2 z-[1000] w-20 h-20 rounded-full"
+                    className="fixed bottom-4 right-4 z-[1000] w-16 h-16 rounded-full cursor-pointer"
+                    onClick={() => setIsOpen(true)}
                 >
                     <DotLottieReact
                         src="https://lottie.host/83e91835-85ea-4739-93c9-230aefc094f0/UcS899GXoa.lottie"
                         loop
                         autoplay
-                        onClick={() => setIsOpen(true)}
                     />
                 </div>
             )}
@@ -119,10 +142,15 @@ export function ChatWidget() {
                             <div className="w-3 h-3 rounded-full bg-yellow-500" />
                             <div className="w-3 h-3 rounded-full bg-green-500" />
                         </div>
-                        {/*<Bot className="ml-4 w-6 h-6" />*/}
-                        <DialogTitle className="ml-4 text-lg font-semibold flex-1 text-left gap-3 ">
-                            Bot Support
+                        <DialogTitle className="ml-4 text-lg font-semibold flex-1 text-left flex items-center gap-2">
+                            <Sparkles className="w-5 h-5 text-primary" />
+                            CamEdu AI Chat
                         </DialogTitle>
+                        <Button variant="ghost" size="icon" onClick={handleNewChat} className="hover:bg-accent/20 mr-6">
+                            <PlusCircle className="w-5 h-5" />
+                            <span className="sr-only">New Chat</span>
+                        </Button>
+                        {/* Removed the duplicate close button */}
                     </DialogHeader>
 
                     <div className="flex-1 overflow-hidden relative bg-background">
@@ -135,61 +163,96 @@ export function ChatWidget() {
 
                         <ScrollArea className="h-full p-4 relative z-10">
                             <div className="space-y-4">
+                                {messages.length === 0 && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="text-center text-muted-foreground py-8"
+                                    >
+                                        <div className="w-32 h-32 mx-auto mb-4"> {/* Container for lottie */}
+                                            <DotLottieReact
+                                                src="https://lottie.host/8e4dc7ea-d549-4c32-8d4e-d2d0c825a7d8/C5RAdvAFYS.lottie"
+                                                loop
+                                                autoplay
+                                            />
+                                        </div>
+                                        <p className="text-lg font-semibold mb-2">How can I help you today?</p>
+                                        <p className="text-sm">Ask me anything about CamEdu courses, learning, or tech!</p>
+                                    </motion.div>
+                                )}
                                 {messages.map((msg) => (
                                     <motion.div
                                         key={msg.id}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.3 }}
-                                        className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
+                                        className={`flex items-start gap-3 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
                                     >
-                                        {msg.senderName && (
-                                            <span className={`text-xs font-semibold text-muted-foreground mb-1 ${msg.sender === "user" ? "mr-2" : "ml-2"}`}>
-                        {msg.senderName}
-                      </span>
+                                        {msg.sender === "bot" && (
+                                            <Avatar className="w-8 h-8 shrink-0 border border-border">
+                                                <DotLottieReact
+                                                    src="https://lottie.host/ca28f67e-40b3-4a93-a89b-43e22c768eca/3Bdr1kIW3G.lottie"
+                                                    loop
+                                                    autoplay
+                                                />
+                                            </Avatar>
                                         )}
                                         <div
-                                            className={`flex items-start gap-2 max-w-[80%] p-3.5 rounded-2xl shadow-sm transition-all duration-200 ${ // Increased rounded, softer shadow
+                                            className={`max-w-[75%] p-3 shadow-sm transition-all duration-200 prose dark:prose-invert text-sm leading-relaxed ${ // Moved prose classes here
                                                 msg.sender === "user"
-                                                    ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground ml-auto" // Gradient for user, push to right
-                                                    : "bg-muted/50 text-foreground mr-auto" // Softer background for bot, push to left
+                                                    ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-tl-xl rounded-tr-xl rounded-bl-xl rounded-br-none"
+                                                    : "bg-muted/70 text-foreground rounded-tl-xl rounded-tr-xl rounded-br-xl rounded-bl-none"
                                             }`}
                                         >
-                                            {msg.sender !== "user" && (
-                                                <Avatar className="w-12 h-12 shrink-0">
-                                                    <DotLottieReact
-                                                        src="https://lottie.host/ca28f67e-40b3-4a93-a89b-43e22c768eca/3Bdr1kIW3G.lottie"
-                                                        loop
-                                                        autoplay
-                                                    />
-                                                </Avatar>
-                                            )}
-                                            <div>
-                                                <p className="text-sm leading-relaxed">{msg.text}</p> {/* Added leading-relaxed */}
-                                                <span className="text-xs text-muted-foreground/70 block mt-1">{msg.timestamp}</span> {/* More subtle timestamp */}
-                                            </div>
-                                            {msg.sender === "user" && (
-                                                <Avatar className="w-7 h-7 shrink-0">
-                                                    <AvatarFallback className="bg-primary-foreground text-primary">
-                                                        <User className="w-4 h-4" />
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                            )}
+                                            <ReactMarkdown
+                                                remarkPlugins={[remarkGfm]}
+                                                components={{
+                                                    code({ node, inline, className, children, ...props }) {
+                                                        const match = /language-(\w+)/.exec(className || '');
+                                                        return !inline && match ? (
+                                                            <SyntaxHighlighter
+                                                                style={atomDark} // You can choose other styles from 'react-syntax-highlighter/dist/esm/styles/prism'
+                                                                language={match[1]}
+                                                                PreTag="div"
+                                                                {...props}
+                                                            >
+                                                                {String(children).replace(/\n$/, '')}
+                                                            </SyntaxHighlighter>
+                                                        ) : (
+                                                            <code className={className} {...props}>
+                                                                {children}
+                                                            </code>
+                                                        );
+                                                    },
+                                                }}
+                                            >
+                                                {msg.content}
+                                            </ReactMarkdown>
+                                            <span className="text-xs text-muted-foreground/70 block mt-1">
+                                                {msg.timestamp}
+                                            </span>
                                         </div>
+                                        {msg.sender === "user" && (
+                                            <Avatar className="w-8 h-8 shrink-0 border border-border">
+                                                <AvatarFallback className="bg-primary/10 text-primary">
+                                                    <User className="w-4 h-4" />
+                                                </AvatarFallback>
+                                            </Avatar>
+                                        )}
                                     </motion.div>
                                 ))}
                                 {isTyping && (
                                     <div className="flex justify-start">
-                                        <div className="flex items-center gap-2 max-w-[80%] p-3.5 rounded-2xl shadow-sm bg-muted/50 text-muted-foreground"> {/* Consistent rounded and shadow */}
-                                            <Avatar className="w-12 h-12 shrink-0">
+                                        <div className="flex items-center gap-3 max-w-[75%] p-3 rounded-xl shadow-sm bg-muted/70 text-muted-foreground rounded-bl-none">
+                                            <Avatar className="w-8 h-8 shrink-0 border border-border">
                                                 <DotLottieReact
-                                                    src="https://lottie.host/2fcd5a23-b86e-4928-92e1-37823429859f/D07zrPadBJ.lottie"
+                                                    src="https://lottie.host/ca28f67e-40b3-4a93-a89b-43e22c768eca/3Bdr1kIW3G.lottie"
                                                     loop
                                                     autoplay
                                                 />
                                             </Avatar>
                                             <Loader2 className="w-5 h-5 animate-spin" />
-                                            <span className="text-sm">Typing...</span>
+                                            <span className="text-sm">CamEdu AI is typing...</span>
                                         </div>
                                     </div>
                                 )}
@@ -204,14 +267,14 @@ export function ChatWidget() {
                             value={inputMessage}
                             onChange={(e) => setInputMessage(e.target.value)}
                             onKeyPress={handleKeyPress}
-                            disabled={isSending} // Disable input while sending
+                            disabled={isSending}
                             className="flex-1 min-h-[40px] max-h-[120px] resize-none bg-background border-input focus:border-primary focus:ring-0 dark:border-cyan-500 dark:focus:border-0"
                         />
                         <Button
                             size="icon"
                             className="w-10 h-10 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
                             onClick={handleSendMessage}
-                            disabled={inputMessage.trim() === "" || isSending} // Disable button while sending
+                            disabled={inputMessage.trim() === "" || isSending}
                         >
                             {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                         </Button>
