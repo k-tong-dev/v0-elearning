@@ -105,7 +105,7 @@ function DashboardContent() {
     // Define tabs configuration with icons
     const tabsConfig = [
         { value: "overview", label: "Overview", icon: LayoutDashboard },
-        { value: "enrollments", label: "My Enrollments", icon: GraduationCap }, // Changed label and icon
+        { value: "enrollments", label: "Enrollments", icon: GraduationCap }, // Changed label and icon
         { value: "my-courses", label: "My Courses", icon: BookOpen },
         { value: "expenditure", label: "Expenditure", icon: CreditCard },
         { value: "analytics", label: "Analytics", icon: BarChart3 },

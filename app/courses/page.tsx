@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import {useState, useMemo} from "react"
+import {useState, useMemo, useEffect, useRef} from "react"
 import {useRouter} from "next/navigation"
 import {Breadcrumbs, BreadcrumbItem} from "@nextui-org/react"
 import {motion} from "framer-motion"
@@ -33,10 +33,11 @@ import {CourseSkeleton} from "@/components/course-skeleton"
 import {Header} from "@/components/header"
 import {Footer} from "@/components/footer"
 import Link from "next/link";
+import { LoadingSpinner } from "@/components/page-loading"; // Import LoadingSpinner
 
 export default function CoursesPage() {
     const router = useRouter()
-    const [isLoading, setIsLoading] = useState(false)
+    const [isSearching, setIsSearching] = useState(false) // Renamed from isLoading for clarity
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedCategory, setSelectedCategory] = useState("all")
     const [selectedLevel, setSelectedLevel] = useState("all")
@@ -46,9 +47,12 @@ export default function CoursesPage() {
     const [showFilters, setShowFilters] = useState(false)
     const [favorites, setFavorites] = useState<number[]>([])
 
-    // Pagination states
-    const [currentPage, setCurrentPage] = useState(1)
-    const coursesPerPage = 12 // Display 12 courses per page
+    // Infinite scroll states
+    const initialCoursesToShow = 10;
+    const coursesToLoadIncrement = 10;
+    const [coursesToDisplayCount, setCoursesToDisplayCount] = useState(initialCoursesToShow);
+    const [hasMore, setHasMore] = useState(true);
+    const loadingRef = useRef(null);
 
     const courses = [
         {
@@ -547,20 +551,52 @@ export default function CoursesPage() {
         return filtered
     }, [courses, searchQuery, selectedCategory, selectedLevel, selectedEducator, showFavorites, sortBy, favorites])
 
-    // Pagination logic
-    const indexOfLastCourse = currentPage * coursesPerPage
-    const indexOfFirstCourse = indexOfLastCourse - coursesPerPage
-    const currentCourses = filteredCourses.slice(indexOfFirstCourse, indexOfLastCourse)
-    const totalPages = Math.ceil(filteredCourses.length / coursesPerPage)
+    // Courses to display based on infinite scroll
+    const displayedCourses = useMemo(() => {
+        return filteredCourses.slice(0, coursesToDisplayCount);
+    }, [filteredCourses, coursesToDisplayCount]);
 
-    const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
+    // Effect to update hasMore when filteredCourses or coursesToDisplayCount changes
+    useEffect(() => {
+        setHasMore(coursesToDisplayCount < filteredCourses.length);
+    }, [coursesToDisplayCount, filteredCourses.length]);
+
+    // Intersection Observer for infinite scrolling
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !isSearching) {
+                    setCoursesToDisplayCount((prevCount) => prevCount + coursesToLoadIncrement);
+                }
+            },
+            { threshold: 1.0 } // Trigger when 100% of the target is visible
+        );
+
+        if (loadingRef.current) {
+            observer.observe(loadingRef.current);
+        }
+
+        return () => {
+            if (loadingRef.current) {
+                observer.unobserve(loadingRef.current);
+            }
+        };
+    }, [hasMore, isSearching, coursesToDisplayCount]); // Re-run effect when these dependencies change
+
+    // Reset infinite scroll states when filters change
+    useEffect(() => {
+        setCoursesToDisplayCount(initialCoursesToShow);
+        setHasMore(true);
+    }, [searchQuery, selectedCategory, selectedLevel, selectedEducator, showFavorites, sortBy]);
+
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault()
-        setIsLoading(true)
-        setCurrentPage(1) // Reset to first page on new search
+        setIsSearching(true)
+        setCoursesToDisplayCount(initialCoursesToShow); // Reset count on new search
+        setHasMore(true); // Assume more courses until filtered list is known
         console.log("[v0] Searching for courses:", searchQuery)
-        setTimeout(() => setIsLoading(false), 1000)
+        setTimeout(() => setIsSearching(false), 1000)
     }
 
     const toggleFavorite = (courseId: number) => {
@@ -573,7 +609,8 @@ export default function CoursesPage() {
         setSelectedEducator("all")
         setShowFavorites(false)
         setSearchQuery("")
-        setCurrentPage(1) // Reset to first page on clear filters
+        setCoursesToDisplayCount(initialCoursesToShow); // Reset count on clear filters
+        setHasMore(true);
     }
 
     const handleCourseClick = (courseId: number) => {
@@ -638,17 +675,17 @@ export default function CoursesPage() {
                                 placeholder="Search courses, topics, or instructors..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyPress={() => setCurrentPage(1)} // Reset page on search input
+                                onKeyPress={() => setCoursesToDisplayCount(initialCoursesToShow)} // Reset count on search input
                                 className="pl-12 py-5 text-base glass-enhanced rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
                             />
                         </div>
                         <Button
                             type="submit"
-                            disabled={isLoading}
+                            disabled={isSearching}
                             className="py-5 px-8 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-lg font-semibold"
                         >
                             <Search className="w-5 h-5 mr-1"/>
-                            {isLoading ? "Searching..." : "Search"}
+                            {isSearching ? "Searching..." : "Search"}
                         </Button>
                         <Button
                             type="button"
@@ -692,7 +729,7 @@ export default function CoursesPage() {
                                             className="w-2 h-2 rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500"></div>
                                         Category
                                     </label>
-                                    <Select value={selectedCategory} onValueChange={(value) => {setSelectedCategory(value); setCurrentPage(1);}}>
+                                    <Select value={selectedCategory} onValueChange={(value) => {setSelectedCategory(value); setCoursesToDisplayCount(initialCoursesToShow);}}>
                                         <SelectTrigger
                                             className="glass-enhanced border-2 hover:border-cyan-300 rounded-lg">
                                             <SelectValue/>
@@ -713,7 +750,7 @@ export default function CoursesPage() {
                                             className="w-2 h-2 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500"></div>
                                         Level
                                     </label>
-                                    <Select value={selectedLevel} onValueChange={(value) => {setSelectedLevel(value); setCurrentPage(1);}}>
+                                    <Select value={selectedLevel} onValueChange={(value) => {setSelectedLevel(value); setCoursesToDisplayCount(initialCoursesToShow);}}>
                                         <SelectTrigger
                                             className="glass-enhanced border-2 hover:border-cyan-300 rounded-lg">
                                             <SelectValue/>
@@ -734,7 +771,7 @@ export default function CoursesPage() {
                                             className="w-2 h-2 rounded-full bg-gradient-to-r from-orange-500 to-red-500"></div>
                                         Educator
                                     </label>
-                                    <Select value={selectedEducator} onValueChange={(value) => {setSelectedEducator(value); setCurrentPage(1);}}>
+                                    <Select value={selectedEducator} onValueChange={(value) => {setSelectedEducator(value); setCoursesToDisplayCount(initialCoursesToShow);}}>
                                         <SelectTrigger
                                             className="glass-enhanced border-2 hover:border-cyan-300 rounded-lg">
                                             <SelectValue/>
@@ -752,7 +789,7 @@ export default function CoursesPage() {
                                 <div className="flex items-center space-x-3 pt-8">
                                     <Button
                                         variant={showFavorites ? "default" : "outline"}
-                                        onClick={() => {setShowFavorites(!showFavorites); setCurrentPage(1);}}
+                                        onClick={() => {setShowFavorites(!showFavorites); setCoursesToDisplayCount(initialCoursesToShow);}}
                                         className={`flex items-center gap-2 ${showFavorites ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white' : 'hover:bg-accent/20'}`}
                                     >
                                         <Heart className={`w-4 h-4 ${showFavorites ? 'fill-white' : 'text-red-500'}`} />
@@ -765,9 +802,9 @@ export default function CoursesPage() {
                 </motion.div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-12">
-                    {isLoading
-                        ? Array.from({length: coursesPerPage}).map((_, index) => <CourseSkeleton key={index}/>)
-                        : currentCourses.map((course, index) => (
+                    {isSearching
+                        ? Array.from({length: initialCoursesToShow}).map((_, index) => <CourseSkeleton key={index}/>)
+                        : displayedCourses.map((course, index) => (
                             <motion.div
                                 key={course.id}
                                 initial={{ opacity: 0, y: 20, scale: 0.9 }}
@@ -911,7 +948,7 @@ export default function CoursesPage() {
                         ))}
                 </div>
 
-                {!isLoading && filteredCourses.length === 0 && (
+                {!isSearching && filteredCourses.length === 0 && (
                     <div className="text-center py-12">
                         <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4"/>
                         <h3 className="text-xl font-semibold mb-2">No courses found</h3>
@@ -922,41 +959,12 @@ export default function CoursesPage() {
                     </div>
                 )}
 
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 }}
-                        className="flex justify-center items-center gap-2 mt-8"
-                    >
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => paginate(currentPage - 1)}
-                            disabled={currentPage === 1}
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </Button>
-                        {Array.from({ length: totalPages }, (_, i) => (
-                            <Button
-                                key={i + 1}
-                                variant={currentPage === i + 1 ? "default" : "outline"}
-                                onClick={() => paginate(i + 1)}
-                                className={currentPage === i + 1 ? "bg-gradient-to-r from-cyan-500 to-emerald-500 text-white" : ""}
-                            >
-                                {i + 1}
-                            </Button>
-                        ))}
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => paginate(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </Button>
-                    </motion.div>
+                {/* Infinite scroll loading indicator */}
+                {hasMore && filteredCourses.length > 0 && (
+                    <div ref={loadingRef} className="text-center py-8">
+                        <LoadingSpinner size="lg" />
+                        <p className="text-muted-foreground mt-2">Loading more courses...</p>
+                    </div>
                 )}
             </div>
 

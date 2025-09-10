@@ -4,98 +4,24 @@ import React, { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
-import {
-    MessageCircle,
-    ThumbsUp,
-    ThumbsDown,
-    Share2,
-    Flag,
-    Eye,
-    Clock,
-    Reply,
-    MoreVertical,
-    Heart,
-    Bookmark,
-    ArrowLeft,
-    Send,
-    Image as ImageIcon,
-    Link as LinkIcon,
-    Smile, Star
-} from "lucide-react"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
-import { motion, AnimatePresence } from "framer-motion" // Ensure AnimatePresence is imported
+import { ArrowLeft } from "lucide-react"
+import { motion } from "framer-motion"
+import { toast } from "sonner"
 
-interface User {
-    id: string
-    name: string
-    avatar?: string
-    role: string
-    joinDate: string
-    postCount: number
-    reputation: number
-    isOnline: boolean
-}
+import { ForumPostHeader } from "@/components/forum/ForumPostHeader"
+import { ForumPostContent } from "@/components/forum/ForumPostContent"
+import { ForumCommentSection } from "@/components/forum/ForumCommentSection"
+import { ForumSidebarAuthorInfo } from "@/components/forum/ForumSidebarAuthorInfo"
+import { ForumSidebarRelatedDiscussions } from "@/components/forum/ForumSidebarRelatedDiscussions"
+import { ForumShareDialog } from "@/components/forum/ForumShareDialog"
+import { ForumReportDialog } from "@/components/forum/ForumReportDialog"
 
-interface Comment {
-    id: string
-    content: string
-    author: User
-    createdAt: string
-    likes: number
-    dislikes: number
-    replies: Reply[]
-    isLiked: boolean
-    isDisliked: boolean
-}
-
-interface Reply {
-    id: string
-    content: string
-    author: User
-    createdAt: string
-    likes: number
-    isLiked: boolean
-}
-
-interface ForumPost {
-    id: string
-    title: string
-    content: string
-    author: User
-    category: string
-    replies: number
-    views: number
-    likes: number
-    dislikes: number
-    isPinned: boolean
-    isAnswered: boolean
-    createdAt: string
-    lastActivity: string
-    tags: string[]
-    isLiked: boolean
-    isDisliked: boolean
-    isBookmarked: boolean
-    comments: Comment[]
-}
+// Import types
+import { ForumPost, User, Comment, Reply } from "@/types/forum"
+import ShareForm from "@/components/ui/share-form";
+import ReportForm from "@/components/ui/report-form";
 
 export default function ForumDetailPage() {
     const { id } = useParams()
@@ -103,11 +29,22 @@ export default function ForumDetailPage() {
 
     const [post, setPost] = useState<ForumPost | null>(null)
     const [newComment, setNewComment] = useState("")
-    const [replyingTo, setReplyingTo] = useState<string | null>(null)
-    const [replyContent, setReplyContent] = useState("")
     const [isLoading, setIsLoading] = useState(true)
     const [showShareDialog, setShowShareDialog] = useState(false)
     const [showReportDialog, setShowReportDialog] = useState(false)
+    const [reportDetails, setReportDetails] = useState<{ itemId: string; itemType: 'post' | 'comment' | 'reply'; } | null>(null);
+
+    // Mock current user for comments/replies
+    const currentUser: User = {
+        id: "current-user",
+        name: "You",
+        avatar: "/images/Avatar.jpg", // Placeholder for current user's avatar
+        role: "Student",
+        joinDate: "Today",
+        postCount: 0,
+        reputation: 0,
+        isOnline: true
+    }
 
     // Mock data - In real app, fetch from API
     useEffect(() => {
@@ -206,6 +143,12 @@ export default function ForumDetailPage() {
         }, 1000)
     }, [id])
 
+    const relatedPosts = [
+        { id: "rp1", title: "Best practices for React performance optimization", replies: 8, views: 124 },
+        { id: "rp2", title: "Understanding asynchronous JavaScript", replies: 5, views: 98 },
+        { id: "rp3", title: "Getting started with Node.js and Express", replies: 10, views: 150 },
+    ];
+
     const handleLikePost = () => {
         setPost(prev => prev ? {
             ...prev,
@@ -231,24 +174,16 @@ export default function ForumDetailPage() {
             ...prev,
             isBookmarked: !prev.isBookmarked
         } : null)
+        toast.info(post?.isBookmarked ? "Bookmark removed!" : "Post bookmarked!");
     }
 
     const handleCommentSubmit = () => {
-        if (!newComment.trim()) return
+        if (!newComment.trim() || !post) return
 
         const newCommentObj: Comment = {
             id: Date.now().toString(),
             content: newComment,
-            author: {
-                id: "current-user",
-                name: "You",
-                avatar: "/images/Avatar.jpg",
-                role: "Student",
-                joinDate: "March 2024",
-                postCount: 5,
-                reputation: 45,
-                isOnline: true
-            },
+            author: currentUser,
             createdAt: "Just now",
             likes: 0,
             dislikes: 0,
@@ -264,24 +199,16 @@ export default function ForumDetailPage() {
         } : null)
 
         setNewComment("")
+        toast.success("Comment posted!")
     }
 
-    const handleReplySubmit = (commentId: string) => {
-        if (!replyContent.trim()) return
+    const handleReplySubmit = (commentId: string, replyContent: string) => {
+        if (!replyContent.trim() || !post) return
 
         const newReply: Reply = {
             id: Date.now().toString(),
             content: replyContent,
-            author: {
-                id: "current-user",
-                name: "You",
-                avatar: "/images/Avatar.jpg",
-                role: "Student",
-                joinDate: "March 2024",
-                postCount: 5,
-                reputation: 45,
-                isOnline: true
-            },
+            author: currentUser,
             createdAt: "Just now",
             likes: 0,
             isLiked: false
@@ -297,13 +224,86 @@ export default function ForumDetailPage() {
             replies: prev.replies + 1
         } : null)
 
-        setReplyContent("")
-        setReplyingTo(null)
+        toast.success("Reply posted!")
+    }
+
+    const handleLikeComment = (commentId: string) => {
+        setPost(prev => prev ? {
+            ...prev,
+            comments: prev.comments.map(comment => {
+                if (comment.id === commentId) {
+                    return {
+                        ...comment,
+                        likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1,
+                        dislikes: comment.isDisliked ? comment.dislikes - 1 : comment.dislikes,
+                        isLiked: !comment.isLiked,
+                        isDisliked: false
+                    }
+                }
+                return comment
+            })
+        } : null)
+    }
+
+    const handleDislikeComment = (commentId: string) => {
+        setPost(prev => prev ? {
+            ...prev,
+            comments: prev.comments.map(comment => {
+                if (comment.id === commentId) {
+                    return {
+                        ...comment,
+                        dislikes: comment.isDisliked ? comment.dislikes - 1 : comment.dislikes + 1,
+                        likes: comment.isLiked ? comment.likes - 1 : comment.likes,
+                        isDisliked: !comment.isDisliked,
+                        isLiked: false
+                    }
+                }
+                return comment
+            })
+        } : null)
+    }
+
+    const handleLikeReply = (commentId: string, replyId: string) => {
+        setPost(prev => prev ? {
+            ...prev,
+            comments: prev.comments.map(comment => {
+                if (comment.id === commentId) {
+                    return {
+                        ...comment,
+                        replies: comment.replies.map(reply => {
+                            if (reply.id === replyId) {
+                                return {
+                                    ...reply,
+                                    likes: reply.isLiked ? reply.likes - 1 : reply.likes + 1,
+                                    isLiked: !reply.isLiked
+                                }
+                            }
+                            return reply
+                        })
+                    }
+                }
+                return comment
+            })
+        } : null)
     }
 
     const handleUserClick = (userId: string) => {
         router.push(`/users/${userId}`)
     }
+
+    const handleSharePost = () => {
+        setShowShareDialog(true);
+    };
+
+    const handleReportContent = (itemId: string, itemType: 'post' | 'comment' | 'reply') => {
+        setReportDetails({ itemId, itemType });
+        setShowReportDialog(true);
+    };
+
+    const handleReportSubmit = (itemId: string, itemType: 'post' | 'comment' | 'reply', reason: string) => {
+        console.log(`Reporting ${itemType} ${itemId} for reason: ${reason}`);
+        toast.success(`${itemType} reported successfully. We'll review it shortly.`);
+    };
 
     if (isLoading) {
         return (
@@ -340,7 +340,7 @@ export default function ForumDetailPage() {
                     <Button
                         variant="ghost"
                         onClick={() => router.back()}
-                        className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+                        className="flex items-center gap-2 text-muted-foreground"
                     >
                         <ArrowLeft className="w-4 h-4" />
                         Back to Forum
@@ -356,135 +356,21 @@ export default function ForumDetailPage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
                         >
-                            <Card className="relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-emerald-500"></div>
-
-                                <CardHeader className="pb-4">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex items-start gap-4 flex-1">
-                                            <div className="relative">
-                                                <Avatar
-                                                    className="w-12 h-12 cursor-pointer hover:scale-110 transition-transform"
-                                                    onClick={() => handleUserClick(post.author.id)}
-                                                >
-                                                    <AvatarImage src={post.author.avatar} />
-                                                    <AvatarFallback>
-                                                        {post.author.name.split(" ").map(n => n[0]).join("")}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                {post.author.isOnline && (
-                                                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-background rounded-full"></div>
-                                                )}
-                                            </div>
-
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <h1 className="text-2xl font-bold">{post.title}</h1>
-                                                    {post.isPinned && <Badge variant="outline" className="text-cyan-500">Pinned</Badge>}
-                                                    {post.isAnswered && <Badge className="bg-green-500 text-white">Answered</Badge>}
-                                                </div>
-
-                                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span
-                              className="hover:text-foreground cursor-pointer transition-colors"
-                              onClick={() => handleUserClick(post.author.id)}
-                          >
-                            by {post.author.name}
-                          </span>
-                                                    <Badge variant="outline">{post.author.role}</Badge>
-                                                    <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                                                        {post.createdAt}
-                          </span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="sm">
-                                                    <MoreVertical className="w-4 h-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => setShowShareDialog(true)}>
-                                                    <Share2 className="w-4 h-4 mr-2" />
-                                                    Share
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={handleBookmarkPost}>
-                                                    <Bookmark className={`w-4 h-4 mr-2 ${post.isBookmarked ? 'fill-current' : ''}`} />
-                                                    {post.isBookmarked ? 'Remove Bookmark' : 'Bookmark'}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    onClick={() => setShowReportDialog(true)}
-                                                    className="text-red-600"
-                                                >
-                                                    <Flag className="w-4 h-4 mr-2" />
-                                                    Report
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                </CardHeader>
-
-                                <CardContent>
-                                    <div className="prose max-w-none mb-6">
-                                        <p className="text-foreground leading-relaxed whitespace-pre-wrap">
-                                            {post.content}
-                                        </p>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <Badge variant="outline">{post.category}</Badge>
-                                        {post.tags.map(tag => (
-                                            <Badge key={tag} variant="secondary" className="text-xs">
-                                                #{tag}
-                                            </Badge>
-                                        ))}
-                                    </div>
-
-                                    <Separator className="my-4" />
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-6">
-                                            <div className="flex items-center gap-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={handleLikePost}
-                                                    className={post.isLiked ? "text-green-500" : ""}
-                                                >
-                                                    <ThumbsUp className={`w-4 h-4 mr-1 ${post.isLiked ? 'fill-current' : ''}`} />
-                                                    {post.likes}
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={handleDislikePost}
-                                                    className={post.isDisliked ? "text-red-500" : ""}
-                                                >
-                                                    <ThumbsDown className={`w-4 h-4 mr-1 ${post.isDisliked ? 'fill-current' : ''}`} />
-                                                    {post.dislikes}
-                                                </Button>
-                                            </div>
-
-                                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                            {post.views} views
-                        </span>
-                                                <span className="flex items-center gap-1">
-                          <MessageCircle className="w-4 h-4" />
-                                                    {post.replies} replies
-                        </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="text-xs text-muted-foreground">
-                                            Last activity {post.lastActivity}
-                                        </div>
-                                    </div>
-                                </CardContent>
+                            <Card className="relative overflow-hidden py-0">
+                                <ForumPostHeader
+                                    post={post}
+                                    onLikePost={handleLikePost}
+                                    onDislikePost={handleDislikePost}
+                                    onBookmarkPost={handleBookmarkPost}
+                                    onUserClick={handleUserClick}
+                                    onShare={handleSharePost}
+                                    onReport={() => handleReportContent(post.id, 'post')}
+                                />
+                                <ForumPostContent
+                                    post={post}
+                                    onLikePost={handleLikePost}
+                                    onDislikePost={handleDislikePost}
+                                />
                             </Card>
                         </motion.div>
 
@@ -494,243 +380,20 @@ export default function ForumDetailPage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
                         >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <MessageCircle className="w-5 h-5" />
-                                        Comments ({post.comments.length})
-                                    </CardTitle>
-                                </CardHeader>
-
-                                <CardContent className="space-y-6">
-                                    {/* Add Comment */}
-                                    <div className="space-y-4">
-                                        <div className="flex items-start gap-4">
-                                            <Avatar className="w-10 h-10">
-                                                <AvatarImage src="/images/Avatar.jpg" />
-                                                <AvatarFallback>You</AvatarFallback>
-                                            </Avatar>
-
-                                            <div className="flex-1 space-y-3">
-                                                <Textarea
-                                                    placeholder="Share your thoughts..."
-                                                    value={newComment}
-                                                    onChange={(e) => setNewComment(e.target.value)}
-                                                    className="min-h-20"
-                                                />
-
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <Button variant="ghost" size="sm">
-                                                            <ImageIcon className="w-4 h-4" />
-                                                        </Button>
-                                                        <Button variant="ghost" size="sm">
-                                                            <LinkIcon className="w-4 h-4" />
-                                                        </Button>
-                                                        <Button variant="ghost" size="sm">
-                                                            <Smile className="w-4 h-4" />
-                                                        </Button>
-                                                    </div>
-
-                                                    <Button
-                                                        onClick={handleCommentSubmit}
-                                                        disabled={!newComment.trim()}
-                                                        className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
-                                                    >
-                                                        <Send className="w-4 h-4 mr-2" />
-                                                        Comment
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <Separator />
-
-                                    {/* Comments List */}
-                                    <div className="space-y-6">
-                                        <AnimatePresence>
-                                            {post.comments.map((comment, index) => (
-                                                <motion.div
-                                                    key={comment.id}
-                                                    initial={{ opacity: 0, y: 20 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    exit={{ opacity: 0, y: -20 }}
-                                                    transition={{ delay: index * 0.1 }}
-                                                    className="space-y-4"
-                                                >
-                                                    <div className="flex items-start gap-4">
-                                                        <div className="relative">
-                                                            <Avatar
-                                                                className="w-10 h-10 cursor-pointer hover:scale-110 transition-transform"
-                                                                onClick={() => handleUserClick(comment.author.id)}
-                                                            >
-                                                                <AvatarImage src={comment.author.avatar} />
-                                                                <AvatarFallback>
-                                                                    {comment.author.name.split(" ").map(n => n[0]).join("")}
-                                                                </AvatarFallback>
-                                                            </Avatar>
-                                                            {comment.author.isOnline && (
-                                                                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-background rounded-full"></div>
-                                                            )}
-                                                        </div>
-
-                                                        <div className="flex-1">
-                                                            <div className="bg-accent/50 rounded-lg p-4">
-                                                                <div className="flex items-center gap-2 mb-2">
-                                  <span
-                                      className="font-semibold cursor-pointer hover:text-primary transition-colors"
-                                      onClick={() => handleUserClick(comment.author.id)}
-                                  >
-                                    {comment.author.name}
-                                  </span>
-                                                                    <Badge variant="outline" className="text-xs">
-                                                                        {comment.author.role}
-                                                                    </Badge>
-                                                                    <span className="text-xs text-muted-foreground">
-                                    {comment.createdAt}
-                                  </span>
-                                                                </div>
-
-                                                                <p className="text-sm leading-relaxed">{comment.content}</p>
-                                                            </div>
-
-                                                            <div className="flex items-center justify-between mt-2">
-                                                                <div className="flex items-center gap-4">
-                                                                    <Button variant="ghost" size="sm">
-                                                                        <ThumbsUp className={`w-3 h-3 mr-1 ${comment.isLiked ? 'fill-current text-green-500' : ''}`} />
-                                                                        {comment.likes}
-                                                                    </Button>
-
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="sm"
-                                                                        onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                                                                    >
-                                                                        <Reply className="w-3 h-3 mr-1" />
-                                                                        Reply
-                                                                    </Button>
-                                                                </div>
-
-                                                                <DropdownMenu>
-                                                                    <DropdownMenuTrigger asChild>
-                                                                        <Button variant="ghost" size="sm">
-                                                                            <MoreVertical className="w-3 h-3" />
-                                                                        </Button>
-                                                                    </DropdownMenuTrigger>
-                                                                    <DropdownMenuContent>
-                                                                        <DropdownMenuItem>
-                                                                            <Share2 className="w-3 h-3 mr-2" />
-                                                                            Share
-                                                                        </DropdownMenuItem>
-                                                                        <DropdownMenuItem className="text-red-600">
-                                                                            <Flag className="w-3 h-3 mr-2" />
-                                                                            Report
-                                                                        </DropdownMenuItem>
-                                                                    </DropdownMenuContent>
-                                                                </DropdownMenu>
-                                                            </div>
-
-                                                            {/* Reply Input */}
-                                                            <AnimatePresence>
-                                                                {replyingTo === comment.id && (
-                                                                    <motion.div
-                                                                        initial={{ opacity: 0, height: 0 }}
-                                                                        animate={{ opacity: 1, height: "auto" }}
-                                                                        exit={{ opacity: 0, height: 0 }}
-                                                                        className="mt-4 pl-4 border-l-2 border-accent"
-                                                                    >
-                                                                        <div className="flex items-start gap-3">
-                                                                            <Avatar className="w-8 h-8">
-                                                                                <AvatarImage src="/images/Avatar.jpg" />
-                                                                                <AvatarFallback>You</AvatarFallback>
-                                                                            </Avatar>
-
-                                                                            <div className="flex-1 space-y-2">
-                                                                                <Textarea
-                                                                                    placeholder={`Reply to ${comment.author.name}...`}
-                                                                                    value={replyContent}
-                                                                                    onChange={(e) => setReplyContent(e.target.value)}
-                                                                                    className="min-h-16"
-                                                                                />
-
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <Button
-                                                                                        size="sm"
-                                                                                        onClick={() => handleReplySubmit(comment.id)}
-                                                                                        disabled={!replyContent.trim()}
-                                                                                    >
-                                                                                        Reply
-                                                                                    </Button>
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="sm"
-                                                                                        onClick={() => setReplyingTo(null)}
-                                                                                    >
-                                                                                        Cancel
-                                                                                    </Button>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </motion.div>
-                                                                )}
-                                                            </AnimatePresence>
-
-                                                            {/* Replies */}
-                                                            {comment.replies.length > 0 && (
-                                                                <div className="mt-4 pl-4 border-l-2 border-accent space-y-3">
-                                                                    {comment.replies.map((reply, replyIndex) => (
-                                                                        <motion.div
-                                                                            key={reply.id}
-                                                                            initial={{ opacity: 0, x: 20 }}
-                                                                            animate={{ opacity: 1, x: 0 }}
-                                                                            transition={{ delay: replyIndex * 0.1 }}
-                                                                            className="flex items-start gap-3"
-                                                                        >
-                                                                            <Avatar
-                                                                                className="w-8 h-8 cursor-pointer hover:scale-110 transition-transform"
-                                                                                onClick={() => handleUserClick(reply.author.id)}
-                                                                            >
-                                                                                <AvatarImage src={reply.author.avatar} />
-                                                                                <AvatarFallback>
-                                                                                    {reply.author.name.split(" ").map(n => n[0]).join("")}
-                                                                                </AvatarFallback>
-                                                                            </Avatar>
-
-                                                                            <div className="flex-1 bg-background rounded-lg p-3">
-                                                                                <div className="flex items-center gap-2 mb-1">
-                                          <span
-                                              className="font-medium text-sm cursor-pointer hover:text-primary transition-colors"
-                                              onClick={() => handleUserClick(reply.author.id)}
-                                          >
-                                            {reply.author.name}
-                                          </span>
-                                                                                    <span className="text-xs text-muted-foreground">
-                                            {reply.createdAt}
-                                          </span>
-                                                                                </div>
-
-                                                                                <p className="text-sm">{reply.content}</p>
-
-                                                                                <div className="flex items-center gap-2 mt-2">
-                                                                                    <Button variant="ghost" size="sm">
-                                                                                        <ThumbsUp className={`w-3 h-3 mr-1 ${reply.isLiked ? 'fill-current text-green-500' : ''}`} />
-                                                                                        {reply.likes}
-                                                                                    </Button>
-                                                                                </div>
-                                                                            </div>
-                                                                        </motion.div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
-                                            ))}
-                                        </AnimatePresence>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            <ForumCommentSection
+                                comments={post.comments}
+                                currentUser={currentUser}
+                                newComment={newComment}
+                                setNewComment={setNewComment}
+                                handleCommentSubmit={handleCommentSubmit}
+                                handleLikeComment={handleLikeComment}
+                                handleDislikeComment={handleDislikeComment}
+                                handleReplySubmit={handleReplySubmit}
+                                handleLikeReply={handleLikeReply}
+                                handleUserClick={handleUserClick}
+                                handleShareToPlatform={handleSharePost}
+                                handleReport={handleReportContent}
+                            />
                         </motion.div>
                     </div>
 
@@ -742,56 +405,10 @@ export default function ForumDetailPage() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.3 }}
                         >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg">Author</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div
-                                        className="flex items-center gap-3 cursor-pointer hover:bg-accent/50 p-2 rounded-lg transition-colors"
-                                        onClick={() => handleUserClick(post.author.id)}
-                                    >
-                                        <div className="relative">
-                                            <Avatar className="w-12 h-12">
-                                                <AvatarImage src={post.author.avatar} />
-                                                <AvatarFallback>
-                                                    {post.author.name.split(" ").map(n => n[0]).join("")}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            {post.author.isOnline && (
-                                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-background rounded-full"></div>
-                                            )}
-                                        </div>
-
-                                        <div>
-                                            <h4 className="font-semibold">{post.author.name}</h4>
-                                            <Badge variant="outline" className="text-xs">
-                                                {post.author.role}
-                                            </Badge>
-                                        </div>
-                                    </div>
-
-                                    <Separator className="my-4" />
-
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Joined</span>
-                                            <span>{post.author.joinDate}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Posts</span>
-                                            <span>{post.author.postCount}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Reputation</span>
-                                            <span className="flex items-center gap-1">
-                        <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                                                {post.author.reputation}
-                      </span>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            <ForumSidebarAuthorInfo
+                                author={post.author}
+                                onUserClick={handleUserClick}
+                            />
                         </motion.div>
 
                         {/* Related Posts */}
@@ -800,90 +417,35 @@ export default function ForumDetailPage() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.4 }}
                         >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg">Related Discussions</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-3">
-                                    {[1, 2, 3].map((item) => (
-                                        <div key={item} className="space-y-2 p-3 rounded-lg hover:bg-accent/50 cursor-pointer transition-colors">
-                                            <h5 className="text-sm font-medium line-clamp-2">
-                                                Best practices for React performance optimization
-                                            </h5>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <MessageCircle className="w-3 h-3" />
-                                                <span>8 replies</span>
-                                                <Eye className="w-3 h-3" />
-                                                <span>124 views</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </CardContent>
-                            </Card>
+                            <ForumSidebarRelatedDiscussions
+                                relatedPosts={relatedPosts}
+                                onPostClick={(postId) => router.push(`/forum/${postId}`)}
+                            />
                         </motion.div>
                     </div>
                 </div>
             </div>
 
             {/* Share Dialog */}
-            <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Share this discussion</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2 p-2 bg-accent rounded">
-                            <Input
-                                value={`${window.location.origin}/forum/${post.id}`}
-                                readOnly
-                                className="flex-1"
-                            />
-                            <Button
-                                onClick={() => {
-                                    navigator.clipboard.writeText(`${window.location.origin}/forum/${post.id}`)
-                                    setShowShareDialog(false)
-                                }}
-                            >
-                                Copy
-                            </Button>
-                        </div>
-                        <div className="flex gap-2">
-                            <Button variant="outline" className="flex-1">
-                                <Share2 className="w-4 h-4 mr-2" />
-                                Twitter
-                            </Button>
-                            <Button variant="outline" className="flex-1">
-                                <Share2 className="w-4 h-4 mr-2" />
-                                LinkedIn
-                            </Button>
-                            <Button variant="outline" className="flex-1">
-                                <Share2 className="w-4 h-4 mr-2" />
-                                Facebook
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            {post && (
+                <ShareForm
+                    isOpen={showShareDialog}
+                    onOpenChange={setShowShareDialog}
+                    url={window.location.href}
+                    title={post.title}
+                />
+            )}
 
             {/* Report Dialog */}
-            <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Report this discussion</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <Textarea placeholder="Please describe why you're reporting this discussion..." />
-                        <div className="flex gap-2 justify-end">
-                            <Button variant="outline" onClick={() => setShowReportDialog(false)}>
-                                Cancel
-                            </Button>
-                            <Button variant="destructive">
-                                Submit Report
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            {reportDetails && (
+                <ReportForm
+                    isOpen={showReportDialog}
+                    onOpenChange={setShowReportDialog}
+                    title={post.title}
+                    onSubmit={handleReportContent}
+                />
+
+                )}
 
             <Footer />
         </div>

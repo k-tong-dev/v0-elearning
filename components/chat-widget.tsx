@@ -152,7 +152,7 @@ export function ChatWidget() {
             {/* Chat Dialog */}
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent
-                    className="gap-0 fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[90vw] max-w-md lg:max-w-xl h-[80vh] max-h-[600px] p-0 flex flex-col rounded-xl overflow-hidden shadow-2xl border border-border bg-background
+                    className="gap-0 fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[100vw] max-w-md lg:max-w-xl h-[80vh] max-h-[600px] p-0 flex flex-col rounded-xl overflow-hidden shadow-2xl border border-border bg-background
                     data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-bottom-full
                     data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:slide-out-to-bottom-full"
                 >
@@ -164,14 +164,13 @@ export function ChatWidget() {
                             <div className="w-3 h-3 rounded-full bg-green-500" />
                         </div>
                         <DialogTitle className="ml-4 text-lg font-semibold flex-1 text-left flex items-center gap-2">
-                            <Sparkles className="w-5 h-5 text-primary" />
+                            {/*<Sparkles className="w-5 h-5 text-primary" />*/}
                             CamEdu AI Chat
                         </DialogTitle>
-                        <Button variant="ghost" size="icon" onClick={handleNewChat} className="hover:bg-accent/20 mr-6">
+                        <Button variant="ghost" size="icon" onClick={handleNewChat} className="dark:hover:bg-cyan-300/10 dark:hover:text-white mr-9">
                             <PlusCircle className="w-5 h-5" />
                             <span className="sr-only">New Chat</span>
                         </Button>
-                        {/* Removed the duplicate close button */}
                     </DialogHeader>
 
                     <div className="flex-1 overflow-hidden relative bg-background">
@@ -207,7 +206,7 @@ export function ChatWidget() {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.3 }}
-                                        className={`flex items-start gap-3 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+                                        className={`flex items-start gap-1 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
                                     >
                                         {msg.sender === "bot" && (
                                             <Avatar className="w-8 h-8 shrink-0 border border-border">
@@ -221,10 +220,10 @@ export function ChatWidget() {
                                             </Avatar>
                                         )}
                                         <div
-                                            className={`max-w-[75%] shadow-sm transition-all duration-200 prose dark:prose-invert text-sm leading-relaxed break-words overflow-hidden ${ // Added overflow-hidden and changed p-3 to p-4
+                                            className={`max-w-[300px] lg:max-w-[400px] shadow-sm transition-all duration-200 prose dark:prose-invert text-sm leading-relaxed break-words overflow-hidden ${ // Added overflow-hidden and changed p-3 to p-4
                                                 msg.sender === "user"
-                                                    ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-tl-xl rounded-tr-xl rounded-bl-xl rounded-br-none p-4" // Changed p-3 to p-4
-                                                    : "bg-muted/70 text-foreground rounded-tl-xl rounded-tr-xl rounded-br-xl rounded-bl-none p-4" // Changed p-3 to p-4
+                                                    ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-tl-xl rounded-tr-xl rounded-bl-xl rounded-br-none p-3" // Changed p-3 to p-4
+                                                    : "bg-muted/70 text-foreground rounded-tl-xl rounded-tr-xl rounded-br-xl rounded-bl-none p-3" // Changed p-3 to p-4
                                             }`}
                                         >
                                             <ReactMarkdown
@@ -251,13 +250,13 @@ export function ChatWidget() {
                                             >
                                                 {msg.content}
                                             </ReactMarkdown>
-                                            <span className="text-xs text-muted-foreground/70 block mt-1">
+                                            <span className="text-xs text-gray-400 block mt-1">
                                                 {msg.timestamp}
                                             </span>
                                         </div>
                                         {msg.sender === "user" && (
-                                            <Avatar className="w-8 h-8 shrink-0 border border-border">
-                                                <AvatarFallback className="bg-primary/10 text-primary">
+                                            <Avatar className="w-8 h-8 shrink-0 border border-border dark:border-cyan-500">
+                                                <AvatarFallback className="bg-primary/10 text-cyan-300">
                                                     <User className="w-4 h-4" />
                                                 </AvatarFallback>
                                             </Avatar>
@@ -291,7 +290,7 @@ export function ChatWidget() {
                             onChange={(e) => setInputMessage(e.target.value)}
                             onKeyPress={handleKeyPress}
                             disabled={isSending}
-                            className="flex-1 min-h-[40px] max-h-[120px] resize-none bg-background border-input focus:border-primary focus:ring-0 dark:border-cyan-500 dark:focus:border-0"
+                            className="flex-1 min-h-[40px] max-h-[120px] resize-none bg-background border-input focus:border-0 focus:ring-0 dark:border-cyan-500 dark:focus:border-0"
                         />
                         <Button
                             size="icon"

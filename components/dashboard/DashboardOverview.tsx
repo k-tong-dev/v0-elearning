@@ -234,9 +234,9 @@ export function DashboardOverview({ stats, enrollmentData, courseTypeData, recen
                     <CardContent>
                         <div className="space-y-4">
                             {recentActivity.map((activity, index) => (
-                                <div key={index} className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent/50 transition-colors">
-                                    <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
-                                        <activity.icon className="w-5 h-5 text-muted-foreground" />
+                                <div key={index} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-400/20 transition-colors">
+                                    <div className="w-10 h-10 rounded-full bg-sky-600 flex items-center justify-center">
+                                        <activity.icon className="w-5 h-5 text-gray-300" />
                                     </div>
                                     <div className="flex-1">
                                         <div className="font-medium">{activity.action}</div>
