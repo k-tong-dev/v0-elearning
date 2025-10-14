@@ -344,25 +344,6 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
 
     const [activeSection, setActiveSection] = useState<"profile" | "skills" | "notifications" | "limits">("profile")
 
-    // Sync section with URL (?section=...)
-    useEffect(() => {
-        if (typeof window === 'undefined') return
-        const params = new URLSearchParams(window.location.search)
-        const section = params.get('section') as any
-        if (section && ["profile","skills","notifications","limits"].includes(section)) {
-            setActiveSection(section)
-        }
-    }, [])
-
-    const selectSection = (section: "profile" | "skills" | "notifications" | "limits") => {
-        setActiveSection(section)
-        if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href)
-            url.searchParams.set('section', section)
-            window.history.replaceState(null, '', url.toString())
-        }
-    }
-
     return (
         <div className="space-y-8">
             {/* Removed redundant header per request */}
@@ -388,16 +369,16 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="min-w-48 glass-enhanced">
-                                            <DropdownMenuItem className="" onClick={() => selectSection("profile")}>
+                                            <DropdownMenuItem className="" onClick={() => setActiveSection("profile")}>
                                                 <Settings className="w-4 h-4 mr-2"/> Profile
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem className="" onClick={() => selectSection("skills")}>
+                                            <DropdownMenuItem className="" onClick={() => setActiveSection("skills")}>
                                                 <Sparkles className="w-4 h-4 mr-2"/> Skills & Badges
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem className="" onClick={() => selectSection("notifications")}>
+                                            <DropdownMenuItem className="" onClick={() => setActiveSection("notifications")}>
                                                 <Bell className="w-4 h-4 mr-2"/> Notifications
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem className="" onClick={() => selectSection("limits")}>
+                                            <DropdownMenuItem className="" onClick={() => setActiveSection("limits")}>
                                                 <Crown className="w-4 h-4 mr-2"/> Creation Limits
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
@@ -432,7 +413,7 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
                                                     }
                                                     input.click()
                                                 }}
-                                                className="w-56 h-56 md:w-64 md:h-64 rounded-full shadow-xl ring-2 ring-primary/20"
+                                                className="w-20 h-20 md:w-64 md:h-64 border-2 border-color-red rounded-lg"
                                             />
                                         </motion.div>
 
@@ -614,7 +595,7 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
                                     className="space-y-6">
                             <Card
                                 className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
-                    <CardHeader>
+                                <CardHeader>
                                     <CardTitle>Skills & Badges</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
@@ -649,7 +630,7 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
                                                 settings</p>
                                         </div>
                                     </div>
-                    </CardHeader>
+                                </CardHeader>
                                 <CardContent className="space-y-6">
                                     {[
                                         {
@@ -688,15 +669,15 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
                                                 <div className={`p-2 rounded-lg bg-muted ${setting.color}`}>
                                                     <setting.icon className="w-4 h-4"/>
                                                 </div>
-                                <div>
-                                    <div className="font-medium">{setting.label}</div>
+                                                <div>
+                                                    <div className="font-medium">{setting.label}</div>
                                                     <div
                                                         className="text-sm text-muted-foreground">{setting.description}</div>
                                                 </div>
-                                </div>
-                                <Switch
-                                    checked={notificationSettings[setting.key as keyof typeof notificationSettings]}
-                                    onCheckedChange={(checked) => handleNotificationChange(setting.key as keyof typeof notificationSettings, checked)}
+                                            </div>
+                                            <Switch
+                                                checked={notificationSettings[setting.key as keyof typeof notificationSettings]}
+                                                onCheckedChange={(checked) => handleNotificationChange(setting.key as keyof typeof notificationSettings, checked)}
                                                 className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-cyan-500 data-[state=checked]:to-emerald-500"/>
                                         </motion.div>
                                     ))}
@@ -707,9 +688,9 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
                                                 className="w-4 h-4 animate-spin"/>Saving...</div>) : (<><Save
                                                 className="w-4 h-4 mr-2"/> Save Notification Settings</>)}
                                         </Button>
-                                </div>
-                    </CardContent>
-                </Card>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </motion.div>
                     )}
 
@@ -729,7 +710,7 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
                                                 plan</p>
                                         </div>
                                     </div>
-                    </CardHeader>
+                                </CardHeader>
                                 <CardContent className="space-y-6">
                                     <div
                                         className="p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/20">
@@ -762,17 +743,17 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
                                                 className="w-4 h-4 text-green-500"/><span>Basic analytics</span></div>
                                             <div className="flex items-center gap-2"><AlertCircle
                                                 className="w-4 h-4 text-yellow-500"/><span>Limited customization</span>
-                                </div>
-                            </div>
-                        </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div className="flex justify-end">
                                         <Button
                                             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">
                                             <Crown className="w-4 h-4 mr-2"/> Upgrade to Pro
-                        </Button>
+                                        </Button>
                                     </div>
-                    </CardContent>
-                </Card>
+                                </CardContent>
+                            </Card>
                         </motion.div>
                     )}
                 </div>

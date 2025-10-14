@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { AuthModal } from "@/components/auth-modal"
 import { SignUpChoiceModal } from "@/components/signup/SignUpChoiceModal"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { UserMenuAvatar } from "@/components/ui/enhanced-avatar"
 import { useAuth } from "@/hooks/use-auth"
 import {
     Menu,
@@ -201,20 +202,20 @@ export function Header() {
                                 <BookOpen className="w-5 h-5 text-primary-foreground" />
                             </div>
                             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                CamEdu
-              </span>
+                                CamEdu
+                            </span>
                         </Link>
 
                         {/* Desktop Navigation */}
                         <nav className="hidden md:flex items-center space-x-8">
-                            <Link href="/" className="text-foreground hover:text-primary transition-colors duration-200">
+                            <Link href="/" className="text-foreground hover:text-cyan-600 transition-colors duration-200">
                                 Home
                             </Link>
-                            <Link href="/courses" className="text-foreground hover:text-primary transition-colors duration-200">
+                            <Link href="/courses" className="text-foreground hover:text-cyan-600 transition-colors duration-200">
                                 Courses
                             </Link>
                             <DropdownMenu open={isExploreOpen} onOpenChange={setIsExploreOpen}>
-                                <DropdownMenuTrigger className="flex items-center gap-1 text-foreground hover:text-primary transition-all duration-200 hover:scale-105">
+                                <DropdownMenuTrigger className="flex items-center gap-1 text-foreground hover:text-cyan-600 transition-all duration-200 hover:scale-105">
                                     Explore
                                     <ChevronDown
                                         className={`w-4 h-4 transition-transform duration-200 ${isExploreOpen ? "rotate-180" : ""}`}
@@ -228,19 +229,19 @@ export function Header() {
                                                 <DropdownMenuItem key={item.title} asChild>
                                                     <Link
                                                         href={item.href}
-                                                        className="flex flex-col items-start p-4 rounded-xl hover:bg-gradient-to-r hover:from-accent/20 hover:to-accent/10 transition-all duration-300 hover:scale-105 hover:shadow-lg group border border-transparent hover:border-accent/20"
+                                                        className="flex flex-col items-start p-4 rounded-xl hover:text-white hover:bg-gradient-to-r hover:from-accent/20 hover:to-accent/10 transition-all duration-300 hover:scale-105 hover:shadow-lg group border border-transparent hover:border-accent/20"
                                                     >
                                                         <div className="flex items-center gap-2 mb-1">
                                                             <IconComponent
                                                                 className={`w-5 h-5 ${item.color} group-hover:scale-110 transition-transform duration-200`}
                                                             />
-                                                            <span className="font-semibold text-sm group-hover:text-primary transition-colors duration-200">
-                                {item.title}
-                              </span>
+                                                            <span className="font-semibold text-sm group-hover:text-cyan-600 transition-colors duration-200">
+                                                                {item.title}
+                                                            </span>
                                                         </div>
                                                         <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors duration-200">
-                              {item.description}
-                            </span>
+                                                          {item.description}
+                                                        </span>
                                                     </Link>
                                                 </DropdownMenuItem>
                                             )
@@ -248,10 +249,10 @@ export function Header() {
                                     </div>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Link href="/pricing" className="text-foreground hover:text-primary transition-colors duration-200">
+                            <Link href="/pricing" className="text-foreground hover:text-cyan-600 transition-colors duration-200">
                                 Partner & Price
                             </Link>
-                            <Link href="/contact" className="text-foreground hover:text-primary transition-colors duration-200">
+                            <Link href="/contact" className="text-foreground hover:text-cyan-600 transition-colors duration-200">
                                 Contact
                             </Link>
                         </nav>
@@ -271,12 +272,10 @@ export function Header() {
                                 <DropdownMenu open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" className="min-w-0 relative h-10 w-10 rounded-full hover:bg-accent/20">
-                                            <Avatar className="h-9 w-9 border-2 border-primary shadow-md avatar-border-gradient"> {/* Applied avatar-border-gradient */}
-                                                <AvatarImage src={user.avatar} alt={user.name} />
-                                                <AvatarFallback>
-                                                    {user.name.split(' ').map(n => n[0]).join('')}
-                                                </AvatarFallback>
-                                            </Avatar>
+                                            <UserMenuAvatar 
+                                                user={user} 
+                                                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                                            />
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent className="w-56 mt-2 glass-enhanced" align="end" side="bottom"> {/* Glass effect applied */}
@@ -353,12 +352,12 @@ export function Header() {
                     {isMenuOpen && (
                         <div className="md:hidden absolute top-16 left-0 right-0 bg-background/95 backdrop-blur-md border-b border-border animate-slide-in-up">
                             <nav className="flex flex-col space-y-1 p-4">
-                                <Link href="/" className="text-foreground hover:text-primary transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20">
+                                <Link href="/" className="text-foreground hover:text-cyan-600 transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20">
                                     Home
                                 </Link>
                                 <Link
                                     href="/courses"
-                                    className="text-foreground hover:text-primary transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
+                                    className="text-foreground hover:text-cyan-600 transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
                                 >
                                     Courses
                                 </Link>
@@ -371,7 +370,7 @@ export function Header() {
                                                 <Link
                                                     key={item.title}
                                                     href={item.href}
-                                                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
+                                                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-cyan-600 transition-colors duration-200 py-2 px-3 rounded-md"
                                                 >
                                                     <IconComponent className={`w-4 h-4 ${item.color}`} />
                                                     {item.title}
@@ -382,13 +381,13 @@ export function Header() {
                                 </div>
                                 <Link
                                     href="/pricing"
-                                    className="text-foreground hover:text-primary transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
+                                    className="text-foreground hover:text-cyan-600 transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
                                 >
                                     Partner & Price
                                 </Link>
                                 <Link
                                     href="/contact"
-                                    className="text-foreground hover:text-primary transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
+                                    className="text-foreground hover:text-cyan-600 transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
                                 >
                                     Contact
                                 </Link>
@@ -401,12 +400,10 @@ export function Header() {
                                     ) : isAuthenticated && user ? (
                                         <>
                                             <div className="flex items-center gap-3 p-2 mb-2">
-                                                <Avatar className="h-8 w-8 border-2 border-primary shadow-md avatar-border-gradient"> {/* Applied avatar-border-gradient */}
-                                                    <AvatarImage src={user.avatar} alt={user.name} />
-                                                    <AvatarFallback className="text-xs">
-                                                        {user.name.split(' ').map(n => n[0]).join('')}
-                                                    </AvatarFallback>
-                                                </Avatar>
+                                                <UserMenuAvatar 
+                                                    user={user}
+                                                    size="sm"
+                                                />
                                                 <div className="flex flex-col">
                                                     <p className="font-medium text-sm">{user.name}</p>
                                                     <p className="text-xs text-muted-foreground truncate">{user.email}</p>

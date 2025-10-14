@@ -276,7 +276,11 @@
     border: 1px solid rgba(255, 255, 255, 0.05); /* Thinner, more subtle border */
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); /* Softer shadow */
 }
-
+.dark .glass-enhanced-none {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.05); /* Thinner, more subtle border */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); /* Softer shadow */
+}
 /* Perspective utilities */
 .perspective-1000 {
     perspective: 1000px;

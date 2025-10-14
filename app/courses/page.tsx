@@ -30,6 +30,7 @@ import {
     ChevronUp,
 } from "lucide-react"
 import {CourseSkeleton} from "@/components/course-skeleton"
+import {CourseCard} from "@/components/CourseCard"
 import {Header} from "@/components/header"
 import {Footer} from "@/components/footer"
 import Link from "next/link";
@@ -614,6 +615,14 @@ export default function CoursesPage() {
     }
 
     const handleCourseClick = (courseId: number) => {
+        console.log('Course card clicked - navigating to course detail:', courseId)
+        router.push(`/courses/${courseId}`)
+    }
+
+    const handleEnrollClick = (courseId: number) => {
+        console.log('Enroll button clicked - starting enrollment process:', courseId)
+        // For now, we'll also navigate to the course detail page
+        // In a real app, this might open a payment modal or enrollment flow
         router.push(`/courses/${courseId}`)
     }
 
@@ -634,7 +643,7 @@ export default function CoursesPage() {
 
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
                         <div>
-                            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+                            <h1 className="text-4xl md:text-4xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent mb-2">
                                 All Courses
                             </h1>
                             <p className="text-lg text-muted-foreground">
@@ -645,7 +654,7 @@ export default function CoursesPage() {
                         <div className="flex items-center gap-4">
                             <Select value={sortBy} onValueChange={setSortBy}>
                                 <SelectTrigger
-                                    className="w-48 glass-enhanced border-2 hover:border-cyan-300 transition-colors">
+                                    className="w-48 border-2 border-gray-400 focus:ring-0 transition-colors">
                                     <SelectValue placeholder="Sort by"/>
                                 </SelectTrigger>
                                 <SelectContent>
@@ -669,27 +678,27 @@ export default function CoursesPage() {
                     <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
                         <div className="flex-1 relative">
                             <Search
-                                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5"/>
+                                className="absolute z-1 left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5"/>
                             <Input
                                 type="text"
                                 placeholder="Search courses, topics, or instructors..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyPress={() => setCoursesToDisplayCount(initialCoursesToShow)} // Reset count on search input
-                                className="pl-12 py-5 text-base glass-enhanced rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+                                onKeyPress={() => setCoursesToDisplayCount(initialCoursesToShow)}
+                                className="focus-visible:ring-0 pl-12 py-5 text-base bg-gray-400/7 rounded-sm shadow-lg hover:shadow-xl transition-all duration-300"
                             />
                         </div>
                         <Button
                             type="submit"
                             disabled={isSearching}
-                            className="py-5 px-8 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-lg font-semibold"
+                            className="py-5 px-8 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 rounded-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-md text-white"
                         >
                             <Search className="w-5 h-5 mr-1"/>
                             {isSearching ? "Searching..." : "Search"}
                         </Button>
                         <Button
                             type="button"
-                            className="py-5 px-6 glass-enhanced border-2 hover:border-cyan-300 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                            className="py-5 px-6 border-2 border-gray-100/30 bg-transparent rounded-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                             onClick={() => setShowFilters(!showFilters)}
                         >
                             <Filter className="w-4 h-4 mr-2"/>
@@ -788,7 +797,7 @@ export default function CoursesPage() {
 
                                 <div className="flex items-center space-x-3 pt-8">
                                     <Button
-                                        variant={showFavorites ? "default" : "outline"}
+                                        variant={showFavorites ? "solid" : "bordered"}
                                         onClick={() => {setShowFavorites(!showFavorites); setCoursesToDisplayCount(initialCoursesToShow);}}
                                         className={`flex items-center gap-2 ${showFavorites ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white' : 'hover:bg-accent/20'}`}
                                     >
@@ -805,146 +814,15 @@ export default function CoursesPage() {
                     {isSearching
                         ? Array.from({length: initialCoursesToShow}).map((_, index) => <CourseSkeleton key={index}/>)
                         : displayedCourses.map((course, index) => (
-                            <motion.div
+                            <CourseCard
                                 key={course.id}
-                                initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                transition={{ delay: 0.1 * (index % 4), duration: 0.3 }}
-                            >
-                                <Card
-                                    className="group py-0 hover:shadow-2xl transition-all duration-500 hover:scale-101 border-2 hover:border-cyan-200 dark:hover:border-cyan-800 relative overflow-hidden glass-enhanced cursor-pointer h-full"
-                                    onClick={() => handleCourseClick(course.id)}
-                                >
-                                    {(course.trending || course.bestseller) && (
-                                        <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-                                            {course.trending && (
-                                                <Badge
-                                                    className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-lg">
-                                                    <TrendingUp className="w-3 h-3 mr-1"/>
-                                                    Trending
-                                                </Badge>
-                                            )}
-                                            {course.bestseller && (
-                                                <Badge
-                                                    className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-lg">
-                                                    <Award className="w-3 h-3 mr-1"/>
-                                                    Bestseller
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    <CardHeader className="p-0">
-                                        <div className="relative overflow-hidden rounded-t-lg">
-                                            <img
-                                                src={course.image || "/placeholder.svg"}
-                                                alt={course.title}
-                                                className="w-full h-52 object-cover group-hover:scale-110 transition-transform duration-500"
-                                            />
-                                            <div
-                                                className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="absolute top-4 left-4 bg-white/90 hover:bg-white text-gray-700 rounded-full p-2 shadow-lg"
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    toggleFavorite(course.id)
-                                                }}
-                                            >
-                                                <Heart
-                                                    className={`w-4 h-4 transition-colors ${favorites.includes(course.id) ? "fill-red-500 text-red-500" : ""}`}
-                                                />
-                                            </Button>
-
-                                            <div className="absolute bottom-4 left-4 flex gap-2">
-                                                <Badge
-                                                    className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white font-semibold px-3 py-1 rounded-full">
-                                                    {course.level}
-                                                </Badge>
-                                                {course.discount && (
-                                                    <Badge
-                                                        className="bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold px-3 py-1 rounded-full">
-                                                        {course.discount}
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </CardHeader>
-
-                                    <CardContent className="p-6">
-                                        <div className="mb-4 flex items-center justify-between">
-                                            <Badge variant="outline"
-                                                   className="text-xs font-medium border-cyan-200 text-cyan-700">
-                                                {course.category}
-                                            </Badge>
-                                            {/* Link to educator profile */}
-                                            <Link
-                                                href={`/users/${course.educatorId}`}
-                                                onClick={(e) => e.stopPropagation()}
-                                                className="text-xs text-muted-foreground font-medium hover:text-primary transition-colors duration-200"
-                                            >
-                                                by {course.educator}
-                                            </Link>
-                                        </div>
-
-                                        <CardTitle
-                                            className="text-lg mb-3 group-hover:text-cyan-600 transition-colors duration-200 line-clamp-2 font-bold">
-                                            {course.title}
-                                        </CardTitle>
-
-                                        <CardDescription
-                                            className="text-sm mb-4 line-clamp-2 text-muted-foreground leading-relaxed">
-                                            {course.description}
-                                        </CardDescription>
-
-                                        <div className="flex flex-wrap gap-2 mb-4">
-                                            {course.tags.slice(0, 3).map((tag) => (
-                                                <Badge
-                                                    key={tag}
-                                                    variant="secondary"
-                                                    className="text-xs bg-gradient-to-r from-cyan-50 to-emerald-50 text-cyan-700 border-cyan-200"
-                                                >
-                                                    {tag}
-                                                </Badge>
-                                            ))}
-                                        </div>
-
-                                        <div className="grid grid-cols-3 gap-3 text-sm text-muted-foreground mb-4">
-                                            <div className="flex items-center gap-1">
-                                                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400"/>
-                                                <span className="font-medium">{course.rating}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <Users className="w-4 h-4"/>
-                                                <span className="font-medium">{course.students.toLocaleString()}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <Clock className="w-4 h-4"/>
-                                                <span className="font-medium">{course.duration}</span>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-
-                                    <CardFooter className="p-6 pb-10 pt-0">
-                                        <div className="flex flex-col gap-4 items-center justify-between w-full">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-3xl font-bold text-cyan-600">{course.price}</span>
-                                                <span
-                                                    className="text-sm text-muted-foreground line-through">{course.originalPrice}</span>
-                                            </div>
-                                            <Button
-                                                className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25 rounded-lg font-semibold"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <BookOpen className="w-4 h-4 mr-2"/>
-                                                Enroll Now
-                                            </Button>
-                                        </div>
-                                    </CardFooter>
-                                </Card>
-                            </motion.div>
+                                course={course}
+                                index={index}
+                                onCourseClick={handleCourseClick}
+                                onToggleFavorite={toggleFavorite}
+                                onEnrollClick={handleEnrollClick}
+                                isFavorite={favorites.includes(course.id)}
+                            />
                         ))}
                 </div>
 

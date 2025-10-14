@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ForumUserAvatar } from "@/components/ui/enhanced-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -88,15 +89,11 @@ export function ForumCommentItem({
             transition={{ delay: replyIndex * 0.1 }}
             className="flex items-start gap-3"
         >
-            <Avatar
-                className="w-8 h-8 cursor-pointer hover:scale-110 transition-transform"
+            <ForumUserAvatar 
+                user={reply.author}
+                size="sm"
                 onClick={() => onUserClick(reply.author.id)}
-            >
-                <AvatarImage src={reply.author.avatar} />
-                <AvatarFallback>
-                    {reply.author.name.split(" ").map(n => n[0]).join("")}
-                </AvatarFallback>
-            </Avatar>
+            />
 
             <div className="flex-1 bg-background rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-1">
@@ -180,18 +177,11 @@ export function ForumCommentItem({
         >
             <div className="flex items-start gap-4">
                 <div className="relative">
-                    <Avatar
-                        className="w-10 h-10 cursor-pointer hover:scale-110 transition-transform"
+                    <ForumUserAvatar 
+                        user={comment.author}
+                        size="md"
                         onClick={() => onUserClick(comment.author.id)}
-                    >
-                        <AvatarImage src={comment.author.avatar} />
-                        <AvatarFallback>
-                            {comment.author.name.split(" ").map(n => n[0]).join("")}
-                        </AvatarFallback>
-                    </Avatar>
-                    {comment.author.isOnline && (
-                        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-background rounded-full"></div>
-                    )}
+                    />
                 </div>
 
                 <div className="flex-1">
@@ -303,10 +293,10 @@ export function ForumCommentItem({
                                 className="mt-4 pl-4 border-l-2 border-accent"
                             >
                                 <div className="flex items-start gap-3">
-                                    <Avatar className="w-8 h-8">
-                                        <AvatarImage src={currentUser.avatar} />
-                                        <AvatarFallback>You</AvatarFallback>
-                                    </Avatar>
+                                    <ForumUserAvatar 
+                                        user={currentUser}
+                                        size="sm"
+                                    />
 
                                     <div className="flex-1 space-y-2">
                                         <Textarea

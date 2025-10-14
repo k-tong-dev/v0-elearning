@@ -186,12 +186,6 @@ export function ProfileSettingsForm({ currentUser }: ProfileSettingsFormProps) {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <AvatarUploadField
-                            avatar={formData.avatar}
-                            name={formData.name}
-                            isUploadingAvatar={isUploadingAvatar}
-                            onAvatarChange={handleAvatarChange}
-                        />
 
                         <BasicInfoFields
                             name={formData.name}

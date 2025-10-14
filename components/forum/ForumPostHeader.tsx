@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ForumUserAvatar } from "@/components/ui/enhanced-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,18 +54,11 @@ export function ForumPostHeader({
                 <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4 flex-1">
                         <div className="relative">
-                            <Avatar
-                                className="w-12 h-12 cursor-pointer hover:scale-110 transition-transform"
+                            <ForumUserAvatar 
+                                user={post.author}
+                                size="lg"
                                 onClick={() => onUserClick(post.author.id)}
-                            >
-                                <AvatarImage src={post.author.avatar} />
-                                <AvatarFallback>
-                                    {post.author.name.split(" ").map(n => n[0]).join("")}
-                                </AvatarFallback>
-                            </Avatar>
-                            {post.author.isOnline && (
-                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-background rounded-full"></div>
-                            )}
+                            />
                         </div>
 
                         <div className="flex-1">

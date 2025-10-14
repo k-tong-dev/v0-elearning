@@ -445,7 +445,12 @@ function DashboardContent() {
                                     followers: user.followers, // Pass followers
                                     following: user.following, // Pass following
                                 }}
-                                stats={stats}
+                                stats={{
+                                    coursesCreated: stats.coursesCreated,
+                                    totalEnrollments: stats.activeLearners,
+                                    totalRevenue: stats.totalRevenue,
+                                    completionRate: stats.completionRate
+                                }}
                             />
                         </TabsContent>
                     </Tabs>

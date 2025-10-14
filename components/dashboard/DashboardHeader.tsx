@@ -7,7 +7,9 @@ import { Plus } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { motion } from "framer-motion"
 import { AnimatedShape } from "./AnimatedShape"
-import { GlitchText } from './GlitchText';
+import { GlitchText } from './GlitchText'
+import { DashboardAvatar } from "@/components/ui/enhanced-avatar"
+import { useAuth } from "@/hooks/use-auth"
 
 interface DashboardHeaderProps {
     userName: string
@@ -17,6 +19,7 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ userName, onCreateCourse }: DashboardHeaderProps) {
     const headerRef = useRef<HTMLDivElement>(null);
     const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
+    const { user } = useAuth();
 
     useEffect(() => {
         const handleMouseMove = (event: MouseEvent) => {
@@ -96,13 +99,24 @@ export function DashboardHeader({ userName, onCreateCourse }: DashboardHeaderPro
                 <div className="absolute top-1/3 left-10 w-24 h-24 bg-gradient-to-r from-purple-400/10 to-pink-400/10 rounded-full blur-xl animate-pulse" style={{ animationDelay: "0.5s" }} />
 
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent animate-gradient bg-[length:200%_200%]">
-                            <GlitchText text="Your Learning Hub" />
-                        </h1>
-                        <p className="text-lg text-muted-foreground">
-                            Welcome back, <GlitchText text={userName} className="font-semibold text-foreground" />! Let's continue your journey.
-                        </p>
+                    <div className="flex items-center gap-4">
+                        {user && (
+                            <motion.div
+                                initial={{ scale: 0, rotate: -180 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                            >
+                                <DashboardAvatar user={user} size="xl" />
+                            </motion.div>
+                        )}
+                        <div>
+                            <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent animate-gradient bg-[length:200%_200%]">
+                                <GlitchText text="Your Learning Hub" />
+                            </h1>
+                            <p className="text-lg text-muted-foreground">
+                                Welcome back, <GlitchText text={userName} className="font-semibold text-foreground" />! Let's continue your journey.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
