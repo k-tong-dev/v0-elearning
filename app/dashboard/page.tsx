@@ -4,17 +4,17 @@ import React, { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { motion } from "framer-motion"
 import { useAuth } from "@/hooks/use-auth"
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader"
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview"
 import { DashboardMyCourses } from "@/components/dashboard/DashboardMyCourses"
-import { DashboardCombinedEnrollments } from "@/components/dashboard/DashboardCombinedEnrollments" // Import new combined component
+import { DashboardCombinedEnrollments } from "@/components/dashboard/DashboardCombinedEnrollments"
 import { DashboardAnalytics } from "@/components/dashboard/DashboardAnalytics"
 import { DashboardSettings } from "@/components/dashboard/DashboardSettings"
 import CreateCourseForm from "@/components/dashboard/CreateCourseForm"
-import { DashboardExpenditure } from "@/components/dashboard/DashboardExpenditure" // Import new component
+import { DashboardExpenditure } from "@/components/dashboard/DashboardExpenditure"
 import {
     Users,
     BookOpen,
@@ -22,21 +22,14 @@ import {
     Star,
     MessageCircle,
     ThumbsUp,
-    Menu,
-    ChevronDown,
     LayoutDashboard,
     BarChart3,
     Settings,
     GraduationCap,
-    CreditCard, // New icon for expenditure
+    CreditCard,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { FloatingDock, DockIcon } from "@/components/ui/floating-dock";
+import { FaRegUser, FaCog, FaCrown } from "react-icons/fa"; // Import react-icons
 
 // Interfaces for mock data
 interface DashboardStats {
@@ -71,7 +64,7 @@ interface Enrollment {
     id: string
     courseId: string
     courseTitle: string
-    studentId: string // Added studentId for linking
+    studentId: string
     studentName: string
     studentAvatar: string
     enrolledAt: string
@@ -102,24 +95,41 @@ function DashboardContent() {
     const [selectedTab, setSelectedTab] = useState(initialTab)
     const [showCreateCourseForm, setShowCreateCourseForm] = useState(initialCreateCourse && initialTab === 'my-courses')
 
+    // State for settings sub-tabs, now managed here
+    const [activeSettingsSection, setActiveSettingsSection] = useState<"profile" | "notifications" | "limits">("profile");
+
+    useEffect(() => {
+        const tab = searchParams?.get("tab")
+        const create = searchParams?.get("create") === "true"
+        const settingsSection = searchParams?.get("section") as any;
+
+        if (tab) {
+            setSelectedTab(tab)
+            setShowCreateCourseForm(create && tab === 'my-courses')
+        }
+        if (settingsSection && ["profile", "notifications", "limits"].includes(settingsSection)) {
+            setActiveSettingsSection(settingsSection);
+        } else if (tab === "settings") {
+            setActiveSettingsSection("profile"); // Default to profile if settings tab is active but no section specified
+        }
+    }, [searchParams])
+
     // Define tabs configuration with icons
     const tabsConfig = [
         { value: "overview", label: "Overview", icon: LayoutDashboard },
-        { value: "enrollments", label: "Enrollments", icon: GraduationCap }, // Changed label and icon
+        { value: "enrollments", label: "Enrollments", icon: GraduationCap },
         { value: "my-courses", label: "My Courses", icon: BookOpen },
         { value: "expenditure", label: "Expenditure", icon: CreditCard },
         { value: "analytics", label: "Analytics", icon: BarChart3 },
         { value: "settings", label: "Settings", icon: Settings },
     ]
 
-    useEffect(() => {
-        const tab = searchParams?.get("tab")
-        const create = searchParams?.get("create") === "true"
-        if (tab) {
-            setSelectedTab(tab)
-            setShowCreateCourseForm(create && tab === 'my-courses')
-        }
-    }, [searchParams])
+    const settingsTabsConfig = [
+        { value: "profile", label: "Profile", icon: FaRegUser },
+        { value: "setting", label: "Setting", icon: FaCog },
+        { value: "limits", label: "Limits", icon: FaCrown },
+    ];
+
 
     // Mock data for dashboard
     const stats: DashboardStats = {
@@ -214,7 +224,7 @@ function DashboardContent() {
             rating: 4.9,
             createdAt: "2024-01-01",
             lastUpdated: "2024-01-15",
-            thumbnailUrl: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&h=200&fit=crop",
+            thumbnailUrl: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&h=200&fit-crop",
             progress: 75,
             totalLessons: 24,
             completedLessons: 18,
@@ -258,7 +268,7 @@ function DashboardContent() {
             id: "1",
             courseId: "1",
             courseTitle: "React Fundamentals for Beginners",
-            studentId: "user-john-smith", // Added studentId
+            studentId: "user-john-smith",
             studentName: "John Smith",
             studentAvatar: "/images/Avatar.jpg",
             enrolledAt: "2024-01-28",
@@ -270,7 +280,7 @@ function DashboardContent() {
             id: "2",
             courseId: "2",
             courseTitle: "JavaScript ES6+ Complete Guide",
-            studentId: "user-maria-garcia", // Added studentId
+            studentId: "user-maria-garcia",
             studentName: "Maria Garcia",
             studentAvatar: "/images/Avatar.jpg",
             enrolledAt: "2024-01-27",
@@ -282,7 +292,7 @@ function DashboardContent() {
             id: "3",
             courseId: "1",
             courseTitle: "React Fundamentals for Beginners",
-            studentId: "user-alex-johnson", // Added studentId
+            studentId: "user-alex-johnson",
             studentName: "Alex Johnson",
             studentAvatar: "/images/Avatar.jpg",
             enrolledAt: "2024-01-26",
@@ -303,8 +313,18 @@ function DashboardContent() {
 
     const handleTabChange = (tab: string) => {
         setSelectedTab(tab)
-        router.push(`/dashboard?tab=${tab}`)
+        // If switching to settings tab, ensure a default section is set
+        if (tab === "settings" && !searchParams?.get("section")) {
+            router.push(`/dashboard?tab=${tab}&section=profile`)
+        } else {
+            router.push(`/dashboard?tab=${tab}`)
+        }
     }
+
+    const handleSettingsSectionChange = (section: "profile" | "setting" | "limits") => {
+        setActiveSettingsSection(section);
+        router.push(`/dashboard?tab=settings&section=${section}`);
+    };
 
     const handleCreateCourseClick = () => {
         setSelectedTab("my-courses")
@@ -333,7 +353,8 @@ function DashboardContent() {
     return (
         <main className="pt-24 pb-8 px-4 sm:px-6 lg:px-8">
             <div className="container mx-auto">
-                <DashboardHeader userName={user.name} onCreateCourse={handleCreateCourseClick} />
+
+                <DashboardHeader userName={user.name}/>
 
                 <motion.div
                     key={selectedTab + (showCreateCourseForm ? '-create' : '-list')}
@@ -343,54 +364,7 @@ function DashboardContent() {
                     className="space-y-6"
                 >
                     <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
-                        {/* Desktop TabsList */}
-                        <TabsList className="hidden md:flex md:flex-nowrap md:overflow-x-auto w-full h-auto p-1 bg-muted/50 rounded-xl shadow-inner mb-6 px-4">
-                            {tabsConfig.map((tab) => {
-                                const IconComponent = tab.icon
-                                return (
-                                    <TabsTrigger
-                                        key={tab.value}
-                                        value={tab.value}
-                                        className="flex-shrink-0 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-lg transition-all duration-200 hover:scale-[1.02] flex items-center gap-3 data-[state=active]:dark:bg-gradient-to-r data-[state=active]:dark:from-cyan-500 data-[state=active]:dark:to-emerald-500 data-[state=active]:dark:text-white"
-                                    >
-                                        <IconComponent className="w-4 h-4" />
-                                        {tab.label}
-                                    </TabsTrigger>
-                                )
-                            })}
-                        </TabsList>
-
-                        {/* Mobile Dropdown for Tabs */}
-                        <div className="md:hidden mb-6">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className="w-full justify-between bg-gradient-to-r from-cyan-500 to-emerald-500 text-white border-transparent hover:from-cyan-600 hover:to-emerald-600 dark:from-cyan-700 dark:to-emerald-700 dark:hover:from-cyan-800 dark:hover:to-emerald-800 transition-all duration-300 hover:shadow-lg hover:shadow-primary/25"
-                                    >
-                                        <Menu className="w-4 h-4 mr-2" />
-                                        {tabsConfig.find((tab) => tab.value === selectedTab)?.label || "Select Tab"}
-                                        <ChevronDown className="w-4 h-4 ml-2" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] glass-enhanced border border-primary/30 text-foreground dark:border-primary/50 shadow-lg">
-                                    {tabsConfig.map((tab) => {
-                                        const IconComponent = tab.icon
-                                        return (
-                                            <DropdownMenuItem
-                                                key={tab.value}
-                                                onClick={() => handleTabChange(tab.value)}
-                                                className="hover:bg-primary/10 dark:hover:bg-primary/20 text-foreground dark:text-foreground hover:text-primary dark:hover:text-primary transition-colors duration-200 flex items-center gap-2"
-                                            >
-                                                <IconComponent className="w-4 h-4" />
-                                                {tab.label}
-                                            </DropdownMenuItem>
-                                        )
-                                    })}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-
+                        {/* TabsContent for each section */}
                         <TabsContent value="overview" className="mt-0">
                             <DashboardOverview
                                 stats={stats}
@@ -442,8 +416,8 @@ function DashboardContent() {
                                     settings: (user as any).settings || {},
                                     skills: (user as any).settings?.skills || [],
                                     badgeIds: (user as any)?.badgeIds || [],
-                                    followers: user.followers, // Pass followers
-                                    following: user.following, // Pass following
+                                    followers: user.followers,
+                                    following: user.following,
                                 }}
                                 stats={{
                                     coursesCreated: stats.coursesCreated,
@@ -451,11 +425,52 @@ function DashboardContent() {
                                     totalRevenue: stats.totalRevenue,
                                     completionRate: stats.completionRate
                                 }}
+                                activeSection={activeSettingsSection} // Pass active section
                             />
                         </TabsContent>
                     </Tabs>
                 </motion.div>
             </div>
+
+            {/* Floating Dock Menu for main tabs */}
+            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+                <FloatingDock>
+                    {tabsConfig.map((tab) => {
+                        const IconComponent = tab.icon;
+                        return (
+                            <DockIcon
+                                key={tab.value}
+                                label={tab.label}
+                                active={selectedTab === tab.value}
+                                onClick={() => handleTabChange(tab.value)}
+                            >
+                                <IconComponent className={`w-6 h-6 ${selectedTab === tab.value ? "text-white" : "group-hover:text-white"}`} />
+                            </DockIcon>
+                        );
+                    })}
+                </FloatingDock>
+            </div>
+
+            {/*/!* Floating Dock Menu for settings sub-tabs (only show if settings tab is active) *!/*/}
+            {/*{selectedTab === "settings" && (*/}
+            {/*    <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50">*/}
+            {/*        <FloatingDock>*/}
+            {/*            {settingsTabsConfig.map((section) => {*/}
+            {/*                const IconComponent = section.icon;*/}
+            {/*                return (*/}
+            {/*                    <DockIcon*/}
+            {/*                        key={section.value}*/}
+            {/*                        label={section.label}*/}
+            {/*                        active={activeSettingsSection === section.value}*/}
+            {/*                        onClick={() => handleSettingsSectionChange(section.value as any)}*/}
+            {/*                    >*/}
+            {/*                        <IconComponent className={`w-6 h-6 ${activeSettingsSection === section.value ? "text-white" : "text-white/70 group-hover:text-white"}`} />*/}
+            {/*                    </DockIcon>*/}
+            {/*                );*/}
+            {/*            })}*/}
+            {/*        </FloatingDock>*/}
+            {/*    </div>*/}
+            {/*)}*/}
         </main>
     )
 }

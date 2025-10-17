@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@heroui/react"
@@ -33,6 +33,9 @@ import {
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
+import {AnimatedModalDemo} from "@/Tests/test-modal";
+import {Modal, ModalBody, ModalContent, ModalFooter, ModalTrigger} from "@/components/ui/aceternity/animated-modal";
+import {motion} from "motion/react";
 
 export function Header() {
     const router = useRouter()
@@ -271,7 +274,7 @@ export function Header() {
                             ) : isAuthenticated && user ? (
                                 <DropdownMenu open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="min-w-0 relative h-10 w-10 rounded-full hover:bg-accent/20">
+                                        <Button variant="ghost" className="border-none !border-medium min-w-0 relative h-10 w-10 rounded-full hover:bg-accent/20">
                                             <UserMenuAvatar 
                                                 user={user} 
                                                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}

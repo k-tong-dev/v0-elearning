@@ -114,7 +114,7 @@ export function EnhancedAvatar({
     >
       {/* Glow effect */}
       {glow && (
-        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 blur-md animate-pulse" />
+        <div className="absolute inset-0 rounded-full bg-gradient-to-r glass-enhanced blur-md animate-pulse" />
       )}
 
       {/* Main avatar */}
@@ -131,7 +131,7 @@ export function EnhancedAvatar({
           alt={alt}
           className="object-cover transition-all duration-300 hover:scale-110"
         />
-        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-primary font-semibold">
+        <AvatarFallback className="text-primary font-semibold">
           {fallback || "U"}
         </AvatarFallback>
       </Avatar>

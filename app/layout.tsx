@@ -4,17 +4,17 @@ import {GeistSans} from "geist/font/sans"
 import {GeistMono} from "geist/font/mono"
 import {ThemeProvider} from "@/components/theme-provider"
 import {AuthProvider} from "@/hooks/use-auth"
+
 import "./globals.css"
 
 import { Toaster } from "sonner"
-import { ChatWidget } from "@/components/chat-widget" // Import ChatWidget
+import { ChatWidget } from "@/components/chat-widget"
 
 
 export const metadata: Metadata = {
     title: "CamEducation",
     description: "Modern eLearning platform with cutting-edge courses and interactive learning experiences",
     generator: "Tong",
-    icons:'../../public/ui-ux-design-concept.png',
     appleWebApp: true,
     publisher: "CamEducation",
     appLinks: {},
@@ -26,10 +26,15 @@ export const metadata: Metadata = {
         url: "https://khontong.vercel.app",
     },
     category: 'eLearning',
-    creator: 'Khon Tong',
+    creator: 'KHON TONG',
     robots: {
         index: true,
         follow: true,
+    },
+    icons: {
+        icon: "/camedu-logo.png",
+        shortcut: "/camedu-logo.png",
+        apple: "/camedu-logo.png",
     },
 }
 

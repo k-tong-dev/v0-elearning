@@ -1,125 +1,101 @@
 "use client"
 
-import React, { useRef, useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { motion } from "framer-motion"
-import { AnimatedShape } from "./AnimatedShape"
-import { GlitchText } from './GlitchText'
-import { DashboardAvatar } from "@/components/ui/enhanced-avatar"
-import { useAuth } from "@/hooks/use-auth"
+import React, {useRef, useEffect, useState} from "react"
+import {motion} from "framer-motion"
+import {useAuth} from "@/hooks/use-auth"
 
 interface DashboardHeaderProps {
     userName: string
-    onCreateCourse: () => void
 }
 
-export function DashboardHeader({ userName, onCreateCourse }: DashboardHeaderProps) {
-    const headerRef = useRef<HTMLDivElement>(null);
-    const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
-    const { user } = useAuth();
+export function DashboardHeader({userName}: DashboardHeaderProps) {
+    const {user} = useAuth()
+    const headerRef = useRef<HTMLDivElement>(null)
+    const [pos, setPos] = useState({x: 50, y: 50})
 
+    // Mouse light parallax effect
     useEffect(() => {
-        const handleMouseMove = (event: MouseEvent) => {
-            if (headerRef.current) {
-                const rect = headerRef.current.getBoundingClientRect();
-                const x = ((event.clientX - rect.left) / rect.width) * 100;
-                const y = ((event.clientY - rect.top) / rect.height) * 100;
-                setMousePosition({ x, y });
-            }
-        };
-
-        const currentRef = headerRef.current;
-        if (currentRef) {
-            currentRef.addEventListener('mousemove', handleMouseMove);
+        const handleMove = (e: MouseEvent) => {
+            if (!headerRef.current) return
+            const rect = headerRef.current.getBoundingClientRect()
+            const x = ((e.clientX - rect.left) / rect.width) * 100
+            const y = ((e.clientY - rect.top) / rect.height) * 100
+            setPos({x, y})
         }
-
-        return () => {
-            if (currentRef) {
-                currentRef.removeEventListener('mousemove', handleMouseMove);
-            }
-        };
-    }, []);
+        window.addEventListener("mousemove", handleMove)
+        return () => window.removeEventListener("mousemove", handleMove)
+    }, [])
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+        <motion.header
+            ref={headerRef}
+            initial={{opacity: 0, y: -30}}
+            animate={{opacity: 1, y: 0}}
+            transition={{duration: 0.8, ease: "easeOut"}}
+            className="
+        relative mb-10 overflow-hidden rounded-3xl
+        border border-white/20
+        bg-white/10 backdrop-blur-2xl
+        shadow-[0_10px_40px_rgba(0,0,0,0.05)]
+        dark:border-white/10
+        dark:bg-white/5
+        dark:shadow-[0_10px_40px_rgba(255,255,255,0.05)]
+      "
+            style={{
+                background: `radial-gradient(circle at ${pos.x}% ${pos.y}%, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.05) 70%)`,
+            }}
         >
+            {/* --- Animated Liquid Blobs --- */}
+            <motion.div
+                className="absolute -top-24 -left-20 w-[500px] h-[500px] bg-gradient-to-br from-sky-400/40 via-purple-300/30 to-pink-400/40 dark:from-blue-500/20 dark:via-indigo-400/20 dark:to-purple-500/20 blur-3xl rounded-full"
+                animate={{
+                    x: [0, 40, -40, 0],
+                    y: [0, 25, -25, 0],
+                    scale: [1, 1.1, 0.95, 1],
+                    borderRadius: [
+                        "50%",
+                        "55% 45% 60% 40%",
+                        "45% 55% 40% 60%",
+                        "50%"
+                    ],
+                }}
+                transition={{repeat: Infinity, duration: 18, ease: "easeInOut"}}
+            />
+            <motion.div
+                className="absolute bottom-[-100px] right-[-100px] w-[400px] h-[400px] bg-gradient-to-tr from-indigo-400/40 via-blue-300/30 to-teal-400/40 dark:from-indigo-500/20 dark:via-blue-400/20 dark:to-cyan-500/20 blur-3xl rounded-full"
+                animate={{
+                    x: [0, -30, 30, 0],
+                    y: [0, -20, 20, 0],
+                    scale: [1, 1.15, 0.9, 1],
+                    borderRadius: ["50%", "60% 40% 50% 50%", "40% 60% 50% 50%", "50%"],
+                }}
+                transition={{repeat: Infinity, duration: 16, ease: "easeInOut"}}
+            />
+
+            {/* --- Header Content --- */}
             <div
-                ref={headerRef}
-                className="relative p-8 rounded-2xl overflow-hidden glass-enhanced border-2 border-primary/20 shadow-xl animate-glass-pulse animate-shimmer-border"
-                style={{
-                    '--mouse-x': `${mousePosition.x}%`,
-                    '--mouse-y': `${mousePosition.y}%`,
-                } as React.CSSProperties}
-            >
-                {/* Animated background elements */}
-                <div className="absolute inset-0 animated-grid-background animate-gradient-radial"></div>
-                {/* New Scanline Overlay */}
-                <div className="scanline-overlay"></div>
-
-                {/* Floating animated shapes (cubes/circles) */}
-                <AnimatedShape size="md" x="10%" y="20%" rotate={0} delay={0} shape="circle" color="bg-cyan-500/20" />
-                <AnimatedShape size="lg" x="80%" y="10%" rotate={45} delay={2} shape="square" color="bg-emerald-500/20" />
-                <AnimatedShape size="sm" x="25%" y="70%" rotate={90} delay={4} shape="square" color="bg-purple-500/20" />
-                <AnimatedShape size="xl" x="50%" y="50%" rotate={135} delay={6} shape="circle" color="bg-pink-500/20" />
-                <AnimatedShape size="md" x="5%" y="90%" rotate={180} delay={8} shape="square" color="bg-blue-500/20" />
-                <AnimatedShape size="lg" x="90%" y="80%" rotate={225} delay={10} shape="circle" color="bg-orange-500/20" />
-                {/* Additional Animated Shapes - Group 1 */}
-                <AnimatedShape size="sm" x="40%" y="5%" rotate={30} delay={1} shape="circle" color="bg-emerald-500/15" />
-                <AnimatedShape size="md" x="15%" y="45%" rotate={60} delay={3} shape="square" color="bg-purple-500/15" />
-                <AnimatedShape size="lg" x="70%" y="60%" rotate={100} delay={5} shape="circle" color="bg-cyan-500/15" />
-                <AnimatedShape size="xl" x="30%" y="85%" rotate={160} delay={7} shape="square" color="bg-pink-500/15" />
-                <AnimatedShape size="sm" x="60%" y="25%" rotate={200} delay={9} shape="square" color="bg-blue-500/15" />
-                <AnimatedShape size="md" x="85%" y="35%" rotate={250} delay={11} shape="circle" color="bg-orange-500/15" />
-                {/* Additional Animated Shapes - Group 2 */}
-                <AnimatedShape size="xs" x="5%" y="5%" rotate={10} delay={0.5} shape="circle" color="bg-cyan-500/10" />
-                <AnimatedShape size="sm" x="95%" y="95%" rotate={200} delay={1.5} shape="square" color="bg-emerald-500/10" />
-                <AnimatedShape size="md" x="35%" y="15%" rotate={70} delay={2.5} shape="circle" color="bg-purple-500/10" />
-                <AnimatedShape size="lg" x="65%" y="85%" rotate={110} delay={3.5} shape="square" color="bg-pink-500/10" />
-                <AnimatedShape size="xl" x="15%" y="60%" rotate={150} delay={4.5} shape="circle" color="bg-blue-500/10" />
-                <AnimatedShape size="xs" x="80%" y="40%" rotate={270} delay={5.5} shape="square" color="bg-orange-500/10" />
-                <AnimatedShape size="sm" x="20%" y="95%" rotate={10} delay={6.5} shape="circle" color="bg-emerald-500/10" />
-                <AnimatedShape size="md" x="75%" y="5%" rotate={190} delay={7.5} shape="square" color="bg-cyan-500/10" />
-
-                {/* Animated Particles (Pinging Dots) */}
-                <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-cyan-400 rounded-full animate-ping" style={{ animationDelay: "0s" }} />
-                <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-emerald-400 rounded-full animate-ping" style={{ animationDelay: "1s" }} />
-                <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-blue-400 rounded-full animate-ping" style={{ animationDelay: "2s" }} />
-                <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-purple-400 rounded-full animate-ping" style={{ animationDelay: "0.5s" }} />
-                <div className="absolute bottom-10 right-20 w-2 h-2 bg-pink-400 rounded-full animate-ping" style={{ animationDelay: "1.5s" }} />
-
-                {/* Gradient Orbs (Blurring Pulsing Circles) */}
-                <div className="absolute top-10 right-1/4 w-32 h-32 bg-gradient-to-r from-cyan-400/10 to-emerald-400/10 rounded-full blur-xl animate-pulse" />
-                <div className="absolute bottom-10 left-1/4 w-40 h-40 bg-gradient-to-r from-emerald-400/10 to-blue-400/10 rounded-full blur-xl animate-pulse" style={{ animationDelay: "1s" }} />
-                <div className="absolute top-1/3 left-10 w-24 h-24 bg-gradient-to-r from-purple-400/10 to-pink-400/10 rounded-full blur-xl animate-pulse" style={{ animationDelay: "0.5s" }} />
-
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        {user && (
-                            <motion.div
-                                initial={{ scale: 0, rotate: -180 }}
-                                animate={{ scale: 1, rotate: 0 }}
-                                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                            >
-                                <DashboardAvatar user={user} size="xl" />
-                            </motion.div>
-                        )}
-                        <div>
-                            <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent animate-gradient bg-[length:200%_200%]">
-                                <GlitchText text="Your Learning Hub" />
-                            </h1>
-                            <p className="text-lg text-muted-foreground">
-                                Welcome back, <GlitchText text={userName} className="font-semibold text-foreground" />! Let's continue your journey.
-                            </p>
-                        </div>
+                className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between p-8 md:p-12 gap-6">
+                <div className="flex items-center gap-6">
+                    <div>
+                        <motion.h1
+                            className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-sky-500 via-purple-500 to-pink-400 bg-clip-text text-transparent dark:from-indigo-300 dark:via-blue-300 dark:to-purple-300"
+                            initial={{opacity: 0, x: -40}}
+                            animate={{opacity: 1, x: 0}}
+                            transition={{delay: 0.4, duration: 0.7}}
+                        >
+                            Welcome, {userName}!
+                        </motion.h1>
+                        <motion.p
+                            className="text-lg text-black/60 dark:text-white/70 mt-2 font-medium"
+                            initial={{opacity: 0, x: -40}}
+                            animate={{opacity: 1, x: 0}}
+                            transition={{delay: 0.5, duration: 0.7}}
+                        >
+                            Good to see you back. Your dashboard is ready.
+                        </motion.p>
                     </div>
                 </div>
             </div>
-        </motion.div>
+        </motion.header>
     )
 }
