@@ -50,12 +50,12 @@ export function AvatarUploadField({
     };
 
     const handleButtonClick = () => {
-        fileInputRef.current?.click(); // Programmatically click the hidden file input
+        fileInputRef.current?.click();
     };
 
     return (
         <div className="flex flex-col items-center gap-4">
-            <Avatar className="w-24 h-24 border-4 border-primary shadow-md avatar-border-gradient"> {/* Applied avatar-border-gradient */}
+            <Avatar className="w-24 h-24 border-4 border-primary shadow-md avatar-border-gradient">
                 <AvatarImage src={avatar || "/placeholder-user.jpg"} />
                 <AvatarFallback>
                     {name.split(" ").map((n) => n[0]).join("")}

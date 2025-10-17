@@ -6,6 +6,7 @@ import {ThemeProvider} from "@/components/theme-provider"
 import {AuthProvider} from "@/hooks/use-auth"
 
 import "./globals.css"
+import "./fonts.css"
 
 import { Toaster } from "sonner"
 import { ChatWidget } from "@/components/chat-widget"

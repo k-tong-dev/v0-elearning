@@ -35,13 +35,11 @@ export async function POST(request: NextRequest) {
                 headers: {
                     Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
                     'HTTP-Referer': 'https://camedu.vercel.app',
-                    'X-Title': 'CamEdu AI Chat',
                 },
             }
         );
 
         const botMessage = response.data.choices[0].message.content;
-        console.log(">>>>>>>> response: ", response);
         return NextResponse.json({ response: botMessage });
     } catch (error: any) {
         console.error('Error calling OpenRouter API:', error);
