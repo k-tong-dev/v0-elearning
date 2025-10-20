@@ -17,7 +17,14 @@ interface ShareFormProps {
 export default function ShareForm({ title, url, isOpen, onOpenChange }: ShareFormProps) {
     const handleShare = (platform: string) => {
         if (typeof window === "undefined") {
-            toast.error("Sharing is not available in this environment.")
+            toast.error("Sharing is not available in this environment.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             return
         }
 
@@ -44,11 +51,25 @@ export default function ShareForm({ title, url, isOpen, onOpenChange }: ShareFor
                 navigator.clipboard
                     .writeText(url)
                     .then(() => {
-                        toast.success("Link copied to clipboard!")
+                        toast.success("Link copied to clipboard!", {
+                            position: "top-center",
+                            action: {
+                                label: "Close",
+                                onClick: () => {},
+                            },
+                            closeButton: false,
+                        })
                         onOpenChange(false)
                     })
                     .catch(() => {
-                        toast.error("Failed to copy link.")
+                        toast.error("Failed to copy link.", {
+                            position: "top-center",
+                            action: {
+                                label: "Close",
+                                onClick: () => {},
+                            },
+                            closeButton: false,
+                        })
                     })
                 return
             default:

@@ -47,7 +47,14 @@ function PreferencesContent() {
 
     useEffect(() => {
         if (!userId) {
-            toast.error("User ID missing for preferences setup. Redirecting to home.")
+            toast.error("User ID missing for preferences setup. Redirecting to home.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             router.push("/")
         }
     }, [userId, router])
@@ -131,7 +138,14 @@ function PreferencesContent() {
                 throw new Error(data.error || "Failed to save preferences.")
             }
 
-            toast.success("Preferences saved successfully! Welcome to CamEdu.")
+            toast.success("Preferences saved successfully! Welcome to CamEdu.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             await refreshUser() // Refresh user context to get updated role/preferences
             router.push("/dashboard") // Redirect to dashboard on success
         } catch (err: any) {

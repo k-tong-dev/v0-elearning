@@ -44,21 +44,49 @@ export function CourseRatingForm({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (hasRated) {
-            toast.info("You have already rated this course.")
+            toast.info("You have already rated this course.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             return
         }
         if (currentRating === 0) {
-            toast.error("Please select a star rating.")
+            toast.error("Please select a star rating.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             return
         }
 
         setIsSubmitting(true)
         try {
             await onSubmit(currentRating, commentText)
-            toast.success("Your review has been submitted!")
+            toast.success("Your review has been submitted!", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         } catch (error) {
             console.error("Failed to submit review:", error)
-            toast.error("Failed to submit review. Please try again.")
+            toast.error("Failed to submit review. Please try again.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         } finally {
             setIsSubmitting(false)
         }

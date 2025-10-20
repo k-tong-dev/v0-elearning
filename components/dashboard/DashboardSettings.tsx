@@ -149,7 +149,14 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
             setFormData(prev => ({...prev, avatar: objectUrl}))
 
             if (!user?.id) {
-                toast.error("User not authenticated.")
+                toast.error("User not authenticated.", {
+                    position: "top-center",
+                    action: {
+                        label: "Close",
+                        onClick: () => {},
+                    },
+                    closeButton: false,
+                })
                 return
             }
 
@@ -179,10 +186,24 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
             }
 
             await refreshUser()
-            toast.success("Avatar updated successfully!")
+            toast.success("Avatar updated successfully!", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         } catch (error: any) {
             console.error("Avatar update error:", error)
-            toast.error(error.message || "Failed to update avatar")
+            toast.error(error.message || "Failed to update avatar", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         } finally {
             setIsUploadingAvatar(false)
         }
@@ -213,7 +234,14 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
     const handleSaveProfile = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!user?.id) {
-            toast.error("User not authenticated.")
+            toast.error("User not authenticated.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             return
         }
 
@@ -247,10 +275,24 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
             }
 
             await refreshUser()
-            toast.success("Profile updated successfully!")
+            toast.success("Profile updated successfully!", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         } catch (error: any) {
             console.error("Error updating profile:", error)
-            toast.error(error.message || "Failed to update profile.")
+            toast.error(error.message || "Failed to update profile.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         } finally {
             setIsSavingProfile(false)
         }
@@ -258,7 +300,14 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
 
     const handleSaveNotifications = async () => {
         if (!user?.id) {
-            toast.error("User not authenticated.")
+            toast.error("User not authenticated.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             return
         }
 
@@ -295,11 +344,25 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
             }
 
             const data = await response.json()
-            toast.success("Notification settings updated successfully!")
+            toast.success("Notification settings updated successfully!", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             await refreshUser()
         } catch (error: any) {
             console.error("Error updating notification settings:", error)
-            toast.error(error.message || "Failed to update notification settings.")
+            toast.error(error.message || "Failed to update notification settings.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         } finally {
             setIsSavingNotifications(false)
         }

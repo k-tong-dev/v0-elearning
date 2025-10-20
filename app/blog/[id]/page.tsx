@@ -427,13 +427,27 @@ Happy coding!
   const handleLike = () => {
     setIsLiked(!isLiked)
     setPost(prev => prev ? { ...prev, likes: prev.likes + (isLiked ? -1 : 1) } : null)
-    toast.success(isLiked ? "Unliked post" : "Liked post!")
+    toast.success(isLiked ? "Unliked post" : "Liked post!", {
+      position: "top-center",
+      action: {
+        label: "Close",
+        onClick: () => {},
+      },
+      closeButton: false,
+    })
   }
 
   const handleBookmark = () => {
     setIsBookmarked(!isBookmarked)
     setPost(prev => prev ? { ...prev, bookmarks: prev.bookmarks + (isBookmarked ? -1 : 1) } : null)
-    toast.success(isBookmarked ? "Removed from bookmarks" : "Bookmarked post!")
+    toast.success(isBookmarked ? "Removed from bookmarks" : "Bookmarked post!", {
+      position: "top-center",
+      action: {
+        label: "Close",
+        onClick: () => {},
+      },
+      closeButton: false,
+    })
   }
 
   const handleShare = (platform: string) => {
@@ -453,7 +467,14 @@ Happy coding!
         break
       case "copy":
         navigator.clipboard.writeText(url)
-        toast.success("Link copied to clipboard!")
+        toast.success("Link copied to clipboard!", {
+          position: "top-center",
+          action: {
+            label: "Close",
+            onClick: () => {},
+          },
+          closeButton: false,
+        })
         setShowShareDialog(false)
         return
     }
@@ -467,18 +488,39 @@ Happy coding!
   const handleReportSubmit = () => {
     if (reportReason.trim()) {
       console.log(`Reporting blog post ${postId} for reason: ${reportReason}`);
-      toast.success("Blog post reported successfully. We'll review it shortly.");
+      toast.success("Blog post reported successfully. We'll review it shortly.", {
+        position: "top-center",
+        action: {
+          label: "Close",
+          onClick: () => {},
+        },
+        closeButton: false,
+      });
       setReportReason("");
       setShowReportDialog(false);
     } else {
-      toast.error("Please provide a reason for reporting.");
+      toast.error("Please provide a reason for reporting.", {
+        position: "top-center",
+        action: {
+          label: "Close",
+          onClick: () => {},
+        },
+        closeButton: false,
+      });
     }
   }
 
   const handleCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!newCommentContent.trim()) {
-      toast.error("Comment cannot be empty.");
+      toast.error("Comment cannot be empty.", {
+        position: "top-center",
+        action: {
+          label: "Close",
+          onClick: () => {},
+        },
+        closeButton: false,
+      });
       return;
     }
 
@@ -506,12 +548,26 @@ Happy coding!
     setComments(prev => [...prev, newComment]);
     setPost(prev => prev ? { ...prev, comments: prev.comments + 1 } : null);
     setNewCommentContent("");
-    toast.success("Comment posted successfully!");
+    toast.success("Comment posted successfully!", {
+      position: "top-center",
+      action: {
+        label: "Close",
+        onClick: () => {},
+      },
+      closeButton: false,
+    });
   }
 
   const handleReplySubmit = (commentId: string) => {
     if (!replyContent.trim()) {
-      toast.error("Reply cannot be empty.");
+      toast.error("Reply cannot be empty.", {
+        position: "top-center",
+        action: {
+          label: "Close",
+          onClick: () => {},
+        },
+        closeButton: false,
+      });
       return;
     }
 
@@ -541,7 +597,14 @@ Happy coding!
     setPost(prev => prev ? { ...prev, comments: prev.comments + 1 } : null); // Increment total comments count
     setReplyContent("");
     setReplyingTo(null);
-    toast.success("Reply posted successfully!");
+    toast.success("Reply posted successfully!", {
+      position: "top-center",
+      action: {
+        label: "Close",
+        onClick: () => {},
+      },
+      closeButton: false,
+    });
   }
 
   const toggleCommentExpansion = (commentId: string) => {
@@ -562,7 +625,14 @@ Happy coding!
 
   const handleFollowAuthor = () => {
     setIsFollowingAuthor(!isFollowingAuthor)
-    toast.success(isFollowingAuthor ? "Unfollowed author" : "Following author!")
+    toast.success(isFollowingAuthor ? "Unfollowed author" : "Following author!", {
+      position: "top-center",
+      action: {
+        label: "Close",
+        onClick: () => {},
+      },
+      closeButton: false,
+    })
   }
 
   const formatDate = (dateString: string) => {
@@ -606,7 +676,14 @@ Happy coding!
                       variant="ghost"
                       size="sm"
                       className={`h-6 px-2 ${comment.isLiked ? 'text-red-500' : ''}`}
-                      onClick={() => toast.info("Like comment functionality coming soon!")} // Placeholder
+                      onClick={() => toast.info("Like comment functionality coming soon!", {
+                        position: "top-center",
+                        action: {
+                          label: "Close",
+                          onClick: () => {},
+                        },
+                        closeButton: false,
+                      })} // Placeholder
                   >
                     <Heart className="w-3 h-3 mr-1" />
                     {comment.likes}
@@ -713,7 +790,14 @@ Happy coding!
                       variant="ghost"
                       size="sm"
                       className={`h-5 px-1.5 ${reply.isLiked ? 'text-red-500' : ''}`}
-                      onClick={() => toast.info("Like reply functionality coming soon!")} // Placeholder
+                      onClick={() => toast.info("Like reply functionality coming soon!", {
+                        position: "top-center",
+                        action: {
+                          label: "Close",
+                          onClick: () => {},
+                        },
+                        closeButton: false,
+                      })} // Placeholder
                   >
                     <Heart className="w-3 h-3 mr-1" />
                     {reply.likes}

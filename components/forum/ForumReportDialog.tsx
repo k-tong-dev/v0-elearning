@@ -24,7 +24,14 @@ export function ForumReportDialog({ isOpen, onClose, itemId, itemType, onReportS
             setReportReason("");
             onClose();
         } else {
-            toast.error("Please provide a reason for reporting.");
+            toast.error("Please provide a reason for reporting.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            });
         }
     };
 

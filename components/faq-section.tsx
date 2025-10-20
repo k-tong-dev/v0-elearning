@@ -40,7 +40,7 @@ export function FAQSection() {
                 <div className="grid md:grid-cols-2 gap-10">
                     {/* Left Column - Header */}
                     <div className="text-left">
-                        <h2 className="text-3xl font-semibold mb-4 flex flex-col">
+                        <h2 className="text-3xl font-semibold mb-4 flex flex-col text-gray-500">
                             Frequently
                             <span>Asked Questions</span>
                         </h2>

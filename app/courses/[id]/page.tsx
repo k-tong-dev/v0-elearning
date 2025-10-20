@@ -29,11 +29,12 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@heroui/react"
 import Link from "next/link"
-import { CourseRatingForm } from "@/components/CourseRatingForm" // Import new rating form
-import dynamic from "next/dynamic" // Import dynamic from next/dynamic
+import { CourseRatingForm } from "@/components/courses/CourseRatingForm" // Import new rating form
+import dynamic from "next/dynamic"
+import {CoursePreviewModal} from "@/components/courses/CoursePreviewModal"; // Import dynamic from next/dynamic
 
 // Dynamically import CourseActionsDropdown to ensure it only renders on the client-side
-const CourseActionsDropdown = dynamic(() => import("@/components/CourseActionsDropdown").then(mod => mod.CourseActionsDropdown), { ssr: false });
+const CourseActionsDropdown = dynamic(() => import("@/components/courses/CourseActionsDropdown").then(mod => mod.CourseActionsDropdown), { ssr: false });
 
 export default function CourseDetailPage() {
     const params = useParams()
@@ -219,6 +220,8 @@ export default function CourseDetailPage() {
         // In a real app, you would send this update to your backend
         console.log(`Course ${course.id} is now ${isFavorite ? "unbookmarked" : "bookmarked"}`)
     }
+
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
@@ -458,7 +461,7 @@ export default function CourseDetailPage() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.6 }}
                         >
-                            <Card className="sticky top-24">
+                            <Card className="sticky top-24 py-0">
                                 <CardHeader className="p-0">
                                     <div className="relative">
                                         <img
@@ -467,10 +470,32 @@ export default function CourseDetailPage() {
                                             className="w-full h-48 object-cover rounded-t-lg"
                                         />
                                         <div className="absolute inset-0 bg-black/20 rounded-t-lg flex items-center justify-center">
-                                            <Button size="lg" className="bg-white/90 text-black hover:bg-white">
+                                            <Button
+                                                size="lg"
+                                                className="bg-white/90 text-black hover:bg-white"
+                                                onClick={() => setIsPreviewOpen(true)}
+                                            >
                                                 <Play className="w-5 h-5 mr-2" />
                                                 Preview
                                             </Button>
+
+                                            {/*<CoursePreviewModal*/}
+                                            {/*    isOpen={isPreviewOpen}*/}
+                                            {/*    onClose={() => setIsPreviewOpen(false)}*/}
+                                            {/*    courseId={course.id}*/}
+                                            {/*    courseTitle={course.title}*/}
+                                            {/*    previewUrl={course.previewUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}*/}
+                                            {/*    fileType={course.fileType || "video"}*/}
+                                            {/*/>*/}
+                                            <CoursePreviewModal
+                                                isOpen={isPreviewOpen}
+                                                onClose={() => setIsPreviewOpen(false)}
+                                                courseId={course.id}
+                                                courseTitle={course.title}
+                                                previewUrl={"https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
+                                                fileType={"video"}
+                                            />
+
                                         </div>
                                         {course.discount && (
                                             <Badge className="absolute top-4 right-4 bg-red-500 text-white">{course.discount}</Badge>

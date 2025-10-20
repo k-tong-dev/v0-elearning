@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { Header } from "@/components/header"
 import { HeroSection } from "@/components/hero-section"
-import { CoursesSection } from "@/components/courses-section"
+import { CoursesSection } from "@/components/courses/courses-section"
 import { TestimonialsSection } from "@/components/testimonials-section"
 import { FAQSection } from "@/components/faq-section"
 import { CTASection } from "@/components/cta-section"

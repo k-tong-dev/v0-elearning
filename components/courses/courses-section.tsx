@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { CourseCard } from "@/components/CourseCard"
+import { Button } from "@heroui/react"
+import { CourseCard } from "@/components/courses/CourseCard"
 import { ArrowRight } from "lucide-react"
 
 const courses = [
@@ -105,7 +105,7 @@ export function CoursesSection() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4 uppercase">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4 uppercase font-saira text-gray-500">
             Learn from the{" "}
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">best</span>
           </h2>
@@ -131,9 +131,11 @@ export function CoursesSection() {
         {/* View All Button */}
         <div className="text-center">
           <Button
-            asChild
-            size="lg"
-            className="group bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white px-8 py-4 rounded-xl transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/25 hover:scale-105 text-lg font-semibold"
+            size="md"
+            className="group text-md font-normal font-saira text-gray-500
+            hover:shadow-xl hover:scale-105
+            px-8 py-4 rounded-xl transition-all duration-300
+            bg-gray-400/10"
           >
             <Link href="/courses" className="flex items-center gap-2">
               See All Courses

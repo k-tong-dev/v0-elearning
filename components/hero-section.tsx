@@ -3,13 +3,13 @@
 import type React from "react"
 
 import {useState, useEffect} from "react"
-import {Button} from "@/components/ui/button"
+import {Button} from "@heroui/react"
 import {Input} from "@/components/ui/input"
 import {Search, Play, Star, Users, BookOpen, Award, Sparkles} from "lucide-react"
 import {useRouter} from "next/navigation"
 import {motion} from "framer-motion"
 import {LayoutTextFlip} from "@/components/ui/aceternity/layout-text-flip";
-
+import { GrLinkNext } from "react-icons/gr";
 
 export function HeroSection() {
     const [searchQuery, setSearchQuery] = useState("")
@@ -27,7 +27,7 @@ export function HeroSection() {
     const handleSearch = () => {
         if (searchQuery.trim()) {
             console.log("[v0] Searching for:", searchQuery)
-            router.push(`/courses?search=${encodeURIComponent(searchQuery)}`); // Redirect to courses page with search query
+            router.push(`/courses?search=${encodeURIComponent(searchQuery)}`);
         }
     }
 
@@ -100,16 +100,30 @@ export function HeroSection() {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="text-center mt-[100px] max-w-5xl mx-auto">
                     <div className="animate-slide-in-up" data-aos="fade-up" data-aos-duration="1000">
-                        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
-                            <span className="bg-gradient-to-r from-cyan-400 via-emerald-400 to-blue-500 bg-clip-text text-transparent animate-glow-text relative">
-                                CamEdu Learning
+                        <motion.div
+                            initial={{opacity: 0, y: 20}}
+                            animate={{opacity: 1, y: 0}}
+                            transition={{duration: 0.5}}
+                            className="mb-6"
+                        >
+                                <span className="inline-flex items-center rounded-full
+                                    bg-primary/10 px-4 py-2 text-sm font-medium text-primary
+                                    dark:bg-none dark:border-1 dark:border-cyan-500 dark:text-white">
+                                    <Sparkles className="mr-2 h-4 w-4"/>
+                                    New courses added weekly
+                                </span>
+                        </motion.div>
+                        <h1 className="text-5xl lg:text-7xl font-bold mb-8 leading-tight">
+                            <span className="font-saira bg-gradient-to-r from-cyan-400 via-emerald-400 to-blue-500 bg-clip-text text-transparent animate-glow-text relative">
+                                Camedu Learning
                                 <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400/20 via-emerald-400/20 to-blue-500/20 rounded-lg blur opacity-30 animate-pulse"/>
                             </span>
                             <span className="block mb-4"></span>
                             <motion.div
-                                className="font-saira relative mx-4 my-4 flex flex-col items-center justify-center gap-4 text-center sm:mx-0 sm:mb-0 sm:flex-row">
+                                className="font-saira text-gray-400 relative mx-4 my-4 flex flex-col items-center justify-center gap-4 text-center sm:mx-0 sm:mb-0 sm:flex-row">
                                 <LayoutTextFlip
-                                    text="Transform Your Future with"
+                                    className="text-cyan-600"
+                                    text="Unlock Potential With"
                                     words={[
                                         "Fight Club",
                                         "The Matrix",
@@ -131,15 +145,13 @@ export function HeroSection() {
                     </div>
 
                     <div
-                        className="animate-slide-in-up"
+                        className="animate-slide-in-up font-saira"
                         data-aos="fade-up"
                         data-aos-delay="200"
                         style={{animationDelay: "0.2s"}}
                     >
                         <p className="text-xl sm:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed font-light">
-                            Join thousands of learners worldwide in mastering new skills with our interactive courses,
-                            expert
-                            instructors, and cutting-edge learning technology.
+                            Join thousands worldwide to master skills with interactive courses, expert instructors, and advanced tech.
                         </p>
                     </div>
 
@@ -151,22 +163,27 @@ export function HeroSection() {
                     >
                         <div className="max-w-2xl mx-auto relative">
                             <div
-                                className="relative glass-enhanced rounded-2xl p-2 shadow-2xl hover:shadow-cyan-500/25 transition-all duration-300">
+                                className="relative rounded-2xl p-2 shadow-sm bg-white
+                                dark:bg-transparent dark:border-gray-400/30
+                                hover:shadow-cyan-500/25 transition-all duration-300
+                                border-1 border-gray-200">
                                 <Input
                                     type="text"
                                     placeholder="What would you like to learn today?"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyPress={handleKeyPress}
-                                    className="w-full pl-6 pr-16 py-4 bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-cyan-transparent text-lg focus-visible:border-none focus-visible:ring-0"
+                                    className="w-full pl-6 pr-16 py-4 bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:ring-0 focus:ring-cyan-transparent text-lg focus-visible:border-none focus-visible:ring-0"
                                 />
                                 <Button
                                     onClick={handleSearch}
-                                    size="lg"
-                                    className="absolute right-2 top-2 bottom-2 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white rounded-xl px-6 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/25"
+                                    className="absolute right-2 top-2 bottom-2
+                                    dark:bg-gray-400/50 dark:text-white
+                                    bg-gray-400/10 text-gray-500 rounded-xl transition-all duration-300
+                                    hover:shadow-lg hover:shadow-cyan-500/25"
                                 >
-                                    <Search className="w-5 h-5 mr-2"/>
-                                    Search
+                                    Go
+                                    <GrLinkNext/>
                                 </Button>
                             </div>
                         </div>
@@ -179,17 +196,23 @@ export function HeroSection() {
                         style={{animationDelay: "0.6s"}}
                     >
                         <Button
-                            size="lg"
-                            className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white px-10 py-4 rounded-2xl text-xl font-semibold transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/25 hover:scale-105 transform-gpu"
+                            size="md"
+                            className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600
+                            text-white px-10 py-4 rounded-2xl text-xl font-normal font-saira
+                            transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/25
+                            hover:scale-105 transform-gpu hover:gap-5"
                             onClick={() => router.push("/courses")} // Link to courses page
                         >
-                            <Sparkles className="w-6 h-6 mr-3"/>
                             Start Learning Now
+                            <GrLinkNext/>
                         </Button>
                         <Button
                             variant="outline"
-                            size="lg"
-                            className="border-2 border-cyan-500 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500 hover:text-white px-10 py-4 rounded-2xl text-xl font-semibold transition-all duration-300 hover:shadow-2xl hover:scale-105 bg-transparent backdrop-blur-sm"
+                            size="md"
+                            className="border-2 border-cyan-500 text-cyan-600 dark:text-cyan-400
+                            hover:bg-cyan-500 hover:text-white px-10 py-4
+                            rounded-2xl text-xl font-normal font-saira
+                            hover:shadow-2xl hover:scale-105 bg-transparent backdrop-blur-sm"
                             onClick={() => router.push("/demo")} // Link to demo page
                         >
                             <Play className="w-6 h-6 mr-3"/>

@@ -38,7 +38,14 @@ export function SkillsManagement({ selectedSkills, onSkillsChange }: SkillsManag
                 setAvailableSkills(data);
             } catch (error) {
                 console.error("Error fetching skills:", error);
-                toast.error("Failed to load available skills.");
+                toast.error("Failed to load available skills.", {
+                    position: "top-center",
+                    action: {
+                        label: "Close",
+                        onClick: () => {},
+                    },
+                    closeButton: false,
+                });
             }
         };
         fetchSkills();

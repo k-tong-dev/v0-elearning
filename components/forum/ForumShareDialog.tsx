@@ -21,9 +21,23 @@ export function ForumShareDialog({ isOpen, onClose, postTitle, postId }: ForumSh
     const handleCopyLink = async () => {
         try {
             await navigator.clipboard.writeText(postLink);
-            toast.success("Post link copied to clipboard!");
+            toast.success("Post link copied to clipboard!", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            });
         } catch (error) {
-            console.error("Failed to copy link:", error);
+            console.error("Failed to copy link:", error, {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            });
             toast.error("Failed to copy link.");
         }
         onClose();

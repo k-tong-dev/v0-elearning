@@ -113,7 +113,14 @@ export default function SignUpPage() {
 
         try {
             await register(formData.name, formData.email, formData.password, formData.role, formData.preferences)
-            toast.success("Account created successfully! Welcome to CamEdu.")
+            toast.success("Account created successfully! Welcome to CamEdu.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             setTimeout(() => router.push("/dashboard"), 500)
         } catch (err: any) {
             console.error("Sign up failed:", err)

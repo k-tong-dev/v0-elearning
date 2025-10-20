@@ -41,7 +41,14 @@ interface ShareFormProps {
 const ShareForm: React.FC<ShareFormProps> = ({ title, url, isOpen, onOpenChange }) => {
     const handleShare = (platform: string) => {
         if (typeof window === "undefined") {
-            toast.error("Sharing is not available in this environment.")
+            toast.error("Sharing is not available in this environment.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             return
         }
 
@@ -68,11 +75,25 @@ const ShareForm: React.FC<ShareFormProps> = ({ title, url, isOpen, onOpenChange 
                 navigator.clipboard
                     .writeText(url)
                     .then(() => {
-                        toast.success("Link copied to clipboard!")
+                        toast.success("Link copied to clipboard!", {
+                            position: "top-center",
+                            action: {
+                                label: "Close",
+                                onClick: () => {},
+                            },
+                            closeButton: false,
+                        })
                         onOpenChange(false)
                     })
                     .catch(() => {
-                        toast.error("Failed to copy link.")
+                        toast.error("Failed to copy link.", {
+                            position: "top-center",
+                            action: {
+                                label: "Close",
+                                onClick: () => {},
+                            },
+                            closeButton: false,
+                        })
                     })
                 return
         }
@@ -157,7 +178,14 @@ const ReportForm: React.FC<ReportFormProps> = ({ title, isOpen, onOpenChange, on
     const handleNext = () => {
         if (!reportType) {
             setError("Please select a report type.")
-            toast.error("Please select a report type.")
+            toast.error("Please select a report type.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             return
         }
         setError("")
@@ -172,16 +200,37 @@ const ReportForm: React.FC<ReportFormProps> = ({ title, isOpen, onOpenChange, on
     const handleSubmit = () => {
         if (!reportReason.trim()) {
             setError("Please provide a reason for your report.")
-            toast.error("Please provide a reason for your report.")
+            toast.error("Please provide a reason for your report.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             return
         }
         if (reportReason.length > maxReasonLength) {
             setError(`Reason must be ${maxReasonLength} characters or less.`)
-            toast.error(`Reason must be ${maxReasonLength} characters or less.`)
+            toast.error(`Reason must be ${maxReasonLength} characters or less.`, {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             return
         }
         onSubmit(reportType, reportReason)
-        toast.success("Report submitted successfully!")
+        toast.success("Report submitted successfully!", {
+            position: "top-center",
+            action: {
+                label: "Close",
+                onClick: () => {},
+            },
+            closeButton: false,
+        })
         setReportType("")
         setReportReason("")
         setError("")
@@ -491,7 +540,14 @@ export default function UserProfilePage() {
                     message: error.message,
                     stack: error.stack,
                 })
-                toast.error("Failed to load profile. Please try again later.")
+                toast.error("Failed to load profile. Please try again later.", {
+                    position: "top-center",
+                    action: {
+                        label: "Close",
+                        onClick: () => {},
+                    },
+                    closeButton: false,
+                })
             } finally {
                 setIsLoading(false)
             }
@@ -511,10 +567,24 @@ export default function UserProfilePage() {
             //   body: JSON.stringify({ userId: id, reportType, reason }),
             // })
             // if (!response.ok) throw new Error("Failed to submit report")
-            toast.success("Report submitted successfully")
+            toast.success("Report submitted successfully", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         } catch (error: any) {
             console.error("Report submission failed:", error)
-            toast.error("Failed to submit report")
+            toast.error("Failed to submit report", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         }
     }
 

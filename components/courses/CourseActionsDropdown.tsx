@@ -33,10 +33,24 @@ export function CourseActionsDropdown({
     const handleCopyLink = async () => {
         try {
             await navigator.clipboard.writeText(courseLink)
-            toast.success("Course link copied to clipboard!")
+            toast.success("Course link copied to clipboard!", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         } catch (error) {
             console.error("Failed to copy link:", error)
-            toast.error("Failed to copy link.")
+            toast.error("Failed to copy link.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         }
         setShowShareDialog(false)
     }
@@ -68,11 +82,25 @@ export function CourseActionsDropdown({
     const handleReportSubmit = () => {
         if (reportReason.trim()) {
             console.log(`Reporting course ${courseId} for reason: ${reportReason}`)
-            toast.success("Course reported successfully. We'll review it shortly.")
+            toast.success("Course reported successfully. We'll review it shortly.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             setReportReason("")
             setShowReportDialog(false)
         } else {
-            toast.error("Please provide a reason for reporting.")
+            toast.error("Please provide a reason for reporting.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         }
     }
 

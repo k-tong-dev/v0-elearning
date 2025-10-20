@@ -82,13 +82,34 @@ export function Header() {
     const handleSignOut = async () => {
         try {
             await logout()
-            toast.success('Signed out successfully')
+            toast.success('Signed out successfully', {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             setIsUserMenuOpen(false)
             setIsMenuOpen(false)
             router.push('/')
         } catch (error) {
-            console.error('Sign out failed:', error)
-            toast.error('Failed to sign out')
+            console.error('Sign out failed:', error, {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
+            toast.error('Failed to sign out', {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         }
     }
 
@@ -112,14 +133,35 @@ export function Header() {
                     text: 'Check out CamEducation - the best online learning platform!',
                     url: window.location.origin,
                 })
-                toast.success('Shared successfully!')
+                toast.success('Shared successfully!', {
+                    position: "top-center",
+                    action: {
+                        label: "Close",
+                        onClick: () => {},
+                    },
+                    closeButton: false,
+                })
             } else {
                 await navigator.clipboard.writeText(window.location.origin)
-                toast.success('Link copied to clipboard!')
+                toast.success('Link copied to clipboard!', {
+                    position: "top-center",
+                    action: {
+                        label: "Close",
+                        onClick: () => {},
+                    },
+                    closeButton: false,
+                })
             }
         } catch (error) {
             console.error('Share failed:', error)
-            toast.error('Failed to share')
+            toast.error('Failed to share', {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         }
         setIsUserMenuOpen(false)
     }
@@ -127,16 +169,37 @@ export function Header() {
     const handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(window.location.origin)
-            toast.success('Link copied to clipboard!')
+            toast.success('Link copied to clipboard!', {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         } catch (error) {
             console.error('Copy failed:', error)
-            toast.error('Failed to copy link')
+            toast.error('Failed to copy link', {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         }
         setIsUserMenuOpen(false)
     }
 
     const handleAuthSuccess = () => {
-        toast.success('Welcome to CamEducation!')
+        toast.success('Welcome to CamEducation!', {
+            position: "top-center",
+            action: {
+                label: "Close",
+                onClick: () => {},
+            },
+            closeButton: false,
+        })
         handleCloseAuth()
     }
 

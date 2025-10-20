@@ -528,7 +528,7 @@ export default function PricingPage() {
           transition={{ delay: 0.4 }}
           className="mb-16"
         >
-          <h2 className="text-3xl font-bold text-center mb-8">
+          <h2 className="text-3xl font-bold text-center mb-8 text-gray-400">
             Frequently Asked Questions
           </h2>
           

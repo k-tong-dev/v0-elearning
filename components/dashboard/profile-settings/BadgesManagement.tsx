@@ -38,7 +38,14 @@ export function BadgesManagement({ selectedBadgeIds, onBadgesChange }: BadgesMan
                 setAllBadges(data);
             } catch (error) {
                 console.error("Error fetching badges:", error);
-                toast.error("Failed to load available badges.");
+                toast.error("Failed to load available badges.", {
+                    position: "top-center",
+                    action: {
+                        label: "Close",
+                        onClick: () => {},
+                    },
+                    closeButton: false,
+                });
             }
         };
         fetchBadges();

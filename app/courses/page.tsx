@@ -29,8 +29,8 @@ import {
     ChevronDown,
     ChevronUp,
 } from "lucide-react"
-import {CourseSkeleton} from "@/components/course-skeleton"
-import {CourseCard} from "@/components/CourseCard"
+import {CourseSkeleton} from "@/components/courses/course-skeleton"
+import {CourseCard} from "@/components/courses/CourseCard"
 import {Header} from "@/components/header"
 import {Footer} from "@/components/footer"
 import Link from "next/link";

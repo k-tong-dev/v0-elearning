@@ -64,12 +64,33 @@ const NavbarGroup = () => {
 
       if (data.success) {
         setIsEducator(true)
-        toast.success(data.message)
+        toast.success(data.message, {
+          position: "top-center",
+          action: {
+            label: "Close",
+            onClick: () => {},
+          },
+          closeButton: false,
+        })
       } else {
-        toast.error(data.message)
+        toast.error(data.message, {
+          position: "top-center",
+          action: {
+            label: "Close",
+            onClick: () => {},
+          },
+          closeButton: false,
+        })
       }
     } catch (error) {
-      toast.error(error.message)
+      toast.error(error.message, {
+        position: "top-center",
+        action: {
+          label: "Close",
+          onClick: () => {},
+        },
+        closeButton: false,
+      })
     }
   }
 

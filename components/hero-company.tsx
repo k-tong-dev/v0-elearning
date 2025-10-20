@@ -66,7 +66,7 @@ export function HeroCompany() {
                     <div
                         className={`transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
                     >
-                        <h2 className="text-3xl sm:text-4xl font-bold gradient-text mb-4 text-balance uppercase tracking-wide">
+                        <h2 className="text-3xl sm:text-4xl font-bold font-saira gradient-text mb-4 text-balance uppercase tracking-wide">
                             Trusted by Industry Leaders
                         </h2>
                         <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">

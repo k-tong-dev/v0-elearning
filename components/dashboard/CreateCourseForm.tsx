@@ -100,7 +100,14 @@ export default function CreateCourseForm({ onCancel, onSuccess }: CreateCourseFo
         if (validateStep()) {
             setCurrentStep(prev => prev + 1)
         } else {
-            toast.error("Please fix the errors before proceeding.")
+            toast.error("Please fix the errors before proceeding.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         }
     }
 
@@ -162,7 +169,14 @@ export default function CreateCourseForm({ onCancel, onSuccess }: CreateCourseFo
 
     const handleSubmitCourse = async () => {
         if (!validateStep()) {
-            toast.error("Please fix the errors before submitting the course.")
+            toast.error("Please fix the errors before submitting the course.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             return
         }
 
@@ -175,11 +189,25 @@ export default function CreateCourseForm({ onCancel, onSuccess }: CreateCourseFo
             await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate API call
 
             console.log("Course created:", courseData)
-            toast.success("Course created successfully!")
+            toast.success("Course created successfully!", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             onSuccess(); // Call onSuccess prop to signal completion
         } catch (error) {
             console.error("Error creating course:", error)
-            toast.error("Failed to create course. Please try again.")
+            toast.error("Failed to create course. Please try again.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
         } finally {
             setIsSubmitting(false)
         }

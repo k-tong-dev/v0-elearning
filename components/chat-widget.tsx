@@ -104,7 +104,14 @@ export function ChatWidget() {
             setMessages((prev) => [...prev, botResponse])
         } catch (error: any) {
             console.error('Chatbot error:', error);
-            toast.error(error.message || "Failed to connect to the AI. Please try again.");
+            toast.error(error.message || "Failed to connect to the AI. Please try again.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            });
             const errorMessage: ChatMessage = {
                 id: Date.now().toString() + "-error",
                 sender: "bot",
@@ -132,7 +139,14 @@ export function ChatWidget() {
         setIsTyping(false);
         setIsSending(false);
         sessionStorage.removeItem(SESSION_STORAGE_KEY); // Clear session storage for new chat
-        toast.info("Started a new chat session!");
+        toast.info("Started a new chat session!", {
+            position: "top-center",
+            action: {
+                label: "Close",
+                onClick: () => {},
+            },
+            closeButton: false,
+        });
     }
 
     return (

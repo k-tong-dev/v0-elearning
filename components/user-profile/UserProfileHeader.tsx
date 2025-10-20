@@ -53,17 +53,38 @@ export function UserProfileHeader({ user, isFollowing, setIsFollowing }: UserPro
 
     const handleFollow = () => {
         setIsFollowing(!isFollowing)
-        toast.success(isFollowing ? "Unfollowed user" : "Following user!")
+        toast.success(isFollowing ? "Unfollowed user" : "Following user!", {
+            position: "top-center",
+            action: {
+                label: "Close",
+                onClick: () => {},
+            },
+            closeButton: false,
+        })
     }
 
     const handleMessage = () => {
-        toast.info("Messaging functionality coming soon!")
+        toast.info("Messaging functionality coming soon!", {
+            position: "top-center",
+            action: {
+                label: "Close",
+                onClick: () => {},
+            },
+            closeButton: false,
+        })
     }
 
     const handleShare = () => {
         const profileUrl = `${window.location.origin}/users/${user.id}`
         navigator.clipboard.writeText(profileUrl)
-        toast.success("Profile link copied to clipboard!")
+        toast.success("Profile link copied to clipboard!", {
+            position: "top-center",
+            action: {
+                label: "Close",
+                onClick: () => {},
+            },
+            closeButton: false,
+        })
     }
 
     return (

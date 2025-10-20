@@ -40,7 +40,14 @@ export default function ReportForm({ title, isOpen, onOpenChange, onSubmit }: Re
     const handleNext = () => {
         if (!reportType) {
             setError("Please select a report type.")
-            toast.error("Please select a report type.")
+            toast.error("Please select a report type.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             return
         }
         setError("")
@@ -55,16 +62,37 @@ export default function ReportForm({ title, isOpen, onOpenChange, onSubmit }: Re
     const handleSubmit = () => {
         if (!reportReason.trim()) {
             setError("Please provide a reason for your report.")
-            toast.error("Please provide a reason for your report.")
+            toast.error("Please provide a reason for your report.", {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             return
         }
         if (reportReason.length > maxReasonLength) {
             setError(`Reason must be ${maxReasonLength} characters or less.`)
-            toast.error(`Reason must be ${maxReasonLength} characters or less.`)
+            toast.error(`Reason must be ${maxReasonLength} characters or less.`, {
+                position: "top-center",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            })
             return
         }
         onSubmit(reportType, reportReason)
-        toast.success("Report submitted successfully!")
+        toast.success("Report submitted successfully!", {
+            position: "top-center",
+            action: {
+                label: "Close",
+                onClick: () => {},
+            },
+            closeButton: false,
+        })
         setReportType("")
         setReportReason("")
         setError("")

@@ -40,7 +40,7 @@ export default function FAQSection() {
       className="w-screen px-4 py-20 lg:px-32 lg:py-40 grid md:grid-cols-2 gap-10 bg-white mb-20"
     >
       <div className={"text-left"}>
-        <h2 className="text-3xl font-semibold mb-4 flex flex-col">
+        <h2 className="text-3xl font-semibold mb-4 flex flex-col text-gray-400">
           Frequently
           <span>Asked Questions</span>
         </h2>

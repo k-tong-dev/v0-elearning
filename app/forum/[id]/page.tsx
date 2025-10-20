@@ -174,7 +174,14 @@ export default function ForumDetailPage() {
             ...prev,
             isBookmarked: !prev.isBookmarked
         } : null)
-        toast.info(post?.isBookmarked ? "Bookmark removed!" : "Post bookmarked!");
+        toast.info(post?.isBookmarked ? "Bookmark removed!" : "Post bookmarked!", {
+            position: "top-center",
+            action: {
+                label: "Close",
+                onClick: () => {},
+            },
+            closeButton: false,
+        });
     }
 
     const handleCommentSubmit = () => {
@@ -199,7 +206,14 @@ export default function ForumDetailPage() {
         } : null)
 
         setNewComment("")
-        toast.success("Comment posted!")
+        toast.success("Comment posted!", {
+            position: "top-center",
+            action: {
+                label: "Close",
+                onClick: () => {},
+            },
+            closeButton: false,
+        })
     }
 
     const handleReplySubmit = (commentId: string, replyContent: string) => {
@@ -224,7 +238,14 @@ export default function ForumDetailPage() {
             replies: prev.replies + 1
         } : null)
 
-        toast.success("Reply posted!")
+        toast.success("Reply posted!", {
+            position: "top-center",
+            action: {
+                label: "Close",
+                onClick: () => {},
+            },
+            closeButton: false,
+        })
     }
 
     const handleLikeComment = (commentId: string) => {
@@ -302,7 +323,14 @@ export default function ForumDetailPage() {
 
     const handleReportSubmit = (itemId: string, itemType: 'post' | 'comment' | 'reply', reason: string) => {
         console.log(`Reporting ${itemType} ${itemId} for reason: ${reason}`);
-        toast.success(`${itemType} reported successfully. We'll review it shortly.`);
+        toast.success(`${itemType} reported successfully. We'll review it shortly.`, {
+            position: "top-center",
+            action: {
+                label: "Close",
+                onClick: () => {},
+            },
+            closeButton: false,
+        });
     };
 
     if (isLoading) {
