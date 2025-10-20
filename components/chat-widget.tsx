@@ -222,9 +222,9 @@ export function ChatWidget() {
                                                 </Avatar>
                                             )}
                                             <div
-                                                className={`max-w-[300px] lg:max-w-[400px] shadow-sm transition-all duration-200 prose dark:prose-invert text-sm leading-relaxed break-words overflow-hidden ${ // Added overflow-hidden and changed p-3 to p-4
+                                                className={`max-w-[90%] shadow-sm transition-all duration-200 prose dark:prose-invert text-sm leading-relaxed break-words overflow-hidden ${ // Added overflow-hidden and changed p-3 to p-4
                                                     msg.sender === "user"
-                                                        ? "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-white rounded-xl rounded-tr-none p-3" // Changed p-3 to p-4
+                                                        ? " bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-white rounded-xl rounded-tr-none p-3" // Changed p-3 to p-4
                                                         : "bg-muted/70 text-foreground rounded-tl-xl rounded-tr-xl rounded-br-xl rounded-bl-none p-3" // Changed p-3 to p-4
                                                 }`}
                                             >
