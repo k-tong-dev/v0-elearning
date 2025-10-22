@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Search, XCircle, Check } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/utils"
 import { toast } from "sonner"
 
 interface SkillsManagementProps {

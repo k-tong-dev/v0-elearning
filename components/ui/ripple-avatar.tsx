@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { motion, AnimatePresence } from "framer-motion"
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/utils"
 import { 
   Crown, 
   Star, 

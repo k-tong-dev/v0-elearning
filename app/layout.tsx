@@ -49,7 +49,7 @@ export default function RootLayout({
         <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange={false}>
             <AuthProvider>
-                <Toaster position="top-right" richColors closeButton />
+                <Toaster position="top-center" richColors/>
                 {children}
                 <ChatWidget />
             </AuthProvider>

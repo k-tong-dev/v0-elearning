@@ -1,7 +1,9 @@
+// /Users/tong/Documents/@StudyMaterial/@FnalProject/Developments/website/v0-elearning/lib/auth.ts
+
 import clientPromise from './mongodb'
 import { ObjectId } from 'mongodb'
-import { UserRole, UserPreferences, UserSettings } from '@/types/auth' // Import from new types file
-import { BadgeDefinition } from '@/types/db' // Import BadgeDefinition
+import { UserRole, UserPreferences, UserSettings } from '@/types/auth'
+import { BadgeDefinition } from '@/types/db'
 
 export interface User {
     _id?: ObjectId
@@ -13,13 +15,13 @@ export interface User {
     providerId?: string
     password?: string // Only for email auth
     isVerified?: boolean
-    role?: UserRole // New field
-    preferences?: UserPreferences // New field for onboarding choices
-    settings?: UserSettings // New field for user-configurable settings
-    badgeIds?: string[] // Add this field
+    role?: UserRole
+    preferences?: UserPreferences
+    settings?: UserSettings
+    badgeIds?: string[]
     createdAt: Date
     updatedAt: Date
-    profile?: { // Existing profile fields
+    profile?: {
         bio?: string
         location?: string
         website?: string

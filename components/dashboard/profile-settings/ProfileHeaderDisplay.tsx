@@ -14,7 +14,7 @@ import {
     ImageIcon,
 } from "lucide-react"
 import Image from "next/image"
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/utils"
 import { AvatarDock, AvatarDockIcon } from "@/components/ui/aceternity/avatar-dock"
 import { avatarList } from "@/lib/static-avatars"
 import {BackgroundBeams} from "@/components/ui/aceternity/background-beams";

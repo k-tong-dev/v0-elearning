@@ -15,5 +15,5 @@ export interface UserSettings {
         weeklyAnalytics?: boolean
     }
     newsletter?: boolean
-    skills?: string[] // Added skills field
+    skills?: string[]
 }

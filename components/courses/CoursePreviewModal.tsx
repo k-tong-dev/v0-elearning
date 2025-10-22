@@ -1,17 +1,14 @@
 "use client"
 
 import React, { useEffect, useState, useRef } from "react";
-import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, FileText } from "lucide-react";
+import { X, Loader2, FileText, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 
-const ReactPlayer = dynamic(() => import("react-player").then((mod) => {
-    return mod;
-}), { ssr: false });
-
-const Document = dynamic(() => import("react-pdf").then((mod) => mod.Document), { ssr: false });
-const Page = dynamic(() => import("react-pdf").then((mod) => mod.Page), { ssr: false });
+import { PdfPreview } from "./course-previews/PdfPreview";
+import { ContentPreviewer } from "./course-previews/ContentPreviewer";
+import { ImagePreview } from "./course-previews/ImagePreview";
 
 interface CoursePreviewModalProps {
     isOpen: boolean;
@@ -20,115 +17,155 @@ interface CoursePreviewModalProps {
     courseTitle?: string;
     previewUrl?: string;
     fileType?: string;
+    isCourseRestricted?: boolean;
+    maxPreviewPages?: number;
+    onUrlChange?: (url: string) => void;
 }
 
 export const CoursePreviewModal: React.FC<CoursePreviewModalProps> = ({
                                                                           isOpen,
                                                                           onClose,
                                                                           courseTitle = "Course Preview",
-                                                                          previewUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                                                                          previewUrl = "https://res.cloudinary.com/dpf3zv351/video/upload/v1761051642/gaze-of-the-blade_jilgoe.mp4",
                                                                           fileType = "video",
+                                                                          isCourseRestricted = false,
+                                                                          maxPreviewPages = 1,
+                                                                          onUrlChange,
                                                                       }) => {
-    const [showPlayer, setShowPlayer] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
-    const playerRef = useRef<any>(null);
-    const [hasPlayedTenSeconds, setHasPlayedTenSeconds] = useState(false);
+    const [hasPlayedThirtySeconds, setHasPlayedThirtySeconds] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [videoProgress, setVideoProgress] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    const [customUrl, setCustomUrl] = useState(previewUrl);
+    const playerRef = useRef<any>(null);
 
     useEffect(() => {
         if (isOpen) {
-            setShowPlayer(true);
-            if (fileType === "video" || fileType === "audio") {
-                setIsPlaying(true);
-            }
-        } else {
-            setShowPlayer(false);
-            setIsPlaying(false);
-            setHasPlayedTenSeconds(false);
+            setIsPlaying(true);
+            setHasPlayedThirtySeconds(false);
             setError(null);
-        }
-    }, [isOpen, fileType]);
-
-    const handleProgress = (state: { playedSeconds: number }) => {
-        if (state.playedSeconds >= 10 && !hasPlayedTenSeconds) {
-            console.log(`Preview for course "${courseTitle}" (ID: ${courseId}, Type: ${fileType}) reached 10 seconds at ${new Date().toLocaleString()}`);
+            setVideoProgress(0);
+            setIsLoading(true);
+            setCustomUrl(previewUrl);
+        } else {
             setIsPlaying(false);
-            setHasPlayedTenSeconds(true);
-            // Optional: Send to analytics
-            /*
-            fetch("/api/track-preview", {
-                method: "POST",
-                body: JSON.stringify({
-                    courseId,
-                    courseTitle,
-                    fileType,
-                    event: "preview_10_seconds",
-                    timestamp: new Date().toISOString(),
-                }),
-                headers: { "Content-Type": "application/json" },
-            });
-            */
+            setHasPlayedThirtySeconds(false);
+            setError(null);
+            setVideoProgress(0);
+        }
+    }, [isOpen, previewUrl, fileType]);
+
+    const onReady = () => {
+        console.log("Player is ready");
+        setIsLoading(false);
+    };
+
+    const handleProgress = (state: { playedSeconds: number, played: number }) => {
+        setVideoProgress(state.played * 100);
+
+        if (isCourseRestricted && state.playedSeconds >= 30 && !hasPlayedThirtySeconds) {
+            console.log(`Intro preview for course "${courseTitle}" reached 30 seconds at ${new Date().toLocaleString()}`);
+            setIsPlaying(false);
+            setHasPlayedThirtySeconds(true);
+            if (playerRef.current) {
+                playerRef.current.seekTo(30); // Ensure it stays at 30s
+                playerRef.current.pause();
+            }
         }
     };
 
+    const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newUrl = e.target.value;
+        setCustomUrl(newUrl);
+        if (onUrlChange) onUrlChange(newUrl);
+    };
+
     const renderPreview = () => {
-        switch (fileType.toLowerCase()) {
+        if (!customUrl) {
+            return <p className="text-red-500 text-center">No preview URL provided.</p>;
+        }
+
+        const lowerCaseFileType = fileType.toLowerCase();
+
+        switch (lowerCaseFileType) {
             case "video":
             case "audio":
                 return (
-                    <ReactPlayer
-                        ref={playerRef}
-                        url={previewUrl}
-                        playing={isPlaying}
-                        controls
-                        width="100%"
-                        height={fileType === "video" ? "100%" : "auto"}
-                        style={fileType === "video" ? { position: "absolute", top: 0, left: 0 } : {}}
-                        onProgress={handleProgress}
-                        onError={(e) => {
-                            console.error("ReactPlayer error:", e);
-                            setError("Failed to load media. Please check the URL or file type.");
-                        }}
-                        config={{
-                            youtube: {
-                                playerVars: {
-                                    autoplay: 0,
-                                    modestbranding: 1,
-                                    rel: 0,
-                                },
-                            },
-                            file: {
-                                attributes: {
-                                    controlsList: fileType === "audio" ? "nodownload" : undefined,
-                                },
-                            },
-                        }}
-                    />
+                    <div className="relative w-full h-full min-h-[200px]">
+                        <ContentPreviewer
+                            url={customUrl}
+                            fileType={lowerCaseFileType as "video" | "audio"}
+                            isPlaying={isPlaying}
+                            onError={(msg) => setError(msg)}
+                            onReady={onReady}
+                            onProgress={handleProgress} // Tracks 30s limit
+                        />
+                        {isCourseRestricted && hasPlayedThirtySeconds && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm text-white text-center p-8 z-50">
+                                <BookOpen className="w-16 h-16 mb-4" />
+                                <h3 className="text-2xl font-bold mb-2">Preview Ended</h3>
+                                <p className="text-lg mb-6">Enroll in the course to watch the full video.</p>
+                                <Button
+                                    onClick={() => { /* TODO: Implement enrollment action */ }}
+                                    className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white hover:opacity-90 rounded-full px-6 py-2"
+                                >
+                                    Enroll Now
+                                </Button>
+                            </div>
+                        )}
+                        {(lowerCaseFileType === "video" || lowerCaseFileType === "audio") && (
+                            <div className="absolute bottom-0 left-0 w-full z-20">
+                                <Progress value={videoProgress} className="h-2 rounded-none" />
+                            </div>
+                        )}
+                    </div>
+                );
+            case "image":
+                return (
+                    <div className="relative w-full h-full min-h-[200px]">
+                        <ImagePreview
+                            url={customUrl}
+                            onError={(msg) => setError(msg)}
+                            onLoad={onReady}
+                        />
+                    </div>
                 );
             case "pdf":
                 return (
-                    <div className="w-full h-full overflow-auto">
-                        <Document
-                            file={previewUrl}
-                            onLoadError={(e) => {
-                                console.error("PDF load error:", e);
-                                setError("Failed to load PDF. Please check the file.");
-                            }}
-                        >
-                            <Page pageNumber={1} width={600} />
-                        </Document>
+                    <div className="w-full h-full overflow-auto relative">
+                        <PdfPreview
+                            url={customUrl}
+                            onError={(msg) => setError(msg)}
+                            isRestricted={isCourseRestricted}
+                        />
+                    </div>
+                );
+            case "quiz":
+                return (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                        <FileText className="w-16 h-16 text-gray-500 mb-4" />
+                        <p className="text-muted-foreground text-lg font-semibold">No preview available for quizzes.</p>
+                        <p className="text-sm text-muted-foreground">Quizzes are interactive and cannot be previewed here.</p>
                     </div>
                 );
             case "doc":
             case "docx":
                 return (
-                    <div className="flex flex-col items-center justify-center h-full">
-                        <FileText className="w-16 h-16 text-gray-500" />
-                        <p className="text-muted-foreground">Preview not available for DOC files. Download to view.</p>
+                    <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                        <FileText className="w-16 h-16 text-gray-500 mb-4" />
+                        <p className="text-muted-foreground text-lg font-semibold">Preview not available for DOC files.</p>
+                        <p className="text-sm text-muted-foreground">Please download the file to view its content.</p>
                     </div>
                 );
             default:
-                return <p className="text-red-500">Unsupported file type: {fileType}</p>;
+                return (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                        <FileText className="w-16 h-16 text-red-500 mb-4" />
+                        <p className="text-red-500 text-lg font-semibold">Unsupported file type: {fileType}</p>
+                        <p className="text-sm text-muted-foreground">We cannot display a preview for this content type.</p>
+                    </div>
+                );
         }
     };
 
@@ -150,26 +187,16 @@ export const CoursePreviewModal: React.FC<CoursePreviewModalProps> = ({
                     >
                         <button
                             onClick={onClose}
-                            className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition"
+                            className="absolute top-3 right-3 z-50 p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition"
                         >
                             <X className="w-5 h-5" />
                         </button>
 
-                        <div className="w-full aspect-video bg-black relative flex items-center justify-center">
-                            {!showPlayer && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <Loader2 className="animate-spin w-10 h-10 text-white/70" />
-                                </div>
-                            )}
-                            {showPlayer && (
-                                <>
-                                    {error ? (
-                                        <p className="text-red-500 text-center">{error}</p>
-                                    ) : (
-                                        renderPreview()
-                                    )}
-                                </>
-                            )}
+                        <div className="w-full aspect-video bg-black relative flex items-center justify-center min-h-[200px]">
+                            <div key={`${customUrl}-${fileType}`} className="w-full h-full">
+                                {renderPreview()}
+                                {error && <p className="text-red-500 text-center mt-2">{error}</p>}
+                            </div>
                         </div>
 
                         <div className="p-6 text-center">
@@ -180,7 +207,12 @@ export const CoursePreviewModal: React.FC<CoursePreviewModalProps> = ({
                                 Enjoy a short preview of this course.
                             </p>
                             <Button
-                                onClick={onClose}
+                                onClick={() => {
+                                    onClose();
+                                    if (isCourseRestricted && hasPlayedThirtySeconds) {
+                                        // router.push(`/courses/${courseId}/enroll`);
+                                    }
+                                }}
                                 className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white hover:opacity-90 rounded-full px-6 py-2"
                             >
                                 Close Preview
