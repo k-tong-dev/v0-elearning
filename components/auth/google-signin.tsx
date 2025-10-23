@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/use-auth'
-import { Sparkles } from 'lucide-react' // Added Sparkles for a nicer fallback icon
+import { Sparkles } from 'lucide-react'
 
 declare global {
     interface Window {
@@ -20,7 +20,6 @@ interface GoogleSignInProps {
 }
 
 export function GoogleSignIn({ onSuccess, onError, text = 'signin_with', className }: GoogleSignInProps) {
-    const { loginWithGoogle } = useAuth()
     const [isGoogleLoaded, setIsGoogleLoaded] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [internalError, setInternalError] = useState<string | null>(null); // Internal error state
@@ -129,9 +128,8 @@ export function GoogleSignIn({ onSuccess, onError, text = 'signin_with', classNa
                 document.body.removeChild(scriptRef.current);
             }
         };
-    }, [googleClientId]); // Dependency array includes googleClientId
+    }, [googleClientId]);
 
-    // Re-render button if text prop changes or container becomes available
     useEffect(() => {
         if (isGoogleLoaded && buttonContainerRef.current && googleInitialized.current) {
             renderGoogleButton();
@@ -143,7 +141,6 @@ export function GoogleSignIn({ onSuccess, onError, text = 'signin_with', classNa
         if (isLoading) return;
 
         if (window.google && isGoogleLoaded && googleClientId) {
-            // If GSI is loaded, but the button didn't render or user clicked fallback, prompt directly
             window.google.accounts.id.prompt();
         } else if (!googleClientId) {
             const msg = 'Google Sign-In is not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID in your .env file and configure Authorized JavaScript origins in Google Cloud Console.';
@@ -163,7 +160,7 @@ export function GoogleSignIn({ onSuccess, onError, text = 'signin_with', classNa
                     {internalError}
                 </div>
             )}
-            {/* Container for the Google button */}
+
             <div
                 ref={buttonContainerRef}
                 style={{
@@ -172,7 +169,6 @@ export function GoogleSignIn({ onSuccess, onError, text = 'signin_with', classNa
                 }}
             />
 
-            {/* Fallback button when Google hasn't loaded or client ID is missing or there's an internal error */}
             {(!isGoogleLoaded || !googleClientId || internalError) && (
                 <Button
                     variant="outline"
@@ -183,7 +179,7 @@ export function GoogleSignIn({ onSuccess, onError, text = 'signin_with', classNa
                     {isLoading ? (
                         <div className="w-5 h-5 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
                     ) : (
-                        <Sparkles className="w-5 h-5 mr-2 text-blue-500" /> // Using Sparkles for a generic icon
+                        <Sparkles className="w-5 h-5 mr-2 text-blue-500" />
                     )}
                     Continue with Google
                 </Button>

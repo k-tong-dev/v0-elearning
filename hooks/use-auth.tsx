@@ -1,7 +1,7 @@
-'use client'
+"use client"
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
-import { UserRole, UserPreferences, UserSettings } from '@/types/auth' // Import new types from shared file
+import { UserRole, UserPreferences, UserSettings } from '@/types/auth'
 
 export interface User {
     id: string
@@ -9,11 +9,11 @@ export interface User {
     name: string
     avatar?: string
     provider: 'google' | 'email'
-    role?: UserRole // Include role in User interface
-    settings?: UserSettings // Include settings in User interface
-    badgeIds?: string[] // Add this field
-    followers?: number; // Add followers count
-    following?: number; // Add following count
+    role?: UserRole
+    settings?: UserSettings
+    badgeIds?: string[]
+    followers?: number
+    following?: number
 }
 
 interface AuthContextType {
@@ -22,7 +22,7 @@ interface AuthContextType {
     isAuthenticated: boolean
     login: (email: string, password: string) => Promise<void>
     register: (name: string, email: string, password: string, role: UserRole, preferences: UserPreferences) => Promise<void>
-    loginWithGoogle: (credential: string) => Promise<void> // Removed role and preferences from arguments
+    loginWithGoogle: (credential: string) => Promise<{user: User, newUser: boolean}>
     logout: () => Promise<void>
     refreshUser: () => Promise<void>
 }
@@ -43,7 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const isAuthenticated = !!user
 
-    // Check for existing auth on mount
     useEffect(() => {
         checkAuth()
     }, [])
@@ -100,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ name, email, password, role, preferences }), // Pass new fields
+                body: JSON.stringify({ name, email, password, role, preferences }),
                 credentials: 'include'
             })
 
@@ -119,31 +118,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }
 
-    const loginWithGoogle = async (credential: string) => { // Removed role and preferences from arguments
+    const loginWithGoogle = async (credential: string) => { // Returns { user, newUser }
         setIsLoading(true)
         try {
-            const response = await fetch('/api/auth/google-oauth', {
+            const response = await fetch('/api/auth/google', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ credential }), // Only pass credential
+                body: JSON.stringify({ credential }),
                 credentials: 'include',
                 redirect: 'follow'
             })
+            console.log(">>>>>>>>>>>>>>>>>>>>>>> response: ", response)
 
-            if (response.redirected) {
-                await refreshUser();
-                return;
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Google login failed')
             }
 
             const data = await response.json()
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Google login failed')
-            }
-
             setUser(data.user)
+
+            return { user: data.user, newUser: data.newUser }
         } catch (error) {
             console.error('Google login error:', error)
             throw error

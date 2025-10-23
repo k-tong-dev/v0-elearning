@@ -1,69 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { UserService, verifyPassword } from '@/lib/auth'
-import { createAuthResponse } from '@/lib/auth-middleware'
-import jwt from 'jsonwebtoken'
+// Updated file: app/api/auth/login/route.ts
+// (Kept the route as is)
+import { NextRequest, NextResponse } from 'next/server';
+import { createAuthResponse } from '@/lib/auth-middleware';
+
+const STRAPI_URL = process.env.STRAPI_URL || 'http://localhost:1337';
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email, password } = body
+    const { email, password } = await request.json();
 
-    // Validate required fields
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      )
+    const response = await fetch(`${STRAPI_URL}/api/auth/local`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error?.message || 'Login failed');
     }
 
-    // Find user by email
-    const user = await UserService.findUserByEmail(email.toLowerCase())
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      )
-    }
-
-    // Verify password
-    const userWithPassword = user as any
-    if (!userWithPassword.password) {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      )
-    }
-
-    const isPasswordValid = await verifyPassword(password, userWithPassword.password)
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      )
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.id,
-        email: user.email,
-        name: user.name,
-        provider: user.provider || 'email'
-      },
-      process.env.NEXTAUTH_SECRET || 'fallback-secret',
-      { expiresIn: '7d' }
-    )
-
-    // Remove password from response
-    const { password: _, ...userResponse } = userWithPassword
-    
-    return createAuthResponse(userResponse, token)
-
+    return createAuthResponse(data.user, data.jwt);
   } catch (error: any) {
-    console.error('Login error:', error)
-    
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error.message }, { status: 401 });
   }
 }

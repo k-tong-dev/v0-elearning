@@ -214,13 +214,13 @@ export function EnhancedAvatar({
 }
 
 // Specialized avatar components for different use cases
-export function UserMenuAvatar({ user, onClick }: { user: any; onClick?: () => void }) {
+export function UserMenuAvatar({ user, onClick, size }: { user: any; onClick?: () => void; size?: "sm" | "md" | "lg" | "xl" | "2xl" }) {
   return (
     <EnhancedAvatar
       src={user.avatar}
       alt={user.name}
       fallback={user.name.split(' ').map((n: string) => n[0]).join('')}
-      size="md"
+      size={size}
       variant={user.role === 'instructor' ? 'instructor' : user.role === 'admin' ? 'admin' : 'default'}
       role={user.role}
       showStatus={true}

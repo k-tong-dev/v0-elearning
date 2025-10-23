@@ -1,3 +1,4 @@
+// Users/tong/Documents/@StudyMaterial/@FnalProject/Developments/website/v0-elearning/app/auth/google/page.tsx
 "use client"
 
 import React, { useState, useEffect, Suspense } from "react"
@@ -11,8 +12,8 @@ import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/use-auth"
 import { UserRole, UserPreferences } from "@/types/auth"
-import { SignUpStepOne } from "@/components/signup/SignUpStepOne"
-import { SignUpStepTwo } from "@/components/signup/SignUpStepTwo"
+import { SignUpStepOne } from "@/components/auth/SignUpStepOne"
+import { SignUpStepTwo } from "@/components/auth/SignUpStepTwo"
 import { PageLoading } from "@/components/page-loading"
 
 export default function GooglePreferencesPage() {
@@ -122,32 +123,25 @@ function PreferencesContent() {
         setIsSubmitting(true)
         try {
             const response = await fetch(`/api/users/${userId}/preferences`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    role: formData.role,
-                    preferences: formData.preferences,
-                }),
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: formData.role, preferences: formData.preferences }),
+                credentials: 'include'
             })
 
             const data = await response.json()
 
             if (!response.ok) {
-                throw new Error(data.error || "Failed to save preferences.")
+                throw new Error(data.error || 'Failed to save preferences')
             }
 
-            toast.success("Preferences saved successfully! Welcome to CamEdu.", {
+            toast.success("Profile completed! Redirecting to dashboard.", {
                 position: "top-center",
-                action: {
-                    label: "Close",
-                    onClick: () => {},
-                },
+                action: { label: "Close", onClick: () => {} },
                 closeButton: false,
             })
-            await refreshUser() // Refresh user context to get updated role/preferences
-            router.push("/dashboard") // Redirect to dashboard on success
+            await refreshUser()
+            router.push("/dashboard")
         } catch (err: any) {
             console.error("Failed to save preferences:", err)
             setError(err.message || "Failed to save preferences. Please try again.")

@@ -1,47 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { UserService } from '@/lib/auth';
-import { UserRole, UserPreferences } from '@/types/auth';
+import { verifyAuthToken } from '@/lib/auth-middleware';
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
-    console.log(`--- HITTING /api/users/${params.id}/preferences PUT endpoint ---`);
-    try {
-        const userId = params.id;
-        const body = await request.json();
-        const { role, preferences } = body;
+const STRAPI_URL = process.env.STRAPI_URL || 'http://localhost:1337';
 
-        if (!userId) {
-            return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-        }
+export async function PUT(request: NextRequest, { params }: { params: { userId: string } }) {
+    const tokenUser = await verifyAuthToken(request);
 
-        if (!role || !preferences) {
-            return NextResponse.json({ error: 'Role and preferences are required' }, { status: 400 });
-        }
-
-        const updatedUser = await UserService.updateUser(userId, {
-            role: role as UserRole,
-            preferences: preferences as UserPreferences,
-        });
-
-        if (!updatedUser) {
-            return NextResponse.json({ error: 'User not found or update failed' }, { status: 404 });
-        }
-
-        return NextResponse.json({
-            message: 'User preferences updated successfully',
-            user: {
-                id: updatedUser.id,
-                email: updatedUser.email,
-                name: updatedUser.name,
-                role: updatedUser.role,
-                preferences: updatedUser.preferences,
-            },
-        });
-
-    } catch (error: any) {
-        console.error('Error updating user preferences:', error);
-        return NextResponse.json(
-            { error: error.message || 'Internal server error' },
-            { status: 500 }
-        );
+    if (!tokenUser || tokenUser.id !== params.userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const { role, preferences } = await request.json();
+
+    const token = request.cookies.get('auth-token')?.value;
+
+    const response = await fetch(`${STRAPI_URL}/api/users/${params.userId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+            role,
+            preferences,
+            // Optionally update other defaults if needed, e.g., settings
+        }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        return NextResponse.json({ error: data.error?.message || 'Update failed' }, { status: 400 });
+    }
+
+    return NextResponse.json({ user: data, message: 'Preferences updated successfully' });
 }

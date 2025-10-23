@@ -1,3 +1,4 @@
+//Users/tong/Documents/@StudyMaterial/@FnalProject/Developments/website/v0-elearning/app/auth/signup/page.tsx
 "use client"
 
 import React, { useState } from "react"
@@ -12,9 +13,9 @@ import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/use-auth"
 import { UserRole, UserPreferences } from "@/types/auth"
-import { SignUpStepOne } from "@/components/signup/SignUpStepOne"
-import { SignUpStepTwo } from "@/components/signup/SignUpStepTwo"
-import { SignUpStepThree } from "@/components/signup/SignUpStepThree"
+import { SignUpStepOne } from "@/components/auth/SignUpStepOne"
+import { SignUpStepTwo } from "@/components/auth/SignUpStepTwo"
+import { SignUpStepThree } from "@/components/auth/SignUpStepThree"
 
 export default function SignUpPage() {
     const router = useRouter()

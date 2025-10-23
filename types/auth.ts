@@ -1,3 +1,4 @@
+// /Users/tong/Documents/@StudyMaterial/@FnalProject/Developments/website/v0-elearning/types/auth.ts
 export type UserRole = 'student' | 'instructor' | 'company' | 'job_seeker' | 'other';
 
 export interface UserPreferences {

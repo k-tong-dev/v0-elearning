@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Eye, EyeOff, Mail, Lock, Sparkles } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { GoogleSignIn } from "@/components/auth/google-signin"
-import { SignUpChoiceModal } from "@/components/signup/SignUpChoiceModal" // Import SignUpChoiceModal
+import { SignUpChoiceModal } from "@/components/auth/SignUpChoiceModal"
 import { useRouter } from "next/navigation"
 
 interface AuthModalProps {
@@ -28,13 +28,17 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
         password: "",
     })
     const [error, setError] = useState("")
-    const [showSignUpChoiceModal, setShowSignUpChoiceModal] = useState(false) // New state for choice modal
+    const [showSignUpChoiceModal, setShowSignUpChoiceModal] = useState(false)
 
     const handleGoogleAuthSuccess = async (credential: string) => {
         try {
-            await loginWithGoogle(credential);
-            onAuthSuccess?.();
-            onClose();
+            const { newUser } = await loginWithGoogle(credential);
+            if (newUser) {
+                router.push('/auth/google-preferences?userId=' + (await loginWithGoogle(credential)).user.id);
+            } else {
+                onAuthSuccess?.();
+                onClose();
+            }
         } catch (error: any) {
             console.error("Google authentication failed:", error);
             setError(error.message || "Google authentication failed");
@@ -60,9 +64,8 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
     }
 
     const handleCreateAccountClick = () => {
-        console.log("handleCreateAccountClick triggered. Closing AuthModal and setting showSignUpChoiceModal to true."); // Debug log
-        onClose(); // Close the login modal
-        setShowSignUpChoiceModal(true); // Open the choice modal
+        onClose();
+        setShowSignUpChoiceModal(true);
     };
 
     const handleSignUpWithEmail = () => {
@@ -71,8 +74,18 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
     }
 
     const handleSignUpWithGoogle = async (credential: string) => {
-        await loginWithGoogle(credential);
-        setShowSignUpChoiceModal(false);
+        try {
+            const { newUser } = await loginWithGoogle(credential);
+            if (newUser) {
+                router.push('/auth/google-preferences?userId=' + (await loginWithGoogle(credential)).user.id);
+            } else {
+                setShowSignUpChoiceModal(false);
+                onAuthSuccess?.();
+            }
+        } catch (error: any) {
+            console.error("Google sign-up failed:", error);
+            setError(error.message || "Google sign-up failed");
+        }
     }
 
     return (
@@ -109,16 +122,16 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                             <div className="absolute inset-0 flex items-center">
                                 <Separator className="w-full bg-gradient-to-r from-transparent via-border to-transparent" />
                             </div>
-                            <div className="relative flex justify-center text-sm uppercase">
-                                <span className="bg-background px-4 text-muted-foreground font-medium">Or continue with email</span>
+                            <div className="relative flex justify-center text-sm">
+                                <span className="px-4 bg-background text-muted-foreground">or continue with</span>
                             </div>
                         </div>
 
-                        <form onSubmit={handleEmailAuth} className="space-y-5">
+                        <form onSubmit={handleEmailAuth} className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium text-white">
                                     <Mail className="w-4 h-4 text-emerald-500" />
-                                    Email Address
+                                    Email
                                 </Label>
                                 <Input
                                     id="email"
@@ -192,7 +205,6 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                 </DialogContent>
             </Dialog>
 
-            {/* SignUpChoiceModal component */}
             <SignUpChoiceModal
                 isOpen={showSignUpChoiceModal}
                 onClose={() => setShowSignUpChoiceModal(false)}

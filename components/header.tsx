@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@heroui/react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AuthModal } from "@/components/auth-modal"
-import { SignUpChoiceModal } from "@/components/signup/SignUpChoiceModal"
+import { SignUpChoiceModal } from "@/components/auth/SignUpChoiceModal"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { UserMenuAvatar } from "@/components/ui/enhanced-avatar"
 import { useAuth } from "@/hooks/use-auth"
@@ -33,7 +33,6 @@ import {
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
-import {AnimatedModalDemo} from "@/Tests/test-modal";
 import {Modal, ModalBody, ModalContent, ModalFooter, ModalTrigger} from "@/components/ui/aceternity/animated-modal";
 import {motion} from "motion/react";
 
@@ -66,13 +65,37 @@ export function Header() {
     }
 
     const handleSignUpWithEmail = () => {
-        router.push("/signup")
+        router.push("/auth/signup")
         setShowSignUpChoiceModal(false)
     }
 
     const handleSignUpWithGoogle = async (credential: string) => {
-        await loginWithGoogle(credential);
-        setShowSignUpChoiceModal(false);
+        try {
+            const { newUser } = await loginWithGoogle(credential);
+            if (newUser) {
+                router.push('/auth/google-preferences?userId=' + (await loginWithGoogle(credential)).user.id);
+            } else {
+                setShowSignUpChoiceModal(false);
+                toast.success('Signed in with Google!', {
+                    position: "top-right",
+                    action: {
+                        label: "Close",
+                        onClick: () => {},
+                    },
+                    closeButton: false,
+                });
+            }
+        } catch (error: any) {
+            console.error('Google sign-up error:', error);
+            toast.error('Google sign-up failed', {
+                position: "top-right",
+                action: {
+                    label: "Close",
+                    onClick: () => {},
+                },
+                closeButton: false,
+            });
+        }
     }
 
     const handleCloseAuth = () => {
@@ -338,8 +361,8 @@ export function Header() {
                                 <DropdownMenu open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" className="border-none !border-medium min-w-0 relative h-10 w-10 rounded-full hover:bg-accent/20">
-                                            <UserMenuAvatar 
-                                                user={user} 
+                                            <UserMenuAvatar
+                                                user={user}
                                                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                                             />
                                         </Button>
@@ -466,7 +489,7 @@ export function Header() {
                                     ) : isAuthenticated && user ? (
                                         <>
                                             <div className="flex items-center gap-3 p-2 mb-2">
-                                                <UserMenuAvatar 
+                                                <UserMenuAvatar
                                                     user={user}
                                                     size="sm"
                                                 />
@@ -515,7 +538,9 @@ export function Header() {
                                         </>
                                     ) : (
                                         <>
-                                            <Button variant="ghost" className="rounded-full justify-start hover:bg-accent/20" onClick={handleSignIn}>
+                                            <Button variant="ghost"
+                                                    className="rounded-full justify-start hover:bg-accent/20"
+                                                    onClick={handleSignIn}>
                                                 <User className="w-4 h-4 mr-2" />
                                                 Login
                                             </Button>
@@ -546,7 +571,6 @@ export function Header() {
                 isOpen={showSignUpChoiceModal}
                 onClose={() => setShowSignUpChoiceModal(false)}
                 onSignUpWithEmail={handleSignUpWithEmail}
-                onSignUpWithGoogle={handleSignUpWithGoogle}
                 onAuthSuccess={handleAuthSuccess}
             />
         </>
