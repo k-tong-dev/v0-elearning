@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle } from "lucide-react"
 import { motion } from "framer-motion"
+import { UserRole } from "@/types/user" // Import UserRole
 
 interface UserSkillsProps {
     skills: string[]
+    userRole: UserRole // Pass the user's charactor code
 }
 
-export function UserSkills({ skills }: UserSkillsProps) {
+export function UserSkills({ skills, userRole }: UserSkillsProps) {
     if (!skills || skills.length === 0) return null
 
     return (

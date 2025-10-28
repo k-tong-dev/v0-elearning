@@ -22,8 +22,8 @@ import {
     Globe,
     GraduationCap,
 } from "lucide-react"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { Footer } from "@/components/ui/footers/footer"
 
 export default function ContactPage() {
     const [formData, setFormData] = useState({

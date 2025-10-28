@@ -1,183 +1,195 @@
-"use client"
+"use client";
 
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
-import { UserRole, UserPreferences, UserSettings } from '@/types/auth'
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import type { User } from "@/types/user";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { getStrapiUserByEmail, storeAccessToken, getAccessToken } from "@/integrations/strapi/utils";
 
-export interface User {
-    id: string
-    email: string
-    name: string
-    avatar?: string
-    provider: 'google' | 'email'
-    role?: UserRole
-    settings?: UserSettings
-    badgeIds?: string[]
-    followers?: number
-    following?: number
-}
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
 interface AuthContextType {
-    user: User | null
-    isLoading: boolean
-    isAuthenticated: boolean
-    login: (email: string, password: string) => Promise<void>
-    register: (name: string, email: string, password: string, role: UserRole, preferences: UserPreferences) => Promise<void>
-    loginWithGoogle: (credential: string) => Promise<{user: User, newUser: boolean}>
-    logout: () => Promise<void>
-    refreshUser: () => Promise<void>
+    user: User | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
+    loginWithGoogle: (credential: string) => Promise<void>;
+    logout: () => Promise<void>;
+    refreshUser: () => Promise<void>;
+    userContext: (strapiUser: any) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function useAuth() {
-    const context = useContext(AuthContext)
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider')
-    }
-    return context
-}
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+    const [user, setUser] = useState<User | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const router = useRouter();
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
+    const userContext = useCallback((strapiUser: any) => {
+        if (!strapiUser) {
+            console.error("[userContext] No strapiUser provided");
+            return;
+        }
+        setUser((prev) => ({
+            ...strapiUser, // Dynamically include all Strapi fields
+            id: strapiUser.id?.toString() || prev?.id || null,
+            supabaseId: prev?.supabaseId || strapiUser.supabaseId || null,
+            email: strapiUser.email || prev?.email || "",
+            name: strapiUser.username || strapiUser.email || prev?.name || "",
+        }));
+        setIsAuthenticated(true);
+    }, []);
 
-    const isAuthenticated = !!user
+    const refreshUser = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const token = getAccessToken();
+            if (token) {
+                const res = await fetch(`${STRAPI_URL}/api/users/me?populate=*`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (res.ok) {
+                    const userData = await res.json();
+                    setUser({
+                        ...userData,
+                        id: userData.id.toString(),
+                        supabaseId: userData.supabaseId || null,
+                        email: userData.email || "",
+                        name: userData.username || userData.email || "",
+                    });
+                    setIsAuthenticated(true);
+                    return;
+                } else {
+                    if(sessionStorage.getItem("access_token")) {
+                        sessionStorage.removeItem("access_token");
+                    }
+                    if (localStorage.getItem("access_token")) {
+                        localStorage.removeItem("access_token");
+                    }
+                }
+            } else {setIsLoading(false);}
+
+            const { data } = await supabase.auth.getSession();
+            const supabaseUser = data.session?.user;
+            if (supabaseUser) {
+                const strapiUser = await getStrapiUserByEmail(supabaseUser.email!);
+                if (strapiUser) {
+                    setUser({
+                        ...strapiUser,
+                        id: strapiUser.id.toString(),
+                        supabaseId: supabaseUser.id,
+                        email: supabaseUser.email!,
+                        name: strapiUser.username || supabaseUser.email!,
+                    });
+                    setIsAuthenticated(true);
+                } else {
+                    setUser({
+                        id: null,
+                        supabaseId: supabaseUser.id,
+                        email: supabaseUser.email!,
+                        username: null,
+                        name: supabaseUser.user_metadata?.full_name || supabaseUser.email!,
+                        avatar: supabaseUser.user_metadata?.avatar_url || null,
+                    });
+                    setIsAuthenticated(true);
+                }
+            } else {
+                setUser(null);
+                setIsAuthenticated(false);
+            }
+        } catch (err: any) {
+            console.error("[refreshUser] Error:", err);
+            setUser(null);
+            setIsAuthenticated(false);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
-        checkAuth()
-    }, [])
+        refreshUser();
+        const { data: sub } = supabase.auth.onAuthStateChange(() => refreshUser());
+        return () => sub?.subscription.unsubscribe();
+    }, [refreshUser]);
 
-    const checkAuth = async () => {
+    const loginWithGoogle = useCallback(async (credential: string) => {
+        setIsLoading(true);
         try {
-            const response = await fetch('/api/auth/me', {
-                credentials: 'include'
-            })
+            const { data, error } = await supabase.auth.signInWithIdToken({
+                provider: "google",
+                token: credential,
+            });
+            if (error) throw error;
 
-            if (response.ok) {
-                const data = await response.json()
-                setUser(data.user)
-            }
-        } catch (error) {
-            console.error('Auth check failed:', error)
+            const supabaseUser = data.user;
+            if (!supabaseUser?.email) throw new Error("No Supabase user email found");
+
+            const res = await fetch(`${STRAPI_URL}/api/auth/google/callback`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: supabaseUser.email }),
+            });
+
+            if (!res.ok) throw new Error("Failed to authenticate with Strapi");
+            const { jwt, user: strapiUser } = await res.json();
+
+            storeAccessToken(jwt);
+            userContext(strapiUser);
+            toast.success("Signed in successfully!", { position: "top-center" });
+        } catch (error: any) {
+            console.error("[loginWithGoogle] Error:", error);
+            toast.error(error.message || "Login failed");
+            setUser(null);
+            setIsAuthenticated(false);
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }
+    }, [userContext]);
 
-    const login = async (email: string, password: string) => {
-        setIsLoading(true)
+    const logout = useCallback(async () => {
+        setIsLoading(true);
         try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password }),
-                credentials: 'include'
-            })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Login failed')
+            await supabase.auth.signOut();
+            if(sessionStorage.getItem("access_token")) {
+                sessionStorage.removeItem("access_token");
             }
-
-            setUser(data.user)
-        } catch (error) {
-            console.error('Login error:', error)
-            throw error
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const register = async (name: string, email: string, password: string, role: UserRole, preferences: UserPreferences) => {
-        setIsLoading(true)
-        try {
-            const response = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name, email, password, role, preferences }),
-                credentials: 'include'
-            })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Registration failed')
+            if (localStorage.getItem("access_token")) {
+                localStorage.removeItem("access_token");
             }
-
-            setUser(data.user)
-        } catch (error) {
-            console.error('Registration error:', error)
-            throw error
+            setUser(null);
+            setIsAuthenticated(false);
+            toast.success("Signed out successfully");
+            router.push("/");
+        } catch (error: any) {
+            toast.error(error.message || "Logout failed");
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }
+    }, [router]);
 
-    const loginWithGoogle = async (credential: string) => { // Returns { user, newUser }
-        setIsLoading(true)
-        try {
-            const response = await fetch('/api/auth/google', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ credential }),
-                credentials: 'include',
-                redirect: 'follow'
-            })
-            console.log(">>>>>>>>>>>>>>>>>>>>>>> response: ", response)
+    return (
+        <AuthContext.Provider
+            value={{
+                user,
+                isAuthenticated,
+                isLoading,
+                loginWithGoogle,
+                logout,
+                refreshUser,
+                userContext,
+            }}
+        >
+            {children}
+        </AuthContext.Provider>
+    );
+}
 
-            if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.error || 'Google login failed')
-            }
-
-            const data = await response.json()
-
-            setUser(data.user)
-
-            return { user: data.user, newUser: data.newUser }
-        } catch (error) {
-            console.error('Google login error:', error)
-            throw error
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const logout = async () => {
-        try {
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                credentials: 'include'
-            })
-
-            setUser(null)
-        } catch (error) {
-            console.error('Logout error:', error)
-            setUser(null)
-        }
-    }
-
-    const refreshUser = async () => {
-        await checkAuth()
-    }
-
-    const value: AuthContextType = {
-        user,
-        isLoading,
-        isAuthenticated,
-        login,
-        register,
-        loginWithGoogle,
-        logout,
-        refreshUser
-    }
-
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+export function useAuth() {
+    const context = useContext(AuthContext);
+    if (!context) throw new Error("useAuth must be used within AuthProvider");
+    return context;
 }

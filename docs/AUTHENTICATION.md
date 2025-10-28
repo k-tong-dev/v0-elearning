@@ -44,7 +44,7 @@ A complete MongoDB-based authentication system has been implemented with support
 - Creates or updates user accounts
 - Supports both new and existing users
 
-### GET /api/auth/me
+### GET /api/user/me
 - Returns current user information
 - Requires authentication token
 - Used for session restoration
@@ -148,7 +148,7 @@ export function ProtectedPage() {
   if (isLoading) return <div>Loading...</div>
   if (!isAuthenticated) return <div>Please log in</div>
   
-  return <div>Welcome, {user.name}!</div>
+  return <div>Welcome, {user.username}!</div>
 }
 ```
 

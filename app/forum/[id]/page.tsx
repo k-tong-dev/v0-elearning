@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { Footer } from "@/components/ui/footers/footer"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
@@ -344,7 +344,7 @@ export default function ForumDetailPage() {
     if (!post) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-                <Header />
+                <HeaderDark />
                 <div className="container mx-auto px-4 py-8 pt-24 text-center">
                     <h1 className="text-2xl font-bold mb-4">Post not found</h1>
                     <Button onClick={() => router.back()}>Go Back</Button>
@@ -356,7 +356,7 @@ export default function ForumDetailPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-            <Header />
+            <HeaderDark />
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
                 {/* Back Button */}

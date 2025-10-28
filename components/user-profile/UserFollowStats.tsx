@@ -8,9 +8,10 @@ import { motion } from "framer-motion"
 interface UserFollowStatsProps {
     followers: number
     following: number
+    userCharactorName: string // Changed to userCharactorName: string
 }
 
-export function UserFollowStats({ followers, following }: UserFollowStatsProps) {
+export function UserFollowStats({ followers, following, userCharactorName }: UserFollowStatsProps) {
     return (
         <motion.div
             initial={{ opacity: 0, x: -20 }}

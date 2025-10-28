@@ -17,7 +17,8 @@ import Image from "next/image"
 import { cn } from "@/utils/utils"
 import { AvatarDock, AvatarDockIcon } from "@/components/ui/aceternity/avatar-dock"
 import { avatarList } from "@/lib/static-avatars"
-import {BackgroundBeams} from "@/components/ui/aceternity/background-beams";
+import DEFAULT_AVATAR from "@/public/avatars/robotic.png"
+import { BackgroundBeams } from "@/components/ui/aceternity/background-beams"
 
 const roleColors = {
     instructor: "from-blue-500 to-purple-500",
@@ -46,7 +47,7 @@ export function ProfileHeaderDisplay({avatar,name,email,followers,following,role
 
     const roleGradient = roleColors[role] || roleColors.student
     const firstName = name ? name.split(" ")[0] : "User"
-
+    const validAvatar = typeof avatar === "string" && avatar ? avatar : DEFAULT_AVATAR
     return (
         <>
             <div className="relative overflow-hidden border border-white/10 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] bg-white/10 dark:bg-gray-950 backdrop-blur-2xl p-8 md:p-10 flex flex-col md:flex-row items-center md:items-end gap-8">
@@ -69,25 +70,18 @@ export function ProfileHeaderDisplay({avatar,name,email,followers,following,role
                         }}
                         onClick={openModal}
                     >
-                        {avatar ? (
-                            <Image
-                                src={avatar}
-                                alt={`${firstName}'s Avatar`}
-                                fill
-                                className="object-cover"
-                            />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cyan-500/40 to-purple-500/40 text-white text-2xl font-bold">
-                                {firstName[0].toUpperCase()}
-                            </div>
-                        )}
+                        <Image
+                            src={validAvatar}
+                            alt={`${firstName}'s Avatar`}
+                            fill
+                            className="object-cover"
+                        />
                         <div
                             className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                         >
                             <Camera className="w-6 h-6 text-white" />
                         </div>
                     </motion.div>
-
 
                     <h1 className="text-3xl font-bold bg-gray-600 bg-clip-text text-transparent mt-6">
                         {name}
@@ -120,29 +114,22 @@ export function ProfileHeaderDisplay({avatar,name,email,followers,following,role
                     >
                         {previewURL || selectedImage ? (
                             <Image
-                                src={previewURL || selectedImage!}
+                                src={previewURL || selectedImage}
                                 alt="Preview"
                                 fill
                                 className="object-cover rounded-3xl"
                             />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                                {avatar ? (
-                                    <Image
-                                        src={avatar}
-                                        alt={`${firstName}'s Avatar`}
-                                        fill
-                                        className="object-cover rounded-3xl"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cyan-500/40 to-purple-500/40 text-white text-2xl font-bold">
-                                        {firstName[0].toUpperCase()}
-                                    </div>
-                                )}
+                                <Image
+                                    src={validAvatar}
+                                    alt={`${firstName}'s Avatar`}
+                                    fill
+                                    className="object-cover rounded-3xl"
+                                />
                             </div>
                         )}
                     </motion.div>
-
 
                     {/* Buttons */}
                     <div className="flex gap-6 mt-4">

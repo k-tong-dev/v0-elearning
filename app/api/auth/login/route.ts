@@ -3,13 +3,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthResponse } from '@/lib/auth-middleware';
 
-const STRAPI_URL = process.env.STRAPI_URL || 'http://localhost:1337';
+const NEXT_PUBLIC_STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    const response = await fetch(`${STRAPI_URL}/api/auth/local`, {
+    const response = await fetch(`${NEXT_PUBLIC_STRAPI_URL}/api/auth/local`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier: email, password }),

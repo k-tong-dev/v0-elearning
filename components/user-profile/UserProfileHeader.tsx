@@ -18,7 +18,7 @@ import {
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
-// Removed: import { AnimatedShape } from "@/components/dashboard/AnimatedShape" // No longer needed
+import { Charactor } from "@/types/user" // Import Charactor
 
 interface UserProfileHeaderProps {
     user: {
@@ -27,7 +27,7 @@ interface UserProfileHeaderProps {
         username: string
         avatar?: string
         coverImage?: string
-        role: string
+        charactor: Charactor // Updated to Charactor
         bio: string
         location?: string
         website?: string
@@ -148,66 +148,66 @@ export function UserProfileHeader({ user, isFollowing, setIsFollowing }: UserPro
                         </div>
 
                         <div className="flex-1 space-y-2 text-center md:text-left">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                <div>
-                                    <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
-                                        {user.name}
-                                    </h1>
-                                    <p className="text-muted-foreground text-lg">{user.username}</p>
-                                    <div className="flex items-center justify-center md:justify-start gap-2 mt-2">
-                                        <Badge variant="outline" className="bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 text-cyan-700 dark:text-cyan-300">
-                                            {user.role}
-                                        </Badge>
-                                        <span className="text-sm text-muted-foreground">
-                      Last active {user.lastActive}
-                    </span>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                    <Button
-                                        onClick={handleFollow}
-                                        className={isFollowing
-                                            ? "bg-gray-500 hover:bg-gray-600 text-white"
-                                            : "bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white"
-                                        }
-                                    >
-                                        {isFollowing ? "Following" : "Follow"}
-                                    </Button>
-                                    <Button variant="outline" onClick={handleMessage}>
-                                        <MessageCircle className="w-4 h-4 mr-2" />
-                                        Message
-                                    </Button>
-                                    <Button variant="outline" size="icon" onClick={handleShare}>
-                                        <Share2 className="w-4 h-4" />
-                                    </Button>
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+                                    {user.name}
+                                </h1>
+                                <p className="text-muted-foreground text-lg">{user.username}</p>
+                                <div className="flex items-center justify-center md:justify-start gap-2 mt-2">
+                                    <Badge variant="outline" className="bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 text-cyan-700 dark:text-cyan-300">
+                                        {user.charactor.name} {/* Display charactor name */}
+                                    </Badge>
+                                    <span className="text-sm text-muted-foreground">
+                                      Last active {user.lastActive}
+                                    </span>
                                 </div>
                             </div>
 
-                            {user.bio && (
-                                <p className="text-base leading-relaxed max-w-3xl mx-auto md:mx-0 mt-4">{user.bio}</p>
-                            )}
+                            <div className="flex items-center gap-3">
+                                <Button
+                                    onClick={handleFollow}
+                                    className={isFollowing
+                                        ? "bg-gray-500 hover:bg-gray-600 text-white"
+                                        : "bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white"
+                                    }
+                                >
+                                    {isFollowing ? "Following" : "Follow"}
+                                </Button>
+                                <Button variant="outline" onClick={handleMessage}>
+                                    <MessageCircle className="w-4 h-4 mr-2" />
+                                    Message
+                                </Button>
+                                <Button variant="outline" size="icon" onClick={handleShare}>
+                                    <Share2 className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
 
-                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground mt-4">
-                                {user.location && (
-                                    <span className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />
-                                        {user.location}
-                  </span>
-                                )}
-                                {user.website && (
-                                    <span className="flex items-center gap-1">
-                    <LinkIcon className="w-4 h-4" />
-                    <a href={user.website} target="_blank" rel="noopener noreferrer"
-                       className="hover:text-primary transition-colors">
-                      {user.website.replace(/^https?:\/\//, '')}
-                    </a>
-                  </span>
-                                )}
+                        {user.bio && (
+                            <p className="text-base leading-relaxed max-w-3xl mx-auto md:mx-0 mt-4">{user.bio}</p>
+                        )}
+
+                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground mt-4">
+                            {user.location && (
                                 <span className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  Joined {user.joinDate}
-                </span>
+                                    <MapPin className="w-4 h-4" />
+                                    {user.location}
+                                </span>
+                            )}
+                            {user.website && (
+                                <span className="flex items-center gap-1">
+                                    <LinkIcon className="w-4 h-4" />
+                                    <a href={user.website} target="_blank" rel="noopener noreferrer"
+                                       className="hover:text-primary transition-colors">
+                                      {user.website.replace(/^https?:\/\//, '')}
+                                    </a>
+                                </span>
+                            )}
+                            <span className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                  Joined {user.joinDate}
+                                </span>
                             </div>
 
                             {/* Social Links */}

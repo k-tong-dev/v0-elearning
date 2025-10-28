@@ -2,8 +2,8 @@
 
 import React, { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Header } from "@/components/header" // Keep Header/Footer for standalone page, but won't be rendered when used in-page
-import { Footer } from "@/components/footer" // Keep Header/Footer for standalone page, but won't be rendered when used in-page
+import { HeaderDark } from "@/components/ui/headers/HeaderDark" // Keep Header/Footer for standalone page, but won't be rendered when used in-page
+import { Footer } from "@/components/ui/footers/footer" // Keep Header/Footer for standalone page, but won't be rendered when used in-page
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

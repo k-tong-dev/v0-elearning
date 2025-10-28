@@ -6,13 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { BookOpen, Award } from "lucide-react"
 import { motion } from "framer-motion"
+import { UserRole } from "@/types/user" // Import UserRole
 
 interface UserCoursesOverviewProps {
     coursesEnrolled: number
     coursesCreated: number
+    userRole: UserRole // Pass the user's charactor code
 }
 
-export function UserCoursesOverview({ coursesEnrolled, coursesCreated }: UserCoursesOverviewProps) {
+export function UserCoursesOverview({ coursesEnrolled, coursesCreated, userRole }: UserCoursesOverviewProps) {
     const router = useRouter()
 
     return (
@@ -45,7 +47,12 @@ export function UserCoursesOverview({ coursesEnrolled, coursesCreated }: UserCou
                         <div className="text-center py-8">
                             <div className="text-4xl font-bold text-purple-500 mb-2">{coursesCreated}</div>
                             <p className="text-muted-foreground text-lg">Courses Published</p>
-                            <Button className="mt-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" onClick={() => router.push('/dashboard?tab=my-courses')}>Create Course</Button>
+                            {userRole === 'instructor' && ( // Only show button if user is an instructor
+                                <Button className="mt-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" onClick={() => router.push('/dashboard?tab=my-courses')}>Create Course</Button>
+                            )}
+                            {userRole !== 'instructor' && (
+                                <p className="text-sm text-muted-foreground mt-4">Become an instructor to create courses.</p>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

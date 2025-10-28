@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UserService } from '@/lib/auth';
 import { ObjectId } from 'mongodb';
-import { UserRole, UserSettings } from '@/types/auth';
+import { User, UserSettings } from '@/types/user';
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
     // Explicitly await params to resolve the proxy object if necessary

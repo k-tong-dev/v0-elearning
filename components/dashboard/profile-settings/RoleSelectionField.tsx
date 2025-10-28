@@ -4,14 +4,14 @@ import React from "react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Briefcase, BookOpen, Building2, Sparkles } from "lucide-react"
-import { UserRole } from "@/types/auth"
+import { UserRoleSlug } from "@/types/user" // Updated import
 
 interface RoleSelectionFieldProps {
-    role: UserRole
-    onRoleChange: (role: UserRole) => void
+    charactor: UserRoleSlug // Changed to charactor
+    onCharactorChange: (charactor: UserRoleSlug) => void // Changed to onCharactorChange
 }
 
-const roleOptions = [
+const charactorOptions: { value: UserRoleSlug; label: string; icon: React.ElementType }[] = [
     { value: "student", label: "Student", icon: BookOpen },
     { value: "instructor", label: "Instructor", icon: Briefcase },
     { value: "company", label: "Company", icon: Building2 },
@@ -19,23 +19,23 @@ const roleOptions = [
     { value: "other", label: "Other", icon: Sparkles },
 ];
 
-export function RoleSelectionField({ role, onRoleChange }: RoleSelectionFieldProps) {
+export function RoleSelectionField({ charactor, onCharactorChange }: RoleSelectionFieldProps) {
     return (
         <div className="space-y-2">
             <Label>
                 <Briefcase className="w-4 h-4 mr-2 text-purple-500" />
-                Your Role
+                Your Charactor
             </Label>
-            <Select value={role} onValueChange={onRoleChange}>
+            <Select value={charactor} onValueChange={onCharactorChange}>
                 <SelectTrigger>
-                    <SelectValue placeholder="Select your role" />
+                    <SelectValue placeholder="Select your charactor" />
                 </SelectTrigger>
                 <SelectContent>
-                    {roleOptions.map((roleOption) => (
-                        <SelectItem key={roleOption.value} value={roleOption.value}>
+                    {charactorOptions.map((charactorOption) => (
+                        <SelectItem key={charactorOption.value} value={charactorOption.value}>
                             <div className="flex items-center gap-2">
-                                <roleOption.icon className="w-4 h-4" />
-                                {roleOption.label}
+                                <charactorOption.icon className="w-4 h-4" />
+                                {charactorOption.label}
                             </div>
                         </SelectItem>
                     ))}

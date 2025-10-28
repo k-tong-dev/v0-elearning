@@ -2,8 +2,8 @@
 
 import React, { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { Footer } from "@/components/ui/footers/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -216,7 +216,7 @@ export default function UsersDirectoryPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-      <Header />
+      <HeaderDark />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         {/* Header */}

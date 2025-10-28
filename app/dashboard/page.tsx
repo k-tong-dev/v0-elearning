@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { Footer } from "@/components/ui/footers/footer"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { motion } from "framer-motion"
 import { useAuth } from "@/hooks/use-auth"
@@ -28,8 +28,8 @@ import {
     GraduationCap,
     CreditCard,
 } from "lucide-react"
-import { FloatingDock, DockIcon } from "@/components/ui/floating-dock";
-import { FaRegUser, FaCog, FaCrown } from "react-icons/fa"; // Import react-icons
+import { FloatingDock, DockIcon } from "@/components/ui/floating-dock"
+import { FaRegUser, FaCog, FaCrown } from "react-icons/fa"
 
 // Interfaces for mock data
 interface DashboardStats {
@@ -73,10 +73,36 @@ interface Enrollment {
     completed: boolean
 }
 
+interface User {
+    id: string
+    username: string
+    email: string
+    avatar?: string | { url: string }
+    role?: string
+    followers: number
+    following: number
+    jwt?: string
+    charactor?: { id: string; attributes: { slug: string } }
+    settings?: {
+        bio?: string
+        location?: string
+        website?: string
+        socialLinks?: { twitter?: string; github?: string; linkedin?: string }
+        skills?: string[]
+        notifications?: {
+            newEnrollments?: boolean
+            courseReviews?: boolean
+            paymentNotifications?: boolean
+            weeklyAnalytics?: boolean
+        }
+    }
+    badgeIds?: number[]
+}
+
 export default function DashboardPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-            <Header />
+            <HeaderDark />
             <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading dashboard...</div>}>
                 <DashboardContent />
             </Suspense>
@@ -95,26 +121,16 @@ function DashboardContent() {
     const [selectedTab, setSelectedTab] = useState(initialTab)
     const [showCreateCourseForm, setShowCreateCourseForm] = useState(initialCreateCourse && initialTab === 'my-courses')
 
-    // State for settings sub-tabs, now managed here
-    const [activeSettingsSection, setActiveSettingsSection] = useState<"profile" | "notifications" | "limits">("profile");
-
     useEffect(() => {
         const tab = searchParams?.get("tab")
         const create = searchParams?.get("create") === "true"
-        const settingsSection = searchParams?.get("section") as any;
 
-        if (tab) {
+        if (tab && tab !== selectedTab) {
             setSelectedTab(tab)
             setShowCreateCourseForm(create && tab === 'my-courses')
         }
-        if (settingsSection && ["profile", "notifications", "limits"].includes(settingsSection)) {
-            setActiveSettingsSection(settingsSection);
-        } else if (tab === "settings") {
-            setActiveSettingsSection("profile"); // Default to profile if settings tab is active but no section specified
-        }
-    }, [searchParams])
+    }, [searchParams, selectedTab])
 
-    // Define tabs configuration with icons
     const tabsConfig = [
         { value: "overview", label: "Overview", icon: LayoutDashboard },
         { value: "enrollments", label: "Enrollments", icon: GraduationCap },
@@ -123,13 +139,6 @@ function DashboardContent() {
         { value: "analytics", label: "Analytics", icon: BarChart3 },
         { value: "settings", label: "Settings", icon: Settings },
     ]
-
-    const settingsTabsConfig = [
-        { value: "profile", label: "Profile", icon: FaRegUser },
-        { value: "setting", label: "Setting", icon: FaCog },
-        { value: "limits", label: "Limits", icon: FaCrown },
-    ];
-
 
     // Mock data for dashboard
     const stats: DashboardStats = {
@@ -143,7 +152,6 @@ function DashboardContent() {
         enrollmentsReceived: 145,
     }
 
-    // Mock chart data
     const enrollmentData = [
         { month: "Jan", enrollments: 45, revenue: 2250 },
         { month: "Feb", enrollments: 52, revenue: 2600 },
@@ -160,7 +168,6 @@ function DashboardContent() {
         { name: "Link", value: 10, color: "#F59E0B" },
     ]
 
-    // New mock data for lessons completed over time
     const lessonsCompletedData = [
         { month: "Jan", lessons: 10 },
         { month: "Feb", lessons: 15 },
@@ -168,7 +175,7 @@ function DashboardContent() {
         { month: "Apr", lessons: 18 },
         { month: "May", lessons: 25 },
         { month: "Jun", lessons: 30 },
-    ];
+    ]
 
     const myCourses: Course[] = [
         {
@@ -195,7 +202,7 @@ function DashboardContent() {
             rating: 4.6,
             createdAt: "2024-01-10",
             lastUpdated: "2024-01-18",
-            thumbnailUrl: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=300&h=200&fit-crop",
+            thumbnailUrl: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=300&h=200&fit=crop",
         },
         {
             id: "3",
@@ -208,7 +215,7 @@ function DashboardContent() {
             rating: 0,
             createdAt: "2024-01-25",
             lastUpdated: "2024-01-25",
-            thumbnailUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=200&fit-crop",
+            thumbnailUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=200&fit=crop",
         },
     ]
 
@@ -224,7 +231,7 @@ function DashboardContent() {
             rating: 4.9,
             createdAt: "2024-01-01",
             lastUpdated: "2024-01-15",
-            thumbnailUrl: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&h=200&fit-crop",
+            thumbnailUrl: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&h=200&fit=crop",
             progress: 75,
             totalLessons: 24,
             completedLessons: 18,
@@ -240,7 +247,7 @@ function DashboardContent() {
             rating: 4.7,
             createdAt: "2024-01-05",
             lastUpdated: "2024-01-20",
-            thumbnailUrl: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=300&h=200&fit-crop",
+            thumbnailUrl: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=300&h=200&fit=crop",
             progress: 45,
             totalLessons: 32,
             completedLessons: 14,
@@ -256,7 +263,7 @@ function DashboardContent() {
             rating: 4.5,
             createdAt: "2024-02-01",
             lastUpdated: "2024-02-10",
-            thumbnailUrl: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=300&h=200&fit-crop",
+            thumbnailUrl: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=300&h=200&fit=crop",
             progress: 20,
             totalLessons: 15,
             completedLessons: 3,
@@ -312,34 +319,32 @@ function DashboardContent() {
     ]
 
     const handleTabChange = (tab: string) => {
-        setSelectedTab(tab)
-        // If switching to settings tab, ensure a default section is set
-        if (tab === "settings" && !searchParams?.get("section")) {
-            router.push(`/dashboard?tab=${tab}&section=profile`)
-        } else {
+        if (tab !== selectedTab) {
+            setSelectedTab(tab)
             router.push(`/dashboard?tab=${tab}`)
         }
     }
 
-    const handleSettingsSectionChange = (section: "profile" | "setting" | "limits") => {
-        setActiveSettingsSection(section);
-        router.push(`/dashboard?tab=settings&section=${section}`);
-    };
-
     const handleCreateCourseClick = () => {
-        setSelectedTab("my-courses")
-        setShowCreateCourseForm(true)
-        router.push("/dashboard?tab=my-courses&create=true")
+        if (selectedTab !== "my-courses" || !showCreateCourseForm) {
+            setSelectedTab("my-courses")
+            setShowCreateCourseForm(true)
+            router.push("/dashboard?tab=my-courses&create=true")
+        }
     }
 
     const handleCancelCreateCourse = () => {
-        setShowCreateCourseForm(false)
-        router.push("/dashboard?tab=my-courses")
+        if (showCreateCourseForm) {
+            setShowCreateCourseForm(false)
+            router.push("/dashboard?tab=my-courses")
+        }
     }
 
     const handleCourseCreatedSuccess = () => {
-        setShowCreateCourseForm(false)
-        router.push("/dashboard?tab=my-courses")
+        if (showCreateCourseForm) {
+            setShowCreateCourseForm(false)
+            router.push("/dashboard?tab=my-courses")
+        }
     }
 
     if (authLoading || !user) {
@@ -353,8 +358,7 @@ function DashboardContent() {
     return (
         <main className="pt-24 pb-8 px-4 sm:px-6 lg:px-8">
             <div className="container mx-auto">
-
-                <DashboardHeader userName={user.name}/>
+                <DashboardHeader userName={user.username} />
 
                 <motion.div
                     key={selectedTab + (showCreateCourseForm ? '-create' : '-list')}
@@ -364,7 +368,6 @@ function DashboardContent() {
                     className="space-y-6"
                 >
                     <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
-                        {/* TabsContent for each section */}
                         <TabsContent value="overview" className="mt-0">
                             <DashboardOverview
                                 stats={stats}
@@ -405,19 +408,15 @@ function DashboardContent() {
                             <DashboardSettings
                                 currentUser={{
                                     id: user.id,
-                                    name: user.name,
+                                    username: user.username,
                                     email: user.email,
-                                    avatar: user.avatar,
-                                    bio: (user as any).profile?.bio,
-                                    location: (user as any).profile?.location,
-                                    website: (user as any).profile?.website,
-                                    socialLinks: (user as any).profile?.social,
+                                    avatar: typeof user.avatar === 'string' ? user.avatar : user.avatar?.url ? `${process.env.NEXT_PUBLIC_STRAPI_URL}${user.avatar.url}` : null,
                                     role: user.role,
-                                    settings: (user as any).settings || {},
-                                    skills: (user as any).settings?.skills || [],
-                                    badgeIds: (user as any)?.badgeIds || [],
                                     followers: user.followers,
                                     following: user.following,
+                                    charactor: user.charactor,
+                                    settings: user.settings || {},
+                                    badgeIds: user.badgeIds || [],
                                 }}
                                 stats={{
                                     coursesCreated: stats.coursesCreated,
@@ -425,18 +424,16 @@ function DashboardContent() {
                                     totalRevenue: stats.totalRevenue,
                                     completionRate: stats.completionRate
                                 }}
-                                activeSection={activeSettingsSection} // Pass active section
                             />
                         </TabsContent>
                     </Tabs>
                 </motion.div>
             </div>
 
-            {/* Floating Dock Menu for main tabs */}
             <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
                 <FloatingDock>
                     {tabsConfig.map((tab) => {
-                        const IconComponent = tab.icon;
+                        const IconComponent = tab.icon
                         return (
                             <DockIcon
                                 key={tab.value}
@@ -446,31 +443,31 @@ function DashboardContent() {
                             >
                                 <IconComponent className={`w-6 h-6 ${selectedTab === tab.value ? "text-white" : "group-hover:text-white"}`} />
                             </DockIcon>
-                        );
+                        )
                     })}
                 </FloatingDock>
             </div>
 
-            {/*/!* Floating Dock Menu for settings sub-tabs (only show if settings tab is active) *!/*/}
-            {/*{selectedTab === "settings" && (*/}
-            {/*    <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50">*/}
-            {/*        <FloatingDock>*/}
-            {/*            {settingsTabsConfig.map((section) => {*/}
-            {/*                const IconComponent = section.icon;*/}
-            {/*                return (*/}
-            {/*                    <DockIcon*/}
-            {/*                        key={section.value}*/}
-            {/*                        label={section.label}*/}
-            {/*                        active={activeSettingsSection === section.value}*/}
-            {/*                        onClick={() => handleSettingsSectionChange(section.value as any)}*/}
-            {/*                    >*/}
-            {/*                        <IconComponent className={`w-6 h-6 ${activeSettingsSection === section.value ? "text-white" : "text-white/70 group-hover:text-white"}`} />*/}
-            {/*                    </DockIcon>*/}
-            {/*                );*/}
-            {/*            })}*/}
-            {/*        </FloatingDock>*/}
-            {/*    </div>*/}
-            {/*)}*/}
+            {/* Keep FloatingDock for settings sub-tabs commented out as requested */}
+            {/* {selectedTab === "settings" && (
+                <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50">
+                    <FloatingDock>
+                        {settingsTabsConfig.map((section) => {
+                            const IconComponent = section.icon
+                            return (
+                                <DockIcon
+                                    key={section.value}
+                                    label={section.label}
+                                    active={activeSettingsSection === section.value}
+                                    onClick={() => handleSettingsSectionChange(section.value)}
+                                >
+                                    <IconComponent className={`w-6 h-6 ${activeSettingsSection === section.value ? "text-white" : "text-white/70 group-hover:text-white"}`} />
+                                </DockIcon>
+                            )
+                        })}
+                    </FloatingDock>
+                </div>
+            )} */}
         </main>
     )
 }

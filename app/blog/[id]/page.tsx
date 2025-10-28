@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link" // Import Link for navigation
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { Footer } from "@/components/ui/footers/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -821,7 +821,7 @@ Happy coding!
   if (!post) {
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-          <Header />
+          <HeaderDark />
           <div className="container mx-auto px-4 py-8 pt-24 text-center">
             <h1 className="text-2xl font-bold mb-4">Post not found</h1>
             <Button onClick={() => router.back()}>Go Back</Button>
@@ -833,7 +833,7 @@ Happy coding!
 
   return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-        <Header />
+        <HeaderDark />
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
           {/* Back Button */}
@@ -855,7 +855,7 @@ Happy coding!
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-3">
-              {/* Article Header */}
+              {/* Article HeaderDark */}
               <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}

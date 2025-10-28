@@ -4,6 +4,7 @@ import * as React from "react"
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
+import { motion } from "framer-motion"
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
@@ -15,25 +16,45 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className="w-10 h-10">
-        <Sun className="h-5 w-5" />
-      </Button>
+        <Button variant="ghost" size="icon" className="rounded-xl w-10 h-10" disabled>
+          <Sun className="h-5 w-5" />
+        </Button>
     )
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      className="w-10 h-10 hover:bg-accent/20 transition-all duration-300"
-    >
-      {theme === "light" ? (
-        <Moon className="h-5 w-5 text-foreground transition-all" />
-      ) : (
-        <Sun className="h-5 w-5 text-foreground transition-all" />
-      )}
-      <span className="sr-only">Toggle theme</span>
-    </Button>
+      <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="rounded-xl w-10 h-10 hover:bg-white/40 dark:hover:bg-white/10 transition-all duration-300 relative overflow-hidden"
+          style={{
+            backdropFilter: "blur(10px)",
+          }}
+      >
+        <motion.div
+            initial={false}
+            animate={{
+              scale: theme === "dark" ? 0 : 1,
+              rotate: theme === "dark" ? 90 : 0,
+            }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="absolute"
+        >
+          <Sun className="h-5 w-5" />
+        </motion.div>
+        <motion.div
+            initial={false}
+            animate={{
+              scale: theme === "dark" ? 1 : 0,
+              rotate: theme === "dark" ? 0 : -90,
+            }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="absolute"
+        >
+          <Moon className="h-5 w-5" />
+        </motion.div>
+        <span className="sr-only">Toggle theme</span>
+      </Button>
   )
 }

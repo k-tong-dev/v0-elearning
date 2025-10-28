@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { UserRole } from "../types/auth";
+import { UserRole } from "../types/user";
 
 // Define sub-schemas for embedded documents
 const NotificationSettingsSchema: Schema = new Schema({

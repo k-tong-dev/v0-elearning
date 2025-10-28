@@ -51,6 +51,7 @@
     "@radix-ui/react-tooltip": "1.1.6",
     "@react-oauth/google": "^0.12.2",
     "@strapi/plugin-users-permissions": "^5.29.0",
+    "@supabase/supabase-js": "^2.76.1",
     "@types/bcrypt": "^6.0.0",
     "@types/react-syntax-highlighter": "^15.5.13",
     "aos": "latest",

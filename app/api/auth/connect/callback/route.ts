@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const STRAPI_URL = process.env.STRAPI_URL || 'http://localhost:1337';
+const NEXT_PUBLIC_STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     try {
         // Exchange code for tokens via Strapi
-        const tokenResponse = await fetch(`${STRAPI_URL}/api/connect/google/callback`, {
+        const tokenResponse = await fetch(`${NEXT_PUBLIC_STRAPI_URL}/api/connect/google/callback`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code, state }),
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         const { jwt, user } = await tokenResponse.json();
 
         // Check if user needs profile completion (e.g., role/preferences)
-        const fullUserResponse = await fetch(`${STRAPI_URL}/users/me`, {
+        const fullUserResponse = await fetch(`${NEXT_PUBLIC_STRAPI_URL}/users/me`, {
             headers: { Authorization: `Bearer ${jwt}` },
         });
         const fullUser = await fullUserResponse.json();

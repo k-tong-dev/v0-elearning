@@ -4,6 +4,7 @@ import React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp, MessageCircle, Heart, Users, Star } from "lucide-react"
 import { motion } from "framer-motion"
+import { UserRole } from "@/types/user" // Import UserRole
 
 interface UserRecentActivityProps {
     recentActivity: Array<{
@@ -12,9 +13,10 @@ interface UserRecentActivityProps {
         time: string
         icon: React.ElementType
     }>
+    userRole: UserRole // Pass the user's charactor code
 }
 
-export function UserRecentActivity({ recentActivity }: UserRecentActivityProps) {
+export function UserRecentActivity({ recentActivity, userRole }: UserRecentActivityProps) {
     return (
         <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
             <CardHeader>

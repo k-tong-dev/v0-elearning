@@ -201,7 +201,7 @@ export function HeroSection() {
                             text-white px-10 py-4 rounded-2xl text-xl font-normal font-saira
                             transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/25
                             hover:scale-105 transform-gpu hover:gap-5"
-                            onClick={() => router.push("/courses")} // Link to courses page
+                            onClick={() => router.push("/courses")}
                         >
                             Start Learning Now
                             <GrLinkNext/>
@@ -213,7 +213,7 @@ export function HeroSection() {
                             hover:bg-cyan-500 hover:text-white px-10 py-4
                             rounded-2xl text-xl font-normal font-saira
                             hover:shadow-2xl hover:scale-105 bg-transparent backdrop-blur-sm"
-                            onClick={() => router.push("/demo")} // Link to demo page
+                            onClick={() => router.push("/demo")}
                         >
                             <Play className="w-6 h-6 mr-3"/>
                             Watch Demo

@@ -5,8 +5,6 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@heroui/react"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { AuthModal } from "@/components/auth-modal"
-import { SignUpChoiceModal } from "@/components/auth/SignUpChoiceModal"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { UserMenuAvatar } from "@/components/ui/enhanced-avatar"
 import { useAuth } from "@/hooks/use-auth"
@@ -43,8 +41,6 @@ export function Header() {
     const [isScrolled, setIsScrolled] = useState(false)
     const [isExploreOpen, setIsExploreOpen] = useState(false)
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-    const [showAuthModal, setShowAuthModal] = useState(false)
-    const [showSignUpChoiceModal, setShowSignUpChoiceModal] = useState(false)
 
     useEffect(() => {
         const handleScroll = () => {
@@ -54,53 +50,10 @@ export function Header() {
         return () => window.removeEventListener("scroll", handleScroll)
     }, [])
 
-    const handleSignIn = () => {
-        setShowAuthModal(true)
-        setIsMenuOpen(false)
-    }
-
-    const handleSignUpClick = () => {
-        setShowSignUpChoiceModal(true)
-        setIsMenuOpen(false)
-    }
-
-    const handleSignUpWithEmail = () => {
-        router.push("/auth/signup")
-        setShowSignUpChoiceModal(false)
-    }
-
-    const handleSignUpWithGoogle = async (credential: string) => {
-        try {
-            const { newUser } = await loginWithGoogle(credential);
-            if (newUser) {
-                router.push('/auth/google-preferences?userId=' + (await loginWithGoogle(credential)).user.id);
-            } else {
-                setShowSignUpChoiceModal(false);
-                toast.success('Signed in with Google!', {
-                    position: "top-right",
-                    action: {
-                        label: "Close",
-                        onClick: () => {},
-                    },
-                    closeButton: false,
-                });
-            }
-        } catch (error: any) {
-            console.error('Google sign-up error:', error);
-            toast.error('Google sign-up failed', {
-                position: "top-right",
-                action: {
-                    label: "Close",
-                    onClick: () => {},
-                },
-                closeButton: false,
-            });
-        }
-    }
-
-    const handleCloseAuth = () => {
-        setShowAuthModal(false)
-    }
+    const handleGetStartedClick = () => {
+        router.push("/auth/start");
+        setIsMenuOpen(false);
+    };
 
     const handleSignOut = async () => {
         try {
@@ -212,18 +165,6 @@ export function Header() {
             })
         }
         setIsUserMenuOpen(false)
-    }
-
-    const handleAuthSuccess = () => {
-        toast.success('Welcome to CamEducation!', {
-            position: "top-center",
-            action: {
-                label: "Close",
-                onClick: () => {},
-            },
-            closeButton: false,
-        })
-        handleCloseAuth()
     }
 
     const handleSearch = () => {
@@ -381,7 +322,7 @@ export function Header() {
                                             <User className="mr-2 h-4 w-4" />
                                             <span>Profile</span>
                                         </DropdownMenuItem>
-                                        {user.role === 'instructor' && (
+                                        {user.role?.code === 'instructor' && ( // Access role.code
                                             <DropdownMenuItem onClick={handleCreateCourseClick} className="hover:bg-accent/20"> {/* Refined hover */}
                                                 <PlusCircle className="mr-2 h-4 w-4" />
                                                 <span>Create Course</span>
@@ -409,15 +350,11 @@ export function Header() {
                                 </DropdownMenu>
                             ) : (
                                 <>
-                                    <Button variant="ghost" className="rounded-full hover:bg-accent/20" onClick={handleSignIn}>
-                                        <User className="w-4 h-4 mr-2" />
-                                        Login
-                                    </Button>
                                     <Button
-                                        onClick={handleSignUpClick}
+                                        onClick={handleGetStartedClick}
                                         className="rounded-full relative bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white px-6 py-2 transition-all duration-300 hover:shadow-lg hover:shadow-orange-400/25 overflow-hidden group"
                                     >
-                                        <span className="relative z-10">Sign Up!</span>
+                                        <span className="relative z-10">Get Started</span>
                                         <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     </Button>
                                 </>
@@ -506,7 +443,7 @@ export function Header() {
                                                 <User className="w-4 h-4 mr-2" />
                                                 Dashboard
                                             </Button>
-                                            {user.role === 'instructor' && (
+                                            {user.role?.code === 'instructor' && ( // Access role.code
                                                 <Button
                                                     variant="ghost"
                                                     className="rounded-full justify-start hover:bg-accent/20"
@@ -533,22 +470,16 @@ export function Header() {
                                                 onClick={handleSignOut}
                                             >
                                                 <LogOut className="w-4 h-4 mr-2" />
-                                                Sign Out
+                                                <span>Sign Out</span>
                                             </Button>
                                         </>
                                     ) : (
                                         <>
-                                            <Button variant="ghost"
-                                                    className="rounded-full justify-start hover:bg-accent/20"
-                                                    onClick={handleSignIn}>
-                                                <User className="w-4 h-4 mr-2" />
-                                                Login
-                                            </Button>
                                             <Button
-                                                onClick={handleSignUpClick}
+                                                onClick={handleGetStartedClick}
                                                 className="rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white"
                                             >
-                                                Sign Up!
+                                                Get Started
                                             </Button>
                                         </>
                                     )}
@@ -558,21 +489,6 @@ export function Header() {
                     )}
                 </div>
             </header>
-
-            {/* AuthModal component */}
-            <AuthModal
-                isOpen={showAuthModal}
-                onClose={handleCloseAuth}
-                onAuthSuccess={handleAuthSuccess}
-            />
-
-            {/* SignUpChoiceModal component */}
-            <SignUpChoiceModal
-                isOpen={showSignUpChoiceModal}
-                onClose={() => setShowSignUpChoiceModal(false)}
-                onSignUpWithEmail={handleSignUpWithEmail}
-                onAuthSuccess={handleAuthSuccess}
-            />
         </>
     )
 }

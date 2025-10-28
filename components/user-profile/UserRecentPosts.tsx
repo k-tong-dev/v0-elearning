@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ThumbsUp, MessageCircle, Clock } from "lucide-react"
 import { motion } from "framer-motion"
+import { UserRole } from "@/types/user" // Import UserRole
 
 interface UserRecentPostsProps {
     posts: Array<{
@@ -18,9 +19,10 @@ interface UserRecentPostsProps {
         replies: number
         category: string
     }>
+    userRole: UserRole // Pass the user's charactor code
 }
 
-export function UserRecentPosts({ posts }: UserRecentPostsProps) {
+export function UserRecentPosts({ posts, userRole }: UserRecentPostsProps) {
     const router = useRouter()
 
     return (

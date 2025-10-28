@@ -25,8 +25,8 @@ import {
     ChevronDown,
     ChevronUp,
 } from "lucide-react"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { Footer } from "@/components/ui/footers/footer"
 import { Button } from "@heroui/react"
 import Link from "next/link"
 import { CourseRatingForm } from "@/components/courses/CourseRatingForm"
@@ -126,7 +126,7 @@ export default function CourseDetailPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-            <Header />
+            <HeaderDark />
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
                 <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
                     <Breadcrumbs size="lg" separator={<ChevronRight className="w-4 h-4" />} className="mb-4">

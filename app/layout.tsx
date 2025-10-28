@@ -3,7 +3,8 @@ import type {Metadata} from "next"
 import {GeistSans} from "geist/font/sans"
 import {GeistMono} from "geist/font/mono"
 import {ThemeProvider} from "@/components/theme-provider"
-import {AuthProvider} from "@/hooks/use-auth"
+import { AuthProvider } from "@/hooks/use-auth"
+import { AuthRedirector } from "@/components/AuthRedirector" // Import the new AuthRedirector
 
 import "./globals.css"
 import "./fonts.css"
@@ -50,8 +51,10 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange={false}>
             <AuthProvider>
                 <Toaster position="top-center" richColors/>
-                {children}
-                <ChatWidget />
+                <AuthRedirector>
+                    {children}
+                    <ChatWidget />
+                </AuthRedirector>
             </AuthProvider>
         </ThemeProvider>
         </body>

@@ -38,7 +38,7 @@ import {BadgesManagement} from "@/components/dashboard/profile-settings/BadgesMa
 import {FollowStatsDisplay} from "@/components/dashboard/profile-settings/FollowStatsDisplay"
 import {RippleAvatar} from "@/components/ui/ripple-avatar"
 import {motion} from "framer-motion"
-import {UserRole, UserSettings} from "@/types/auth"
+import {UserRole, UserSettings} from "@/types/user"
 import {useAuth} from "@/hooks/use-auth"
 import {toast} from "sonner"
 
@@ -89,7 +89,10 @@ export function DashboardSettings({currentUser, stats}: DashboardSettingsProps) 
     })
     const [isSavingNotifications, setIsSavingNotifications] = useState(false)
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
-    const [avatarPreview, setAvatarPreview] = useState<string | undefined>(currentUser.avatar)
+    const [avatarPreview, setAvatarPreview] = useState<string | undefined>(
+        getAvatarUrl(currentUser.avatar) || undefined
+    );
+
 
     // Inline profile form state (merged from ProfileSettingsForm)
     const [formData, setFormData] = useState({

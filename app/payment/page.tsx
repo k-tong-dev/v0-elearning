@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { Footer } from "@/components/ui/footers/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -180,7 +180,7 @@ function PaymentContent() {
   if (paymentStep === "success") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-        <Header />
+        <HeaderDark />
         
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
           <motion.div
@@ -223,7 +223,7 @@ function PaymentContent() {
   if (paymentStep === "processing") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-        <Header />
+        <HeaderDark />
         
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
           <motion.div
@@ -257,7 +257,7 @@ function PaymentContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-      <Header />
+      <HeaderDark />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         {/* Header */}
@@ -535,7 +535,7 @@ function PaymentContent() {
 function PaymentFallback() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-      <Header />
+      <HeaderDark />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">

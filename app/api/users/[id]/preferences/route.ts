@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthToken } from '@/lib/auth-middleware';
 
-const STRAPI_URL = process.env.STRAPI_URL || 'http://localhost:1337';
+const NEXT_PUBLIC_STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
 
 export async function PUT(request: NextRequest, { params }: { params: { userId: string } }) {
     const tokenUser = await verifyAuthToken(request);
@@ -14,7 +14,7 @@ export async function PUT(request: NextRequest, { params }: { params: { userId: 
 
     const token = request.cookies.get('auth-token')?.value;
 
-    const response = await fetch(`${STRAPI_URL}/api/users/${params.userId}`, {
+    const response = await fetch(`${NEXT_PUBLIC_STRAPI_URL}/api/users/${params.userId}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -23,7 +23,6 @@ export async function PUT(request: NextRequest, { params }: { params: { userId: 
         body: JSON.stringify({
             role,
             preferences,
-            // Optionally update other defaults if needed, e.g., settings
         }),
     });
 

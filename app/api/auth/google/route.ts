@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthResponse } from '@/lib/auth-middleware';
 
-const STRAPI_URL = process.env.STRAPI_URL || 'http://localhost:1337';
+const NEXT_PUBLIC_STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
 
 export async function POST(request: NextRequest) {
     try {
         const { credential } = await request.json();
         console.log('Received credential:', credential);
 
-        const response = await fetch(`${STRAPI_URL}/api/auth/google/callback`);
+        const response = await fetch(`${NEXT_PUBLIC_STRAPI_URL}/api/auth/google/callback`);
 
         console.log('Strapi response status:', response.status);
         const text = await response.text();

@@ -31,10 +31,10 @@ import {
 } from "lucide-react"
 import {CourseSkeleton} from "@/components/courses/course-skeleton"
 import {CourseCard} from "@/components/courses/CourseCard"
-import {Header} from "@/components/header"
-import {Footer} from "@/components/footer"
+import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import {Footer} from "@/components/ui/footers/footer"
 import Link from "next/link";
-import { LoadingSpinner } from "@/components/page-loading"; // Import LoadingSpinner
+import { PageLoading } from "@/components/page-loading";
 
 export default function CoursesPage() {
     const router = useRouter()
@@ -628,7 +628,7 @@ export default function CoursesPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-            <Header/>
+            <HeaderDark/>
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
                 <motion.div
@@ -840,7 +840,7 @@ export default function CoursesPage() {
                 {/* Infinite scroll loading indicator */}
                 {hasMore && filteredCourses.length > 0 && (
                     <div ref={loadingRef} className="text-center py-8">
-                        <LoadingSpinner size="lg" />
+                        <PageLoading/>
                         <p className="text-muted-foreground mt-2">Loading more courses...</p>
                     </div>
                 )}
