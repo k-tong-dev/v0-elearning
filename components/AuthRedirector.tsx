@@ -31,6 +31,10 @@ export function AuthRedirector({ children }: { children: React.ReactNode }) {
             console.log(">>>>>>>>>>>>>>>>>>>>> ", pathname)
             router.replace('/');
         }
+        if(!user?.id  && pathname === '/dashboard') {
+            console.log(">>>>>>>>>>>>>>>>>>>>> ", pathname)
+            router.replace('/');
+        }
 
     }, [isLoading, isAuthenticated, user, pathname, router]);
     if (isLoading) {

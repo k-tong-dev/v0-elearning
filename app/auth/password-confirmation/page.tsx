@@ -133,12 +133,12 @@ export default function PasswordConfirmationPage() {
 
     return (
         <BackgroundBeamsWithCollision className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-accent/5 p-4">
+            <div className="min-h-screen flex items-center justify-center  bg-transparent p-4">
             <motion.div
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="w-full max-w-md bg-card rounded-2xl shadow-xl border border-border p-8 space-y-6"
+                className="w-full h-fit max-w-md bg-card rounded-2xl shadow-xl border border-border p-8 space-y-6"
             >
                 <div className="text-center space-y-4">
                     <Lock className="mx-auto w-16 h-16 text-primary" />

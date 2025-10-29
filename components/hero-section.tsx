@@ -207,7 +207,6 @@ export function HeroSection() {
                             <GrLinkNext/>
                         </Button>
                         <Button
-                            variant="outline"
                             size="md"
                             className="border-2 border-cyan-500 text-cyan-600 dark:text-cyan-400
                             hover:bg-cyan-500 hover:text-white px-10 py-4

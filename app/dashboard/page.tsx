@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { HeaderDark } from "@/components/ui/headers/HeaderDark"
 import { Footer } from "@/components/ui/footers/footer"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { motion } from "framer-motion"
@@ -30,6 +29,7 @@ import {
 } from "lucide-react"
 import { FloatingDock, DockIcon } from "@/components/ui/floating-dock"
 import { FaRegUser, FaCog, FaCrown } from "react-icons/fa"
+import {HeaderVibrant} from "@/components/ui/headers/HeaderVibrant";
 
 // Interfaces for mock data
 interface DashboardStats {
@@ -102,7 +102,7 @@ interface User {
 export default function DashboardPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-            <HeaderDark />
+            <HeaderVibrant />
             <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading dashboard...</div>}>
                 <DashboardContent />
             </Suspense>

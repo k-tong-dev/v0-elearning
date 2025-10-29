@@ -17,7 +17,7 @@ interface GoogleAuthButtonProps {
     onError?: (error: string) => void;
     text?: "signin_with" | "signup_with" | "continue_with" | "signin";
     className?: string;
-    isLoading?: boolean; // Prop to control loading state from parent
+    isLoading?: boolean;
 }
 
 export function GoogleAuthButton({ onSuccess, onError, text = "signin_with", className, isLoading: parentIsLoading = false }: GoogleAuthButtonProps) {

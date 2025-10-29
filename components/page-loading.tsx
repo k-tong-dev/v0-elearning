@@ -35,7 +35,7 @@ export function PageLoading({ message = "Loading..." }: PageLoadingProps) {
 
     return (
         <div
-            className="min-h-screen flex flex-col items-center justify-center relative
+            className="absolute z-1000 min-w-screen min-h-screen flex flex-col items-center justify-center
                  bg-gradient-to-br from-[#f0f9ff] via-[#e0f2fe] to-[#dbeafe]
                  dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 overflow-hidden"
             onMouseMove={(e) => {
