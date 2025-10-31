@@ -105,18 +105,18 @@ export function AvatarStep({
             className="w-full max-w-md mx-auto"
         >
             <div className="text-center space-y-3 mb-8">
-                <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.1, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-                    className="mx-auto w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-500/10 via-emerald-500/10 to-blue-500/10 flex items-center justify-center backdrop-blur-sm border border-white/10 shadow-lg"
-                >
-                    <User className="w-10 h-10 text-cyan-500" />
-                </motion.div>
-                <h2 className="text-4xl font-bold bg-gradient-to-br from-cyan-600 via-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                    Choose Avatar
-                </h2>
-                <p className="text-base text-muted-foreground/80">Personalize your profile (optional)</p>
+                {/*<motion.div*/}
+                {/*    initial={{ scale: 0.8, opacity: 0 }}*/}
+                {/*    animate={{ scale: 1, opacity: 1 }}*/}
+                {/*    transition={{ delay: 0.1, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}*/}
+                {/*    className="mx-auto w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-500/10 via-emerald-500/10 to-blue-500/10 flex items-center justify-center backdrop-blur-sm border border-white/10 shadow-lg"*/}
+                {/*>*/}
+                {/*    <User className="w-10 h-10 text-cyan-500" />*/}
+                {/*</motion.div>*/}
+                {/*<h2 className="text-4xl font-bold bg-gradient-to-br from-cyan-600 via-emerald-600 to-blue-600 bg-clip-text text-transparent">*/}
+                {/*    Choose Avatar*/}
+                {/*</h2>*/}
+                {/*<p className="text-base text-muted-foreground/80">Personalize your profile (optional)</p>*/}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">

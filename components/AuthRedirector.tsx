@@ -4,11 +4,14 @@ import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { PageLoading } from '@/components/page-loading';
+import { getStrapiUserByEmail } from "@/integrations/strapi/utils"
 
 export function AuthRedirector({ children }: { children: React.ReactNode }) {
     const { user, isAuthenticated, isLoading=false } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
+
+
     const authRoutes = [
         '/auth/email-auth',
         '/auth/verify-otp',
@@ -28,18 +31,26 @@ export function AuthRedirector({ children }: { children: React.ReactNode }) {
             return;
         }
         if(user?.id  && pathname === '/auth/signup') {
-            console.log(">>>>>>>>>>>>>>>>>>>>> ", pathname)
-            router.replace('/');
+            (async () => {
+                try {
+                    const isUser = await getStrapiUserByEmail(user?.email);
+                    if (isUser) {
+                        router.replace('/');
+                    }
+                } catch (error) {
+                    console.error("Error checking Strapi user:", error);
+                }
+            })();
+            return;
         }
         if(!user?.id  && pathname === '/dashboard') {
-            console.log(">>>>>>>>>>>>>>>>>>>>> ", pathname)
             router.replace('/');
         }
 
     }, [isLoading, isAuthenticated, user, pathname, router]);
-    if (isLoading) {
-        return <PageLoading message="Session Loading..." />;
-    }
+    // if (isLoading) {
+    //     return <PageLoading message="Session Loading..." />;
+    // }
 
     return <>{children}</>;
 }

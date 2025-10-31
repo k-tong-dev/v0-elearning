@@ -8,20 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { strapiLogin, getStrapiUserByEmail } from "@/integrations/strapi/utils";
+import { strapiLogin, getStrapiUserByEmail, storeAccessToken } from "@/integrations/strapi/utils";
 import { useAuth } from "@/hooks/use-auth";
 import Link from "next/link";
 import { PageLoading } from "@/components/page-loading";
 import { ErrorModal } from "@/components/ui/ErrorModal";
 import {BackgroundBeamsWithCollision} from "@/components/ui/backgrounds/background-beams-with-collision";
-
-/* -------------------------------------------------------------------------- */
-/*                  Helper (match with AuthProvider 3-day token)               */
-/* -------------------------------------------------------------------------- */
-const storeAccessToken = (token: string) => {
-    const expiry = Date.now() + 3 * 24 * 60 * 60 * 1000; // 3 days
-    sessionStorage.setItem("access_token", JSON.stringify({ token, expiry }));
-};
 
 export default function PasswordConfirmationPage() {
     const router = useRouter();

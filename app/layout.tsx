@@ -5,6 +5,7 @@ import {GeistMono} from "geist/font/mono"
 import {ThemeProvider} from "@/components/theme-provider"
 import { AuthProvider } from "@/hooks/use-auth"
 import { AuthRedirector } from "@/components/AuthRedirector" // Import the new AuthRedirector
+import { CookieConsent } from '@/components/CookieConsent';
 
 import "./globals.css"
 import "./fonts.css"
@@ -52,6 +53,7 @@ export default function RootLayout({
             <AuthProvider>
                 <Toaster position="top-center" richColors/>
                 <AuthRedirector>
+                    <CookieConsent/>
                     {children}
                     <ChatWidget />
                 </AuthRedirector>

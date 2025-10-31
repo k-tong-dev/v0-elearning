@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { checkStrapiUserExists } from "@/integrations/strapi/utils";
+import { storeEmailForOTP } from "@/lib/cookies";
 import { useAuth } from "@/hooks/use-auth";
 import Link from "next/link";
 import { PageLoading } from "@/components/page-loading";
@@ -110,7 +111,7 @@ export default function VerifyOtpPage() {
 
             if (sessionData.session?.user) {
                 console.log("[OTP] Session found, redirecting to signup...");
-                localStorage.setItem("email_for_otp", email);
+                storeEmailForOTP(email);
                 router.push(`/auth/signup?email=${encodeURIComponent(email)}`);
                 return;
             }
@@ -127,7 +128,7 @@ export default function VerifyOtpPage() {
                 }
                 if (retrySessionData.session?.user) {
                     console.log("[OTP] Session found on retry, redirecting to signup...");
-                    localStorage.setItem("email_for_otp", email);
+                    storeEmailForOTP(email);
                     router.push(`/auth/signup?email=${encodeURIComponent(email)}`);
                     return true;
                 }
@@ -147,7 +148,7 @@ export default function VerifyOtpPage() {
             const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
                 if (session?.user) {
                     console.log("[OTP] Session detected via auth state change, redirecting...");
-                    localStorage.setItem("email_for_otp", email);
+                    storeEmailForOTP(email);
                     router.push(`/auth/signup?email=${encodeURIComponent(email)}`);
                     listener.subscription.unsubscribe();
                 }

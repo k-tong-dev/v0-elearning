@@ -33,6 +33,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { toast } from "sonner"
 import { User, Default, UserRoleSlug } from "@/types/user"
 import avatar_placeholder from "@/public/avatars/robotic.png"
+import { getAccessToken } from "@/lib/cookies"
 
 interface StrapiMedia {
     id: number
@@ -61,7 +62,7 @@ interface DashboardSettingsProps {
 
 export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps) {
     const { user, refreshUser } = useAuth()
-    const access_token = localStorage.getItem("access_token")
+    const access_token = getAccessToken()
     const strapiURL = process.env.NEXT_PUBLIC_STRAPI_URL
 
     // Initialize notification settings with fallback defaults

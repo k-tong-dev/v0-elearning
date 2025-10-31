@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { User } from "@/types/user";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { getStrapiUserByEmail, storeAccessToken, getAccessToken } from "@/integrations/strapi/utils";
+import { removeAccessToken } from "@/lib/cookies";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
@@ -14,7 +15,7 @@ interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    loginWithGoogle: (credential: string) => Promise<void>;
+    loginWithGoogle: (credential: string) => Promise<{ newUser: boolean; user: any }>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
     userContext: (strapiUser: any) => void;
@@ -64,12 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     setIsAuthenticated(true);
                     return;
                 } else {
-                    if(sessionStorage.getItem("access_token")) {
-                        sessionStorage.removeItem("access_token");
-                    }
-                    if (localStorage.getItem("access_token")) {
-                        localStorage.removeItem("access_token");
-                    }
+                    // Clear invalid token from cookies
+                    removeAccessToken();
                 }
             } else {setIsLoading(false);}
 
@@ -116,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => sub?.subscription.unsubscribe();
     }, [refreshUser]);
 
-    const loginWithGoogle = useCallback(async (credential: string) => {
+    const loginWithGoogle = useCallback(async (credential: string): Promise<{ newUser: boolean; user: any }> => {
         setIsLoading(true);
         try {
             const { data, error } = await supabase.auth.signInWithIdToken({
@@ -128,23 +125,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const supabaseUser = data.user;
             if (!supabaseUser?.email) throw new Error("No Supabase user email found");
 
-            const res = await fetch(`${STRAPI_URL}/api/auth/google/callback`, {
+            const res = await fetch('/api/auth/google', {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: supabaseUser.email }),
+                body: JSON.stringify({ 
+                    email: supabaseUser.email,
+                    name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name,
+                    avatar: supabaseUser.user_metadata?.avatar_url || supabaseUser.user_metadata?.picture
+                }),
             });
 
-            if (!res.ok) throw new Error("Failed to authenticate with Strapi");
-            const { jwt, user: strapiUser } = await res.json();
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || "Failed to authenticate with Strapi");
+            }
+            
+            const { jwt, user: strapiUser, newUser } = await res.json();
 
             storeAccessToken(jwt);
             userContext(strapiUser);
-            toast.success("Signed in successfully!", { position: "top-center" });
+            
+            if (!newUser) {
+                toast.success("Signed in successfully!", { position: "top-center" });
+            }
+            
+            return { newUser: newUser || false, user: strapiUser };
         } catch (error: any) {
             console.error("[loginWithGoogle] Error:", error);
             toast.error(error.message || "Login failed");
             setUser(null);
             setIsAuthenticated(false);
+            throw error;
         } finally {
             setIsLoading(false);
         }
@@ -154,12 +165,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(true);
         try {
             await supabase.auth.signOut();
-            if(sessionStorage.getItem("access_token")) {
-                sessionStorage.removeItem("access_token");
-            }
-            if (localStorage.getItem("access_token")) {
-                localStorage.removeItem("access_token");
-            }
+            // Clear token from cookies
+            removeAccessToken();
             setUser(null);
             setIsAuthenticated(false);
             toast.success("Signed out successfully");

@@ -1,4 +1,5 @@
 import { strapi, strapiPublic } from './client';
+import { storeAccessToken as storeCookieToken, getAccessToken as getCookieToken, removeAccessToken as removeCookieToken } from '@/lib/cookies';
 
 export async function checkStrapiUserExists(email: string): Promise<boolean> {
     try {
@@ -27,7 +28,7 @@ export async function registerAccount(userData: { username: string; email: strin
 
 export async function updateUser(userId: string, payload: any): Promise<any> {
     try {
-        const accessToken = getAccessToken();
+        const accessToken = getCookieToken();
         console.log("[updateUser] Access Token:", accessToken);
         if (!accessToken) throw new Error("No access token available for update");
 
@@ -76,7 +77,7 @@ export async function strapiLogin(identifier: string, password: string) {
 
 export async function uploadStrapiFile(file: File, ref?: string, refId?: string, field?: string): Promise<any> {
     try {
-        const accessToken = getAccessToken();
+        const accessToken = getCookieToken();
         if (!accessToken) throw new Error("Missing access token for upload");
 
         const formData = new FormData();
@@ -109,23 +110,7 @@ export async function reportIssue(issueData: { title: string; description: strin
     }
 }
 
-export const storeAccessToken = (token: string) => {
-    const expiry = Date.now() + 3 * 24 * 60 * 60 * 1000; // 3 days
-    localStorage.setItem("access_token", JSON.stringify({ token, expiry }));
-    console.log("[storeAccessToken] Token stored:", token);
-};
-
-export const getAccessToken = (): string | null => {
-    const item = localStorage.getItem("access_token");
-    if (!item) {
-        console.log("[getAccessToken] No token found in localStorage");
-        return null;
-    }
-    const { token, expiry } = JSON.parse(item);
-    if (Date.now() > expiry) {
-        console.log("[getAccessToken] Token expired, removing from localStorage");
-        localStorage.removeItem("access_token");
-        return null;
-    }
-    return token;
-};
+// Export cookie-based token management functions
+export const storeAccessToken = storeCookieToken;
+export const getAccessToken = getCookieToken;
+export const removeAccessToken = removeCookieToken;

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import {getAccessToken} from "@/integrations/strapi/utils";
+import { getAccessToken as getCookieToken } from '@/lib/cookies';
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
 
@@ -13,7 +13,7 @@ export const strapi = axios.create({
 
 strapi.interceptors.request.use(
     async (config) => {
-        const accessToken = getAccessToken();
+        const accessToken = getCookieToken();
         if (accessToken) {
             config.headers.Authorization = `Bearer ${accessToken}`;
         }

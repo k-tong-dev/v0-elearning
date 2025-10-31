@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { checkStrapiUserExists } from "@/integrations/strapi/utils"; // Import the utility
+import { checkStrapiUserExists } from "@/integrations/strapi/utils";
+import { storeEmailForOTP } from "@/lib/cookies"; // Import cookie utility
 import Link from "next/link";
 import { ErrorModal } from "@/components/ui/ErrorModal";
 import {BackgroundBeamsWithCollision} from "@/components/ui/backgrounds/background-beams-with-collision"; // Import the new ErrorModal
@@ -54,7 +55,7 @@ export default function EmailAuthPage() {
                 throw otpError;
             }
 
-            localStorage.setItem("email_for_otp", email);
+            storeEmailForOTP(email);
 
             toast.success("Verification link sent to your email!", {
                 description: "Please check your inbox to continue.",

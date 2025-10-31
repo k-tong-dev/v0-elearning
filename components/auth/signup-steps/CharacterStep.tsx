@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { GraduationCap, Users, Briefcase, Building2, Sparkles, ArrowRight, ArrowLeft, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import type { Default, UserRoleSlug } from "@/types/user"
-import { PageLoading } from "@/compwonents/page-loading"
+import { PageLoading } from "@/components/page-loading"
 
 interface CharacterStepProps {
     selectedCharactor: Default | null

@@ -283,7 +283,7 @@ export function UserMenuAvatar({
                         .map((n: string) => n[0])
                         .join("")
                         .toUpperCase()
-                    : user.username[0].toUpperCase() || null
+                    : "Error"[0].toUpperCase()
             }
             size={size}
             charactor={user?.charactor?.code || "student"}
