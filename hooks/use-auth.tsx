@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             id: strapiUser.id?.toString() || prev?.id || null,
             supabaseId: prev?.supabaseId || strapiUser.supabaseId || null,
             email: strapiUser.email || prev?.email || "",
-            name: strapiUser.username || strapiUser.email || prev?.name || "",
+            name: strapiUser.username || strapiUser.email || prev?.username || "",
         }));
         setIsAuthenticated(true);
     }, []);
@@ -85,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     setIsAuthenticated(true);
                 } else {
                     setUser({
+                        ...strapiUser,
                         id: null,
                         supabaseId: supabaseUser.id,
                         email: supabaseUser.email!,

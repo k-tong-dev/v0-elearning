@@ -18,20 +18,10 @@ import {
     Building2,
 } from "lucide-react"
 import defaultAvatar from "@/public/avatars/robotic.png"
+import { UserRoleSlug, StrapiMedia } from "@/types/user" // Import UserRoleSlug and StrapiMedia
 
 
-type Charactor =
-    | "instructor"
-    | "admin"
-    | "expert"
-    | "mentor"
-    | "student"
-    | "job_seeker"
-    | "company"
-    | "other"
-    | "developer"
-    | "designer"
-    | ""
+type Charactor = UserRoleSlug | "" // Use UserRoleSlug for charactor type
 
 interface EnhancedAvatarProps {
     src?: string
@@ -84,6 +74,10 @@ const roleIcons: Record<Charactor, React.ElementType | null> = {
     other: Sparkles,
     developer: Code,
     designer: Palette,
+    authenticated: User,
+    public: Sparkles,
+    creator: Crown,
+    viewer: User,
     "": null,
 }
 
@@ -98,6 +92,10 @@ const roleColors: Record<Charactor, string> = {
     other: "from-pink-500 via-rose-500 to-red-500",
     developer: "from-blue-600 via-indigo-600 to-violet-600",
     designer: "from-purple-600 via-fuchsia-600 to-pink-600",
+    authenticated: "from-gray-500 via-slate-500 to-zinc-500",
+    public: "from-gray-500 via-slate-500 to-zinc-500",
+    creator: "from-purple-500 via-violet-500 to-pink-500",
+    viewer: "from-blue-500 via-cyan-500 to-teal-500",
     "": "from-gray-500 to-slate-500",
 }
 
@@ -266,15 +264,25 @@ export function EnhancedAvatar({
     return avatarContent
 }
 
+// Helper to get avatar URL from StrapiMedia object
+const getStrapiMediaUrl = (avatar: StrapiMedia | string | null | undefined, strapiURL: string | undefined): string | null => {
+    if (!avatar) return null;
+    if (typeof avatar === 'string') return avatar; // Already a URL string
+    if (avatar.url) return `${strapiURL}${avatar.url}`;
+    return null;
+};
+
 export function UserMenuAvatar({
                                    user,
                                    onClick,
                                    size,
                                }: { user: any; onClick?: () => void; size?: "sm" | "md" | "lg" | "xl" | "2xl" }) {
-    const avatarUrl = user?.avatar?.formats?.medium?.url || user?.avatar?.formats?.small?.url || user?.avatar?.url || null
+    const strapiURL = process.env.NEXT_PUBLIC_STRAPI_URL;
+    const avatarUrl = getStrapiMediaUrl(user?.avatar, strapiURL);
+
     return (
         <EnhancedAvatar
-            src={process.env.NEXT_PUBLIC_STRAPI_URL + avatarUrl || defaultAvatar}
+            src={avatarUrl || defaultAvatar.src} // Use defaultAvatar.src for Image component
             alt={user?.username || "User"}
             fallback={
                 user?.username
@@ -283,10 +291,10 @@ export function UserMenuAvatar({
                         .map((n: string) => n[0])
                         .join("")
                         .toUpperCase()
-                    : "Error"[0].toUpperCase()
+                    : "U"
             }
             size={size}
-            charactor={user?.charactor?.code || "student"}
+            charactor={user?.character?.code || "student"} // Use user.character.code
             showStatus
             isOnline={user?.isOnline}
             verified={user?.verified}
@@ -298,10 +306,12 @@ export function UserMenuAvatar({
 }
 
 export function DashboardAvatar({ user, size = "lg" }: { user: any; size?: "sm" | "md" | "lg" | "xl" | "2xl" }) {
-    const avatarUrl = user?.avatar?.formats?.medium?.url || user?.avatar?.formats?.small?.url || user?.avatar?.url || null
+    const strapiURL = process.env.NEXT_PUBLIC_STRAPI_URL;
+    const avatarUrl = getStrapiMediaUrl(user?.avatar, strapiURL);
+
     return (
         <EnhancedAvatar
-            src={process.env.NEXT_PUBLIC_STRAPI_URL + avatarUrl || "@/public/avatars/robotic.png"}
+            src={avatarUrl || defaultAvatar.src}
             alt={user?.username || "User"}
             fallback={
                 user?.username
@@ -310,10 +320,10 @@ export function DashboardAvatar({ user, size = "lg" }: { user: any; size?: "sm" 
                         .map((n: string) => n[0])
                         .join("")
                         .toUpperCase()
-                    : user.username[0].toUpperCase() || null
+                    : "U"
             }
             size={size}
-            charactor={user.charactor?.code || "student"}
+            charactor={user.character?.code || "student"}
             showStatus={true}
             isOnline={user.isOnline}
             verified={user.verified}
@@ -328,14 +338,12 @@ export function CourseInstructorAvatar({
                                            instructor,
                                            size = "md",
                                        }: { instructor: any; size?: "sm" | "md" | "lg" | "xl" | "2xl" }) {
-    const image =
-        instructor?.avatar?.formats?.medium?.url ||
-        instructor?.avatar?.formats?.small?.url ||
-        instructor?.avatar?.url ||
-        null
+    const strapiURL = process.env.NEXT_PUBLIC_STRAPI_URL;
+    const avatarUrl = getStrapiMediaUrl(instructor?.avatar, strapiURL);
+
     return (
         <EnhancedAvatar
-            src={process.env.NEXT_PUBLIC_STRAPI_URL + image || "@/public/avatars/robotic.png"}
+            src={avatarUrl || defaultAvatar.src}
             alt={instructor?.username || "User"}
             fallback={
                 instructor?.username
@@ -344,7 +352,7 @@ export function CourseInstructorAvatar({
                         .map((n: string) => n[0])
                         .join("")
                         .toUpperCase()
-                    : instructor.username[0].toUpperCase() || null
+                    : "U"
             }
             size={size}
             variant="instructor"
@@ -359,10 +367,12 @@ export function CourseInstructorAvatar({
 }
 
 export function ForumUserAvatar({ user, size = "sm" }: { user: any; size?: "sm" | "md" | "lg" | "xl" | "2xl" }) {
-    const image = user?.avatar?.formats?.medium?.url || user?.avatar?.formats?.small?.url || user?.avatar?.url || null
+    const strapiURL = process.env.NEXT_PUBLIC_STRAPI_URL;
+    const avatarUrl = getStrapiMediaUrl(user?.avatar, strapiURL);
+
     return (
         <EnhancedAvatar
-            src={process.env.NEXT_PUBLIC_STRAPI_URL + image || "@/public/avatars/robotic.png"}
+            src={avatarUrl || defaultAvatar.src}
             alt={user?.username || "User"}
             fallback={
                 user?.username
@@ -371,10 +381,10 @@ export function ForumUserAvatar({ user, size = "sm" }: { user: any; size?: "sm" 
                         .map((n: string) => n[0])
                         .join("")
                         .toUpperCase()
-                    : user.username[0].toUpperCase() || null
+                    : "U"
             }
             size={size}
-            charactor={user.charactor?.code || "student"}
+            charactor={user.character?.code || "student"}
             showStatus={true}
             isOnline={user.isOnline}
             verified={user.verified}

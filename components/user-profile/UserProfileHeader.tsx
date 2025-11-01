@@ -156,7 +156,7 @@ export function UserProfileHeader({ user, isFollowing, setIsFollowing }: UserPro
                                 <p className="text-muted-foreground text-lg">{user.username}</p>
                                 <div className="flex items-center justify-center md:justify-start gap-2 mt-2">
                                     <Badge variant="outline" className="bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 text-cyan-700 dark:text-cyan-300">
-                                        {user.charactor.name} {/* Display charactor name */}
+                                        {user?.chanracter}
                                     </Badge>
                                     <span className="text-sm text-muted-foreground">
                                       Last active {user.lastActive}

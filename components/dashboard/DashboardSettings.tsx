@@ -20,7 +20,6 @@ import {
 } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { BasicInfoFields } from "@/components/dashboard/profile-settings/BasicInfoFields"
-import { RoleSelectionField } from "@/components/dashboard/profile-settings/RoleSelectionField"
 import { BioField } from "@/components/dashboard/profile-settings/BioField"
 import { LocationWebsiteFields } from "@/components/dashboard/profile-settings/LocationWebsiteFields"
 import { SocialLinksFields } from "@/components/dashboard/profile-settings/SocialLinksFields"
@@ -31,22 +30,9 @@ import { FaRegUser, FaCog, FaCrown } from "react-icons/fa"
 import { motion } from "framer-motion"
 import { useAuth } from "@/hooks/use-auth"
 import { toast } from "sonner"
-import { User, Default, UserRoleSlug } from "@/types/user"
-import avatar_placeholder from "@/public/avatars/robotic.png"
+import { User, UserRoleSlug, StrapiMedia } from "@/types/user"
 import { getAccessToken } from "@/lib/cookies"
-
-interface StrapiMedia {
-    id: number
-    documentId: string
-    name: string
-    url: string
-    formats: {
-        thumbnail: { url: string }
-        small: { url: string }
-        medium: { url: string }
-        large: { url: string }
-    }
-}
+import { RoleSelectionCombobox } from "@/components/dashboard/profile-settings/RoleSelectionCombobox"; // Updated import
 
 interface DashboardStats {
     coursesCreated: number
@@ -65,41 +51,44 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
     const access_token = getAccessToken()
     const strapiURL = process.env.NEXT_PUBLIC_STRAPI_URL
 
+    // Helper to get avatar URL
+    const getAvatarUrl = (avatar: StrapiMedia | string | null | undefined): string | null => {
+        if (!avatar) return null;
+        if (typeof avatar === 'string') return avatar;
+        if (avatar.url) return `${strapiURL}${avatar.url}`;
+        return null;
+    };
+
     // Initialize notification settings with fallback defaults
-    const initialNotifications = currentUser.settings?.notifications || {}
     const [notificationSettings, setNotificationSettings] = useState({
-        newEnrollments: initialNotifications.newEnrollments ?? true,
-        courseReviews: initialNotifications.courseReviews ?? true,
-        paymentNotifications: initialNotifications.paymentNotifications ?? true,
-        weeklyAnalytics: initialNotifications.weeklyAnalytics ?? true,
+        newEnrollments: currentUser.notice_new_enrollment ?? true,
+        courseReviews: currentUser.notice_course_reviewer ?? true,
+        paymentNotifications: currentUser.notice_payment ?? true,
+        weeklyAnalytics: currentUser.notice_weekly_analysis ?? true,
     })
 
     const [isSavingNotifications, setIsSavingNotifications] = useState(false)
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
-    const [avatarPreview, setAvatarPreview] = useState<string | null>(
-        currentUser.avatar && typeof currentUser.avatar === 'object' && currentUser.avatar.url
-            ? `${strapiURL}${currentUser.avatar.url}`
-            : typeof currentUser.avatar === 'string'
-                ? currentUser.avatar
-                : null
-    )
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(getAvatarUrl(currentUser.avatar));
 
     // Initialize form data with User fields
     const [formData, setFormData] = useState({
         username: currentUser.username || "",
         email: currentUser.email,
-        bio: currentUser.settings?.bio || "",
-        location: currentUser.settings?.location || "",
-        website: currentUser.settings?.website || "",
-        charactor: currentUser.charactor?.attributes.slug || "student",
+        bio: currentUser.bio || "",
+        location: currentUser.location || "",
+        website: currentUser.website || "",
+        charactor: currentUser.character?.code || "student" as UserRoleSlug, // Use character.code
         socialLinks: {
-            twitter: currentUser.settings?.socialLinks?.twitter || "",
-            github: currentUser.settings?.socialLinks?.github || "",
-            linkedin: currentUser.settings?.socialLinks?.linkedin || "",
+            twitter: currentUser.twister || "", // Map to Strapi's flat fields
+            github: currentUser.github || "",
+            linkedin: currentUser.linkin || "",
+            facebook: currentUser.facebook || "", // Added facebook
+            instagram: currentUser.instagram || "", // Added instagram
         },
-        avatar: currentUser.avatar || "",
-        skills: currentUser.settings?.skills || [],
-        selectedBadgeIds: currentUser.badgeIds || [],
+        avatar: currentUser.avatar || null,
+        skills: currentUser.skills?.map(s => s.name) || [], // Map skills to array of names
+        selectedBadgeIds: currentUser.badges?.map(b => b.id.toString()) || [], // Map badges to array of IDs
     })
 
     const [isSavingProfile, setIsSavingProfile] = useState(false)
@@ -120,37 +109,33 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
         setFormData({
             username: currentUser.username || "",
             email: currentUser.email,
-            bio: currentUser.settings?.bio || "",
-            location: currentUser.settings?.location || "",
-            website: currentUser.settings?.website || "",
-            charactor: currentUser.charactor?.attributes.slug || "student",
+            bio: currentUser.bio || "",
+            location: currentUser.location || "",
+            website: currentUser.website || "",
+            charactor: currentUser.character?.code || "student" as UserRoleSlug,
             socialLinks: {
-                twitter: currentUser.settings?.socialLinks?.twitter || "",
-                github: currentUser.settings?.socialLinks?.github || "",
-                linkedin: currentUser.settings?.socialLinks?.linkedin || "",
+                twitter: currentUser.twister || "",
+                github: currentUser.github || "",
+                linkedin: currentUser.linkin || "",
+                facebook: currentUser.facebook || "",
+                instagram: currentUser.instagram || "",
             },
-            avatar: currentUser.avatar || "",
-            skills: currentUser.settings?.skills || [],
-            selectedBadgeIds: currentUser.badgeIds || [],
+            avatar: currentUser.avatar || null,
+            skills: currentUser.skills?.map(s => s.name) || [],
+            selectedBadgeIds: currentUser.badges?.map(b => b.id.toString()) || [],
         })
-        setAvatarPreview(
-            currentUser.avatar && typeof currentUser.avatar === 'object' && currentUser.avatar.url
-                ? `${strapiURL}${currentUser.avatar.url}`
-                : typeof currentUser.avatar === 'string'
-                    ? currentUser.avatar
-                    : null
-        )
+        setAvatarPreview(getAvatarUrl(currentUser.avatar));
     }, [currentUser, strapiURL])
 
     // Sync notification settings
     useEffect(() => {
         setNotificationSettings({
-            newEnrollments: currentUser.settings?.notifications?.newEnrollments ?? true,
-            courseReviews: currentUser.settings?.notifications?.courseReviews ?? true,
-            paymentNotifications: currentUser.settings?.notifications?.paymentNotifications ?? true,
-            weeklyAnalytics: currentUser.settings?.notifications?.weeklyAnalytics ?? true,
+            newEnrollments: currentUser.notice_new_enrollment ?? true,
+            courseReviews: currentUser.notice_course_reviewer ?? true,
+            paymentNotifications: currentUser.notice_payment ?? true,
+            weeklyAnalytics: currentUser.notice_weekly_analysis ?? true,
         })
-    }, [currentUser.settings])
+    }, [currentUser])
 
     const handleNotificationChange = (key: keyof typeof notificationSettings, checked: boolean) => {
         setNotificationSettings((prev) => ({ ...prev, [key]: checked }))
@@ -175,26 +160,16 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
 
             const [uploadedFile] = await uploadResponse.json()
             const objectUrl = uploadedFile.url
-            setAvatarPreview(uploadedFile.formats?.thumbnail?.url || objectUrl)
-            setFormData((prev) => ({ ...prev, avatar: objectUrl }))
+            setAvatarPreview(uploadedFile.formats?.thumbnail?.url ? `${strapiURL}${uploadedFile.formats.thumbnail.url}` : `${strapiURL}${objectUrl}`);
+            setFormData((prev) => ({ ...prev, avatar: uploadedFile })); // Store the full StrapiMedia object
 
             if (!user?.id) {
                 throw new Error("User not authenticated.")
             }
 
             const updatePayload = {
-                avatar: uploadedFile.id,
-                settings: {
-                    ...currentUser.settings,
-                    notifications: notificationSettings,
-                    skills: formData.skills,
-                    bio: formData.bio,
-                    location: formData.location,
-                    website: formData.website,
-                    socialLinks: formData.socialLinks,
-                },
-                badgeIds: formData.selectedBadgeIds,
-                charactor: currentUser.charactor?.id,
+                avatar: uploadedFile.id, // Send the ID of the uploaded file
+                // Other fields are updated in handleSaveProfile
             }
 
             const response = await fetch(`${strapiURL}/api/users/${user.id}`, {
@@ -248,7 +223,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
         setFormData((prev) => ({ ...prev, skills: newSkills }))
     }
 
-    const handleBadgesChange = (newBadgeIds: number[]) => {
+    const handleBadgesChange = (newBadgeIds: string[]) => {
         setFormData((prev) => ({ ...prev, selectedBadgeIds: newBadgeIds }))
     }
 
@@ -265,21 +240,43 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
 
         setIsSavingProfile(true)
         try {
-            const updatePayload = {
+            // Construct payload for Strapi, mapping formData fields to Strapi's expected structure
+            const updatePayload: any = {
                 username: formData.username,
                 email: formData.email,
-                settings: {
-                    ...currentUser.settings,
-                    bio: formData.bio,
-                    location: formData.location,
-                    website: formData.website,
-                    socialLinks: formData.socialLinks,
-                    skills: formData.skills,
-                    notifications: notificationSettings,
-                },
-                badgeIds: formData.selectedBadgeIds,
-                charactor: currentUser.charactor?.id,
+                bio: formData.bio,
+                location: formData.location,
+                website: formData.website,
+                character: formData.charactor, // Send character code
+                // Map social links back to top-level fields
+                twister: formData.socialLinks.twitter,
+                github: formData.socialLinks.github,
+                linkin: formData.socialLinks.linkedin,
+                facebook: formData.socialLinks.facebook,
+                instagram: formData.socialLinks.instagram,
+                // Map skills back to array of objects with 'name'
+                skills: formData.skills.map(name => ({ name })),
+                // Map badge IDs back to array of objects with 'id'
+                badges: formData.selectedBadgeIds.map(id => ({ id: parseInt(id) })),
+                // Notification settings are handled separately by handleSaveNotifications
+                notice_new_enrollment: notificationSettings.newEnrollments,
+                notice_course_reviewer: notificationSettings.courseReviews,
+                notice_payment: notificationSettings.paymentNotifications,
+                notice_weekly_analysis: notificationSettings.weeklyAnalytics,
             }
+
+            // If avatar was changed, its ID is already updated via handleAvatarChange
+            // If not, ensure the existing avatar ID is sent if it's an object
+            if (formData.avatar && typeof formData.avatar === 'object' && 'id' in formData.avatar) {
+                updatePayload.avatar = formData.avatar.id;
+            } else if (typeof formData.avatar === 'string') {
+                // If avatar is a string (e.g., a template URL), Strapi might expect a different handling
+                // For now, we'll assume it's either an uploaded file ID or null.
+                // If it's a template URL, you might need a separate field in Strapi to store it.
+            } else {
+                updatePayload.avatar = null; // No avatar selected
+            }
+
 
             const response = await fetch(`${strapiURL}/api/users/${user.id}`, {
                 method: "PUT",
@@ -326,19 +323,10 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
         setIsSavingNotifications(true)
         try {
             const updatePayload = {
-                username: currentUser.username,
-                email: currentUser.email,
-                settings: {
-                    ...currentUser.settings,
-                    notifications: notificationSettings,
-                    bio: formData.bio,
-                    location: formData.location,
-                    website: formData.website,
-                    socialLinks: formData.socialLinks,
-                    skills: formData.skills,
-                },
-                badgeIds: currentUser.badgeIds,
-                charactor: currentUser.charactor?.id,
+                notice_new_enrollment: notificationSettings.newEnrollments,
+                notice_course_reviewer: notificationSettings.courseReviews,
+                notice_payment: notificationSettings.paymentNotifications,
+                notice_weekly_analysis: notificationSettings.weeklyAnalytics,
             }
 
             const response = await fetch(`${strapiURL}/api/users/${user.id}`, {
@@ -406,9 +394,9 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                     >
                         <ProfileHeaderDisplay
                             avatar={avatarPreview}
-                            name={currentUser.name || currentUser.username || currentUser.email}
+                            name={currentUser.username || currentUser.email}
                             email={currentUser.email}
-                            role={currentUser.charactor?.attributes.slug || "student"}
+                            role={currentUser.character?.code || "student"}
                             followers={currentUser.followers || 0}
                             following={currentUser.following || 0}
                             onAvatarChange={handleAvatarChange}
@@ -518,7 +506,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                                 email={formData.email}
                                                 onInputChange={handleProfileInputChange}
                                             />
-                                            <RoleSelectionField
+                                            <RoleSelectionCombobox // Using the new HeroUI-based component
                                                 charactor={formData.charactor}
                                                 onCharactorChange={(value) => handleProfileInputChange("charactor", value)}
                                             />
@@ -673,7 +661,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                             <div className="flex items-center justify-between mb-4">
                                                 <div className="flex items-center gap-2">
                                                     <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                                                        <Crown className="w-3 h-3 mr-1" /> Basic Plan
+                                                        <Crown className="w-3 h-3 mr-1" /> {currentUser.subscription === "unlock" ? "Pro Plan" : "Basic Plan"}
                                                     </Badge>
                                                     <span className="text-sm text-muted-foreground">Current Plan</span>
                                                 </div>

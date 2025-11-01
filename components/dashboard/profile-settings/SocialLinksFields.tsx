@@ -3,12 +3,14 @@
 import React from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Github, Twitter, Linkedin } from "lucide-react"
+import { Github, Twitter, Linkedin, Facebook, Instagram } from "lucide-react" // Added Facebook and Instagram
 
 interface SocialLinks {
     twitter?: string
     github?: string
     linkedin?: string
+    facebook?: string // Added facebook
+    instagram?: string // Added instagram
 }
 
 interface SocialLinksFieldsProps {
@@ -55,6 +57,30 @@ export function SocialLinksFields({ socialLinks, onInputChange }: SocialLinksFie
                         value={socialLinks.linkedin || ""}
                         onChange={(e) => onInputChange("socialLinks.linkedin", e.target.value)}
                         placeholder="https://linkedin.com/in/yourusername"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="facebook">
+                        <Facebook className="w-4 h-4 mr-2 text-blue-600" />
+                        Facebook
+                    </Label>
+                    <Input
+                        id="facebook"
+                        value={socialLinks.facebook || ""}
+                        onChange={(e) => onInputChange("socialLinks.facebook", e.target.value)}
+                        placeholder="https://facebook.com/yourprofile"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="instagram">
+                        <Instagram className="w-4 h-4 mr-2 text-pink-500" />
+                        Instagram
+                    </Label>
+                    <Input
+                        id="instagram"
+                        value={socialLinks.instagram || ""}
+                        onChange={(e) => onInputChange("socialLinks.instagram", e.target.value)}
+                        placeholder="https://instagram.com/yourprofile"
                     />
                 </div>
             </div>

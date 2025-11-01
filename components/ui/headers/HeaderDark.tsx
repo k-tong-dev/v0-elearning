@@ -2,17 +2,10 @@
 
 import {
     Bell,
-    Search,
     Settings,
     BookOpen,
     Menu,
     X,
-    MessageCircle,
-    Info,
-    FileText,
-    Briefcase,
-    HelpCircle,
-    Phone,
     User,
     LogOut,
     Share2,
@@ -37,10 +30,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
     DropdownMenuSeparator,
-    DropdownMenuSub,
-    DropdownMenuSubContent,
-    DropdownMenuSubTrigger,
-    DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
@@ -51,7 +40,6 @@ export function HeaderDark() {
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false)
     const [isScrolled, setIsScrolled] = useState(false)
     const headerRef = useRef<HTMLDivElement>(null)
 
@@ -77,7 +65,6 @@ export function HeaderDark() {
         return () => window.removeEventListener("scroll", onScroll)
     }, [])
 
-    /* ---------- All your original handlers (unchanged) ---------- */
     const handleGetStartedClick = () => {
         router.push("/auth/start")
         setIsMenuOpen(false)
@@ -139,31 +126,28 @@ export function HeaderDark() {
         setIsUserMenuOpen(false)
     }
 
-    const handleSearch = () => {
-        console.log("[v0] Search button clicked from header")
-    }
-
-    /* ---------- Explore items (your original data) ---------- */
+    /* ---------- Explore items ---------- */
     const exploreItems = [
-        { title: "Forum", description: "Join discussions with fellow learners", href: "/forum", icon: MessageCircle, color: "text-blue-400" },
-        { title: "About Us", description: "Learn about our mission and team", href: "/about", icon: Info, color: "text-green-400" },
-        { title: "Blog", description: "Read our latest articles and insights", href: "/blog", icon: FileText, color: "text-purple-400" },
-        { title: "Services", description: "Explore our educational services", href: "/services", icon: Briefcase, color: "text-orange-400" },
-        { title: "Support", description: "Get help when you need it", href: "/support", icon: HelpCircle, color: "text-red-400" },
-        { title: "Contact", description: "Reach out to our team", href: "/contact", icon: Phone, color: "text-cyan-400" },
+        { title: "Forum", href: "/forum" },
+        { title: "About Us", href: "/about" },
+        { title: "Blog", href: "/blog" },
+        { title: "Services", href: "/services" },
+        { title: "Support", href: "/support" },
+        { title: "Contact", href: "/contact" },
     ]
 
     return (
         <header
             ref={headerRef}
             className={`
-                left-0 right-0 z-50 overflow-hidden
-                transition-all duration-300
-                ${isScrolled
-                ? "fixed top-0 bg-white/80 dark:bg-black/80 backdrop-blur-2xl border-b dark:border-white/10 border-gray-200/50 shadow-lg"
-                : "absolute top-0 bg-white/10 dark:bg-black/40 backdrop-blur-2xl border-b dark:border-white/5 border-gray-200/50"
+        left-0 right-0 z-50 overflow-hidden
+        transition-all duration-300
+        ${
+                isScrolled
+                    ? "fixed top-0 bg-white/80 dark:bg-black/80 backdrop-blur-2xl border-b dark:border-white/10 border-gray-200/50 shadow-lg"
+                    : "absolute top-0 bg-white/10 dark:bg-black/40 backdrop-blur-2xl border-b dark:border-white/5 border-gray-200/50"
             }
-            `}
+      `}
         >
             {/* ---- Liquid blobs ---- */}
             <div className="pointer-events-none absolute inset-0">
@@ -190,13 +174,12 @@ export function HeaderDark() {
                 />
             </div>
 
-            {/* ---- Shimmer ---- */}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent dark:via-white/5 via-gray-900/5 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" />
 
-            <div className="relative mx-auto max-w-7xl px-6 py-4">
-                <div className="flex items-center justify-between">
-                    {/* ---- Logo ---- */}
-                    <Link href="/" className="flex items-center space-x-2 group">
+            <div className="relative mx-auto max-w-7xl px-6 py-2">
+                <div className="flex items-center justify-between gap-8">
+                    {/* ---- LEFT: LOGO + NAME ---- */}
+                    <Link href="/" className="flex items-center space-x-2 group flex-shrink-0">
                         <motion.div
                             className="w-10 h-10 rounded-2xl flex items-center justify-center relative overflow-hidden"
                             style={{
@@ -218,137 +201,73 @@ export function HeaderDark() {
                             className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 bg-clip-text text-transparent"
                             style={{ backgroundSize: "200% auto", animation: "gradient-shift 3s ease infinite" }}
                         >
-                            CamEdu
-                        </span>
+              CamEdu
+            </span>
                     </Link>
 
-                    {/* ---- CENTER SEARCH (kept on lg+ and md) ---- */}
-                    <div className="hidden md:block flex-1 max-w-md mx-8">
-                        <div className="group relative">
-                            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/20 to-cyan-500/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
-                            <div className="relative flex items-center gap-3 rounded-2xl border dark:border-white/10 border-gray-200/80 dark:bg-white/5 bg-gray-100/20 px-4 py-2.5 backdrop-blur-xl transition-all duration-300 dark:group-hover:border-white/20 group-hover:border-gray-400/50 dark:group-hover:bg-white/10 group-hover:bg-gray-200/80">
-                                <Search className="h-4 w-4 dark:text-gray-400 text-gray-600 transition-colors dark:group-hover:text-gray-300 group-hover:text-gray-900" />
-                                <input
-                                    type="text"
-                                    placeholder="Search anything..."
-                                    className="flex-1 bg-transparent text-sm dark:text-white text-gray-900 dark:placeholder-gray-500 placeholder-gray-400 outline-none"
-                                />
-                                <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border dark:border-white/10 border-gray-300/50 dark:bg-white/5 bg-gray-200/50 px-1.5 text-xs font-medium dark:text-gray-400 text-gray-600">
-                                    Command K
-                                </kbd>
-                            </div>
-                        </div>
-                    </div>
+                    <nav className="hidden lg:flex items-center gap-2">
+                        <Link
+                            href="/"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-white/8 transition-all duration-200"
+                        >
+                            <Home className="h-4 w-4" />
+                            <span>Home</span>
+                        </Link>
 
-                    {/* ---- RIGHT ICONS + USER MENU (lg+ only) ---- */}
-                    <div className="hidden lg:flex items-center gap-2">
+                        <Link
+                            href="/courses"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-white/8 transition-all duration-200"
+                        >
+                            <GraduationCap className="h-4 w-4" />
+                            <span>Courses</span>
+                        </Link>
+
+                        {/* Explorers Dropdown */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-white/8 transition-all duration-200 group">
+                                    <Compass className="h-4 w-4 transition-transform group-hover:rotate-12" />
+                                    <span>Explorers</span>
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="start"
+                                className="w-52 mt-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-950/95 shadow-lg shadow-black/10 dark:shadow-black/40 p-1"
+                            >
+                                {exploreItems.map((item) => (
+                                    <DropdownMenuItem
+                                        key={item.title}
+                                        asChild
+                                        className="rounded-md hover:bg-gray-100 dark:hover:bg-white/10 transition-colors duration-150 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
+                                    >
+                                        <Link href={item.href}>{item.title}</Link>
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <Link
+                            href="/pricing"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-white/8 transition-all duration-200"
+                        >
+                            <DollarSign className="h-4 w-4" />
+                            <span>Pricing</span>
+                        </Link>
+                    </nav>
+
+                    {/* ---- RIGHT: ICONS + USER MENU ---- */}
+                    <div className="flex items-center gap-3 ml-auto">
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <ThemeToggle />
                         </motion.div>
 
                         {/* Notification */}
-                        <button className="group relative rounded-xl border border-white/10 dark:border-white/10 border-gray-300/50 bg-white/5 dark:bg-white/5 bg-gray-100/80 p-2.5 backdrop-blur-xl transition-all duration-300 hover:border-white/20 dark:hover:border-white/20 hover:border-gray-400/50 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 hover:scale-105">
-                            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/20 to-cyan-500/20 opacity-0 blur transition-opacity duration-300 group-hover:opacity-100" />
-                            <Bell className="relative h-5 w-5 text-gray-300 dark:text-gray-300 text-gray-700 transition-colors group-hover:text-white dark:group-hover:text-white group-hover:text-gray-900" />
-                            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-xs font-bold text-white shadow-lg shadow-purple-500/50">
-                                3
-                            </span>
+                        <button className="group relative rounded-full border border-gray-300/30 dark:border-white/15 bg-gray-50 dark:bg-white/8 p-2.5 backdrop-blur-lg transition-all duration-300 hover:border-gray-400/50 dark:hover:border-white/25 hover:bg-gray-100 dark:hover:bg-white/12 hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20">
+                            <Bell className="h-5 w-5 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
+                            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-xs font-bold text-white shadow-lg shadow-blue-500/40">
+                3
+              </span>
                         </button>
-
-                        {/* Settings Dropdown */}
-                        <DropdownMenu open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-                            <DropdownMenuTrigger asChild>
-                                <button className="group relative rounded-xl border border-white/10 dark:border-white/10 border-gray-300/50 bg-white/5 dark:bg-white/5 bg-gray-100/80 p-2.5 backdrop-blur-xl transition-all duration-300 hover:border-white/20 dark:hover:border-white/20 hover:border-gray-400/50 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 hover:scale-105">
-                                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/20 to-cyan-500/20 opacity-0 blur transition-opacity duration-300 group-hover:opacity-100" />
-                                    <Settings className="relative h-5 w-5 text-gray-300 dark:text-gray-300 text-gray-700 transition-colors group-hover:text-white dark:group-hover:text-white group-hover:text-gray-900" />
-                                </button>
-                            </DropdownMenuTrigger>
-
-                            <DropdownMenuContent
-                                align="end"
-                                side="bottom"
-                                className="w-64 mt-2 border-0"
-                                style={{
-                                    backdropFilter: "blur(20px) saturate(180%)",
-                                    WebkitBackdropFilter: "blur(20px) saturate(180%)",
-                                    boxShadow: "0 8px 32px 0 rgba(0,0,0,.1), inset 0 1px 0 0 rgba(255,255,255,.5)",
-                                    borderRadius: "16px",
-                                }}
-                            >
-                                <div className="px-2 py-2">
-                                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 px-2 mb-2">
-                                        NAVIGATION
-                                    </p>
-
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/" className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-200/80 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" onClick={() => setIsSettingsOpen(false)}>
-                                            <Home className="h-4 w-4" />
-                                            <span>Home</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/courses" className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-200/80 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" onClick={() => setIsSettingsOpen(false)}>
-                                            <GraduationCap className="h-4 w-4" />
-                                            <span>Courses</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuSub>
-                                        <DropdownMenuSubTrigger className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-200/80 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer">
-                                            <Compass className="h-4 w-4" />
-                                            <span>Explore</span>
-                                        </DropdownMenuSubTrigger>
-                                        <DropdownMenuPortal>
-                                            <DropdownMenuSubContent
-                                                className="w-72 p-2 border dark:border-white/10 border-gray-300/50"
-                                                sideOffset={8}
-                                                style={{
-                                                    backdropFilter: "blur(20px) saturate(180%)",
-                                                    WebkitBackdropFilter: "blur(20px) saturate(180%)",
-                                                    boxShadow: "0 8px 32px 0 rgba(0,0,0,.1), inset 0 1px 0 0 rgba(255,255,255,.5)",
-                                                    borderRadius: "16px",
-                                                    background: "rgba(255,255,255,.95) dark:rgba(0,0,0,.95)",
-                                                }}
-                                            >
-                                                {exploreItems.map((item) => {
-                                                    const Icon = item.icon
-                                                    return (
-                                                        <DropdownMenuItem key={item.title} asChild>
-                                                            <Link
-                                                                href={item.href}
-                                                                className="flex items-start gap-3 rounded-lg px-3 py-2.5 hover:bg-gray-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                                                                onClick={() => setIsSettingsOpen(false)}
-                                                            >
-                                                                <Icon className={`h-5 w-5 ${item.color} mt-0.5 flex-shrink-0`} />
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-sm font-medium text-gray-900 dark:text-white">{item.title}</span>
-                                                                    <span className="text-xs text-gray-500 dark:text-gray-400">{item.description}</span>
-                                                                </div>
-                                                            </Link>
-                                                        </DropdownMenuItem>
-                                                    )
-                                                })}
-                                            </DropdownMenuSubContent>
-                                        </DropdownMenuPortal>
-                                    </DropdownMenuSub>
-
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/pricing" className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-200/80 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" onClick={() => setIsSettingsOpen(false)}>
-                                            <DollarSign className="h-4 w-4" />
-                                            <span>Partner & Price</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/contact" className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-200/80 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" onClick={() => setIsSettingsOpen(false)}>
-                                            <Phone className="h-4 w-4" />
-                                            <span>Contact</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                </div>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
 
                         {/* USER MENU / GET STARTED */}
                         {isLoading ? (
@@ -359,7 +278,7 @@ export function HeaderDark() {
                             <DropdownMenu open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
                                 <DropdownMenuTrigger className="w-fit">
                                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                        <div className="group relative ml-2">
+                                        <div className="group relative">
                                             <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/30 to-cyan-500/30 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
                                             <div className="relative flex items-center gap-3 rounded-2xl border border-white/10 dark:border-white/10 border-gray-300/50 bg-white/5 dark:bg-white/5 bg-gray-100/80 py-2 pl-3 pr-4 backdrop-blur-xl transition-all duration-300 group-hover:border-white/20 dark:group-hover:border-white/20 group-hover:border-gray-400/50 group-hover:bg-white/10 dark:group-hover:bg-white/10 group-hover:bg-gray-200/80">
                                                 <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 via-violet-500 to-cyan-500 shadow-lg shadow-purple-500/30 flex items-center justify-center">
@@ -378,7 +297,6 @@ export function HeaderDark() {
                                     </motion.div>
                                 </DropdownMenuTrigger>
 
-                                {/* User menu – unchanged */}
                                 <DropdownMenuContent
                                     align="end"
                                     side="bottom"
@@ -393,37 +311,53 @@ export function HeaderDark() {
                                     <div className="flex items-center justify-start gap-2 p-3">
                                         <div className="flex flex-col space-y-1 leading-none">
                                             <p className="font-medium text-sm dark:text-white text-gray-900">{user.name}</p>
-                                            <p className="w-[200px] truncate text-xs dark:text-gray-400 text-gray-600">
-                                                {user.email}
-                                            </p>
+                                            <p className="w-[200px] truncate text-xs dark:text-gray-400 text-gray-600">{user.email}</p>
                                         </div>
                                     </div>
                                     <DropdownMenuSeparator className="bg-white/10 dark:bg-white/10 bg-gray-300/50" />
-                                    <DropdownMenuItem onClick={handleProfileClick} className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900">
+                                    <DropdownMenuItem
+                                        onClick={handleProfileClick}
+                                        className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900"
+                                    >
                                         <User className="mr-2 h-4 w-4" />
                                         <span>Profile</span>
                                     </DropdownMenuItem>
                                     {user.charactor?.code === "instructor" && (
-                                        <DropdownMenuItem onClick={handleCreateCourseClick} className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900">
+                                        <DropdownMenuItem
+                                            onClick={handleCreateCourseClick}
+                                            className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900"
+                                        >
                                             <PlusCircle className="mr-2 h-4 w-4" />
                                             <span>Create Course</span>
                                         </DropdownMenuItem>
                                     )}
-                                    <DropdownMenuItem onClick={() => console.log("Settings clicked")} className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900">
+                                    <DropdownMenuItem
+                                        onClick={() => console.log("Settings clicked")}
+                                        className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900"
+                                    >
                                         <Settings className="mr-2 h-4 w-4" />
                                         <span>Settings</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator className="bg-white/10 dark:bg-white/10 bg-gray-300/50" />
-                                    <DropdownMenuItem onClick={handleShare} className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900">
+                                    <DropdownMenuItem
+                                        onClick={handleShare}
+                                        className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900"
+                                    >
                                         <Share2 className="mr-2 h-4 w-4" />
                                         <span>Share</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleCopy} className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900">
+                                    <DropdownMenuItem
+                                        onClick={handleCopy}
+                                        className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900"
+                                    >
                                         <Copy className="mr-2 h-4 w-4" />
                                         <span>Copy Link</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator className="bg-white/10 dark:bg-white/10 bg-gray-300/50" />
-                                    <DropdownMenuItem onClick={handleSignOut} className="rounded-lg mx-1 hover:bg-red-500/20 text-red-400 dark:text-red-400 text-red-600 hover:text-red-300 dark:hover:text-red-300 hover:text-red-700">
+                                    <DropdownMenuItem
+                                        onClick={handleSignOut}
+                                        className="rounded-lg mx-1 hover:bg-red-500/20 text-red-400 dark:text-red-400 text-red-600 hover:text-red-300 dark:hover:text-red-300 hover:text-red-700"
+                                    >
                                         <LogOut className="mr-2 h-4 w-4" />
                                         <span>Sign Out</span>
                                     </DropdownMenuItem>
@@ -433,27 +367,19 @@ export function HeaderDark() {
                             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                                 <Button
                                     onClick={handleGetStartedClick}
-                                    className="rounded-full relative text-white px-6 py-2 transition-all duration-300 border-0 overflow-hidden"
+                                    className="rounded-lg relative text-white px-6 py-2 text-sm font-semibold transition-all duration-300 border-0 overflow-hidden shadow-lg shadow-blue-500/30 hover:shadow-lg hover:shadow-blue-500/50"
                                     style={{
-                                        background: "linear-gradient(135deg, rgba(59,130,246,.9) 0%, rgba(147,51,234,.9) 100%)",
-                                        boxShadow: "0 4px 16px rgba(59,130,246,.4), inset 0 1px 0 rgba(255,255,255,.3)",
+                                        background: "linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)",
                                     }}
                                 >
                                     <span className="relative z-10">Get Started</span>
-                                    <motion.div
-                                        className="absolute inset-0"
-                                        style={{ background: "linear-gradient(135deg, rgba(255,255,255,.2) 0%, transparent 100%)" }}
-                                        animate={{ opacity: [0.2, 0.4, 0.2] }}
-                                        transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-                                    />
                                 </Button>
                             </motion.div>
                         )}
                     </div>
 
-                    {/* ---- HAMBURGER (sm & md) — only nav items go inside ---- */}
-                    <div className="flex md:hidden items-center space-x-2">
-                        <ThemeToggle />
+                    {/* ---- MOBILE HAMBURGER ---- */}
+                    <div className="flex lg:hidden items-center space-x-2">
                         <Button
                             variant="ghost"
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -464,12 +390,11 @@ export function HeaderDark() {
                     </div>
                 </div>
 
-                {/* ---- MOBILE MENU (sm only) — only navigation, search stays above ---- */}
+                {/* ---- MOBILE MENU ---- */}
                 {isMenuOpen && (
-                    <motion.div
-                        className="md:hidden mt-4 rounded-2xl overflow-hidden border border-gray-200/50 dark:border-white/10"
+                    <motion.nav
+                        className="lg:hidden mt-4 rounded-2xl overflow-hidden border border-gray-200/50 dark:border-white/10 p-4 space-y-2"
                         style={{
-                            background: "rgba(255,255,255,0.95)",
                             backdropFilter: "blur(20px) saturate(180%)",
                             WebkitBackdropFilter: "blur(20px) saturate(180%)",
                             boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
@@ -479,47 +404,45 @@ export function HeaderDark() {
                         exit={{ opacity: 0, y: -12 }}
                         transition={{ duration: 0.25 }}
                     >
-                        <nav className="p-4 space-y-2">
-                            <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg">
-                                <Home className="h-4 w-4" /> Home
-                            </Link>
-                            <Link href="/courses" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg">
-                                <GraduationCap className="h-4 w-4" /> Courses
-                            </Link>
-
-                            <div className="space-y-1">
-                                <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white">
-                                    <Compass className="h-4 w-4" /> Explore
-                                </div>
-                                <div className="pl-6 space-y-1">
-                                    {exploreItems.map((item) => {
-                                        const Icon = item.icon
-                                        return (
-                                            <Link
-                                                key={item.title}
-                                                href={item.href}
-                                                onClick={() => setIsMenuOpen(false)}
-                                                className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg transition-colors"
-                                            >
-                                                <Icon className={`h-4 w-4 ${item.color}`} />
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium">{item.title}</span>
-                                                    <span className="text-xs text-gray-500 dark:text-gray-400">{item.description}</span>
-                                                </div>
-                                            </Link>
-                                        )
-                                    })}
-                                </div>
+                        <Link
+                            href="/"
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg"
+                        >
+                            <Home className="h-4 w-4" /> Home
+                        </Link>
+                        <Link
+                            href="/courses"
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg"
+                        >
+                            <GraduationCap className="h-4 w-4" /> Courses
+                        </Link>
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white">
+                                <Compass className="h-4 w-4" /> Explorers
                             </div>
-
-                            <Link href="/pricing" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg">
-                                <DollarSign className="h-4 w-4" /> Partner & Price
-                            </Link>
-                            <Link href="/contact" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg">
-                                <Phone className="h-4 w-4" /> Contact
-                            </Link>
-                        </nav>
-                    </motion.div>
+                            <div className="pl-6 space-y-1">
+                                {exploreItems.map((item) => (
+                                    <Link
+                                        key={item.title}
+                                        href={item.href}
+                                        onClick={() => setIsMenuOpen(false)}
+                                        className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg"
+                                    >
+                                        {item.title}
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                        <Link
+                            href="/pricing"
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg"
+                        >
+                            <DollarSign className="h-4 w-4" /> Pricing
+                        </Link>
+                    </motion.nav>
                 )}
             </div>
 

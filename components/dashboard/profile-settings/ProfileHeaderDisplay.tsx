@@ -19,8 +19,9 @@ import { AvatarDock, AvatarDockIcon } from "@/components/ui/aceternity/avatar-do
 import { avatarList } from "@/lib/static-avatars"
 import DEFAULT_AVATAR from "@/public/avatars/robotic.png"
 import { BackgroundBeams } from "@/components/ui/aceternity/background-beams"
+import { UserRoleSlug } from "@/types/user" // Import UserRoleSlug
 
-const roleColors = {
+const roleColors: Record<UserRoleSlug | "student", string> = { // Updated to use UserRoleSlug
     instructor: "from-blue-500 to-purple-500",
     admin: "from-red-500 to-pink-500",
     expert: "from-yellow-500 to-orange-500",
@@ -29,9 +30,26 @@ const roleColors = {
     company: "from-indigo-500 to-cyan-500",
     job_seeker: "from-teal-500 to-blue-500",
     other: "from-pink-500 to-red-500",
+    developer: "from-blue-600 to-violet-600", // Added developer
+    designer: "from-purple-600 to-pink-600", // Added designer
+    authenticated: "from-gray-500 to-slate-500", // Added authenticated
+    public: "from-gray-500 to-slate-500", // Added public
+    creator: "from-purple-500 to-pink-500", // Added creator
+    viewer: "from-blue-500 to-cyan-500", // Added viewer
 }
 
-export function ProfileHeaderDisplay({avatar,name,email,followers,following,role = "student",onAvatarChange,isUploadingAvatar,}: any) {
+interface ProfileHeaderDisplayProps {
+    avatar: string | null;
+    name: string;
+    email: string;
+    followers: number;
+    following: number;
+    role: UserRoleSlug; // Changed to UserRoleSlug
+    onAvatarChange: (file: File) => Promise<void>;
+    isUploadingAvatar: boolean;
+}
+
+export function ProfileHeaderDisplay({avatar,name,email,followers,following,role = "student",onAvatarChange,isUploadingAvatar,}: ProfileHeaderDisplayProps) {
     const {
         isOpen,
         openModal,

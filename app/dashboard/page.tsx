@@ -6,7 +6,6 @@ import { Footer } from "@/components/ui/footers/footer"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { motion } from "framer-motion"
 import { useAuth } from "@/hooks/use-auth"
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader"
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview"
 import { DashboardMyCourses } from "@/components/dashboard/DashboardMyCourses"
 import { DashboardCombinedEnrollments } from "@/components/dashboard/DashboardCombinedEnrollments"
@@ -14,24 +13,11 @@ import { DashboardAnalytics } from "@/components/dashboard/DashboardAnalytics"
 import { DashboardSettings } from "@/components/dashboard/DashboardSettings"
 import CreateCourseForm from "@/components/dashboard/CreateCourseForm"
 import { DashboardExpenditure } from "@/components/dashboard/DashboardExpenditure"
-import {
-    Users,
-    BookOpen,
-    DollarSign,
-    Star,
-    MessageCircle,
-    ThumbsUp,
-    LayoutDashboard,
-    BarChart3,
-    Settings,
-    GraduationCap,
-    CreditCard,
-} from "lucide-react"
-import { FloatingDock, DockIcon } from "@/components/ui/floating-dock"
-import { FaRegUser, FaCog, FaCrown } from "react-icons/fa"
-import {HeaderVibrant} from "@/components/ui/headers/HeaderVibrant";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
+import { User as StrapiUser } from "@/types/user"
+import {BookOpen, DollarSign, MessageCircle, Star, ThumbsUp, Users} from "lucide-react"; // Import the updated User interface
 
-// Interfaces for mock data
+// Interfaces for mock data (keeping them here for context, but ideally they'd be in a types file)
 interface DashboardStats {
     totalCourses: number
     activeLearners: number
@@ -73,36 +59,9 @@ interface Enrollment {
     completed: boolean
 }
 
-interface User {
-    id: string
-    username: string
-    email: string
-    avatar?: string | { url: string }
-    role?: string
-    followers: number
-    following: number
-    jwt?: string
-    charactor?: { id: string; attributes: { slug: string } }
-    settings?: {
-        bio?: string
-        location?: string
-        website?: string
-        socialLinks?: { twitter?: string; github?: string; linkedin?: string }
-        skills?: string[]
-        notifications?: {
-            newEnrollments?: boolean
-            courseReviews?: boolean
-            paymentNotifications?: boolean
-            weeklyAnalytics?: boolean
-        }
-    }
-    badgeIds?: number[]
-}
-
 export default function DashboardPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-            <HeaderVibrant />
             <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading dashboard...</div>}>
                 <DashboardContent />
             </Suspense>
@@ -115,6 +74,7 @@ function DashboardContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { user, isLoading: authLoading } = useAuth()
+    const [isExpanded, setIsExpanded] = useState(true);
 
     const initialTab = searchParams?.get("tab") || "overview"
     const initialCreateCourse = searchParams?.get("create") === "true"
@@ -130,15 +90,6 @@ function DashboardContent() {
             setShowCreateCourseForm(create && tab === 'my-courses')
         }
     }, [searchParams, selectedTab])
-
-    const tabsConfig = [
-        { value: "overview", label: "Overview", icon: LayoutDashboard },
-        { value: "enrollments", label: "Enrollments", icon: GraduationCap },
-        { value: "my-courses", label: "My Courses", icon: BookOpen },
-        { value: "expenditure", label: "Expenditure", icon: CreditCard },
-        { value: "analytics", label: "Analytics", icon: BarChart3 },
-        { value: "settings", label: "Settings", icon: Settings },
-    ]
 
     // Mock data for dashboard
     const stats: DashboardStats = {
@@ -355,119 +306,80 @@ function DashboardContent() {
         )
     }
 
+    // Ensure user is treated as StrapiUser type for DashboardSettings
+    const currentUserForSettings: StrapiUser = user as StrapiUser;
     return (
-        <main className="pt-24 pb-8 px-4 sm:px-6 lg:px-8">
-            <div className="container mx-auto">
-                <DashboardHeader userName={user.username} />
+        <div className="flex"> {/* Use flex to lay out sidebar and main content */}
+            <DashboardSidebar
+                currentUser={currentUserForSettings}
+                selectedTab={selectedTab}
+                onTabChange={handleTabChange}
+                onCreateCourse={handleCreateCourseClick}
+                isExpanded={isExpanded}
+                onExpandedChange={setIsExpanded}
+            />
 
-                <motion.div
-                    key={selectedTab + (showCreateCourseForm ? '-create' : '-list')}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-6"
-                >
-                    <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
-                        <TabsContent value="overview" className="mt-0">
-                            <DashboardOverview
-                                stats={stats}
-                                enrollmentData={enrollmentData}
-                                courseTypeData={courseTypeData}
-                                recentActivity={recentActivityData}
-                            />
-                        </TabsContent>
-
-                        <TabsContent value="enrollments" className="mt-0">
-                            <DashboardCombinedEnrollments recentEnrollments={recentEnrollments} myLearningProgress={myLearningProgress} />
-                        </TabsContent>
-
-                        <TabsContent value="my-courses" className="mt-0">
-                            {showCreateCourseForm ? (
-                                <CreateCourseForm
-                                    onCancel={handleCancelCreateCourse}
-                                    onSuccess={handleCourseCreatedSuccess}
+            <main className={`flex-1 pt-10  sm:px-6 lg:px-8 transition-all duration-300 ${isExpanded ? "lg:ml-72" : "lg:ml-24"}`}>
+                <div className="container mx-auto">
+                    <motion.div
+                        key={selectedTab + (showCreateCourseForm ? '-create' : '-list')}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="space-y-6"
+                    >
+                        <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
+                            <TabsContent value="overview" className="mt-0">
+                                <DashboardOverview
+                                    stats={stats}
+                                    enrollmentData={enrollmentData}
+                                    courseTypeData={courseTypeData}
+                                    recentActivity={recentActivityData}
                                 />
-                            ) : (
-                                <DashboardMyCourses
-                                    myCourses={myCourses}
-                                    onCreateCourse={handleCreateCourseClick}
-                                    showCreateButton={true}
+                            </TabsContent>
+
+                            <TabsContent value="enrollments" className="mt-0">
+                                <DashboardCombinedEnrollments recentEnrollments={recentEnrollments} myLearningProgress={myLearningProgress} />
+                            </TabsContent>
+
+                            <TabsContent value="my-courses" className="mt-0">
+                                {showCreateCourseForm ? (
+                                    <CreateCourseForm
+                                        onCancel={handleCancelCreateCourse}
+                                        onSuccess={handleCourseCreatedSuccess}
+                                    />
+                                ) : (
+                                    <DashboardMyCourses
+                                        myCourses={myCourses}
+                                        onCreateCourse={handleCreateCourseClick}
+                                        showCreateButton={true}
+                                    />
+                                )}
+                            </TabsContent>
+
+                            <TabsContent value="expenditure" className="mt-0">
+                                <DashboardExpenditure />
+                            </TabsContent>
+
+                            <TabsContent value="analytics" className="mt-0">
+                                <DashboardAnalytics stats={stats} enrollmentData={enrollmentData} lessonsCompletedData={lessonsCompletedData} />
+                            </TabsContent>
+
+                            <TabsContent value="settings" className="mt-0">
+                                <DashboardSettings
+                                    currentUser={currentUserForSettings}
+                                    stats={{
+                                        coursesCreated: stats.coursesCreated,
+                                        totalEnrollments: stats.activeLearners,
+                                        totalRevenue: stats.totalRevenue,
+                                        completionRate: stats.completionRate
+                                    }}
                                 />
-                            )}
-                        </TabsContent>
-
-                        <TabsContent value="expenditure" className="mt-0">
-                            <DashboardExpenditure />
-                        </TabsContent>
-
-                        <TabsContent value="analytics" className="mt-0">
-                            <DashboardAnalytics stats={stats} enrollmentData={enrollmentData} lessonsCompletedData={lessonsCompletedData} />
-                        </TabsContent>
-
-                        <TabsContent value="settings" className="mt-0">
-                            <DashboardSettings
-                                currentUser={{
-                                    id: user.id,
-                                    username: user.username,
-                                    email: user.email,
-                                    avatar: typeof user.avatar === 'string' ? user.avatar : user.avatar?.url ? `${process.env.NEXT_PUBLIC_STRAPI_URL}${user.avatar.url}` : null,
-                                    role: user.role,
-                                    followers: user.followers,
-                                    following: user.following,
-                                    charactor: user.charactor,
-                                    settings: user.settings || {},
-                                    badgeIds: user.badgeIds || [],
-                                }}
-                                stats={{
-                                    coursesCreated: stats.coursesCreated,
-                                    totalEnrollments: stats.activeLearners,
-                                    totalRevenue: stats.totalRevenue,
-                                    completionRate: stats.completionRate
-                                }}
-                            />
-                        </TabsContent>
-                    </Tabs>
-                </motion.div>
-            </div>
-
-            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-                <FloatingDock>
-                    {tabsConfig.map((tab) => {
-                        const IconComponent = tab.icon
-                        return (
-                            <DockIcon
-                                key={tab.value}
-                                label={tab.label}
-                                active={selectedTab === tab.value}
-                                onClick={() => handleTabChange(tab.value)}
-                            >
-                                <IconComponent className={`w-6 h-6 ${selectedTab === tab.value ? "text-white" : "group-hover:text-white"}`} />
-                            </DockIcon>
-                        )
-                    })}
-                </FloatingDock>
-            </div>
-
-            {/* Keep FloatingDock for settings sub-tabs commented out as requested */}
-            {/* {selectedTab === "settings" && (
-                <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50">
-                    <FloatingDock>
-                        {settingsTabsConfig.map((section) => {
-                            const IconComponent = section.icon
-                            return (
-                                <DockIcon
-                                    key={section.value}
-                                    label={section.label}
-                                    active={activeSettingsSection === section.value}
-                                    onClick={() => handleSettingsSectionChange(section.value)}
-                                >
-                                    <IconComponent className={`w-6 h-6 ${activeSettingsSection === section.value ? "text-white" : "text-white/70 group-hover:text-white"}`} />
-                                </DockIcon>
-                            )
-                        })}
-                    </FloatingDock>
+                            </TabsContent>
+                        </Tabs>
+                    </motion.div>
                 </div>
-            )} */}
-        </main>
+            </main>
+        </div>
     )
 }
