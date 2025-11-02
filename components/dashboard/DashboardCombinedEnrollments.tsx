@@ -141,7 +141,7 @@ export function DashboardCombinedEnrollments({ recentEnrollments, myLearningProg
             </div>
 
             {/* Search and Filters for the active view */}
-            <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+            <Card className="liquid-glass-card">
                 <CardContent className="p-6 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="relative md:col-span-1">
@@ -193,7 +193,7 @@ export function DashboardCombinedEnrollments({ recentEnrollments, myLearningProg
 
 
             {viewMode === 'my-students' && (
-                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Users className="w-5 h-5" />
@@ -258,7 +258,7 @@ export function DashboardCombinedEnrollments({ recentEnrollments, myLearningProg
             )}
 
             {viewMode === 'my-courses' && (
-                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <BookOpen className="w-5 h-5" />
@@ -289,7 +289,7 @@ export function DashboardCombinedEnrollments({ recentEnrollments, myLearningProg
                                             className="group"
                                         >
                                             <Card
-                                                className="h-full flex flex-col justify-between glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden"
+                                                className="h-full flex flex-col justify-between liquid-glass-card cursor-pointer overflow-hidden"
                                                 onClick={() => router.push(`/courses/${course.id}`)}
                                             >
                                                 <div className="relative">

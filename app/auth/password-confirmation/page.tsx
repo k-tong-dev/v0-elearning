@@ -130,7 +130,7 @@ export default function PasswordConfirmationPage() {
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="w-full h-fit max-w-md bg-card rounded-2xl shadow-xl border border-border p-8 space-y-6"
+                className="w-full h-fit max-w-md liquid-glass-card p-8 space-y-6"
             >
                 <div className="text-center space-y-4">
                     <Lock className="mx-auto w-16 h-16 text-primary" />

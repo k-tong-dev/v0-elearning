@@ -20,7 +20,7 @@ export function UserCoursesOverview({ coursesEnrolled, coursesCreated, userRole 
     return (
         <div className="space-y-6 mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <BookOpen className="w-5 h-5 text-blue-500" />
@@ -36,7 +36,7 @@ export function UserCoursesOverview({ coursesEnrolled, coursesCreated, userRole 
                     </CardContent>
                 </Card>
 
-                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Award className="w-5 h-5 text-purple-500" />

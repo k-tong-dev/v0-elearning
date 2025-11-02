@@ -12,7 +12,7 @@ interface FollowStatsDisplayProps {
 
 export function FollowStatsDisplay({ followers, following }: FollowStatsDisplayProps) {
     return (
-        <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+        <Card className="liquid-glass-card hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
             <CardContent className="p-4">
                 <div className="flex items-center justify-around">
                     <div className="text-center p-2 rounded-lg transition-colors">

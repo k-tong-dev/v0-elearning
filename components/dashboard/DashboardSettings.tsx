@@ -25,14 +25,22 @@ import { LocationWebsiteFields } from "@/components/dashboard/profile-settings/L
 import { SocialLinksFields } from "@/components/dashboard/profile-settings/SocialLinksFields"
 import { SkillsManagement } from "@/components/dashboard/profile-settings/SkillsManagement"
 import { BadgesManagement } from "@/components/dashboard/profile-settings/BadgesManagement"
+import { LearningGoalsManagement } from "@/components/dashboard/profile-settings/LearningGoalsManagement"
+import { InterestedsManagement } from "@/components/dashboard/profile-settings/InterestedsManagement"
+import { PreferToLearnsManagement } from "@/components/dashboard/profile-settings/PreferToLearnsManagement"
 import { ProfileHeaderDisplay } from "@/components/dashboard/profile-settings/ProfileHeaderDisplay"
-import { FaRegUser, FaCog, FaCrown } from "react-icons/fa"
+import { ConnectedDevices } from "@/components/dashboard/profile-settings/ConnectedDevices"
+import { AccountDeletion } from "@/components/dashboard/profile-settings/AccountDeletion"
+import { FaRegUser, FaCog, FaCrown, FaDesktop, FaTrash } from "react-icons/fa"
 import { motion } from "framer-motion"
 import { useAuth } from "@/hooks/use-auth"
 import { toast } from "sonner"
 import { User, UserRoleSlug, StrapiMedia } from "@/types/user"
 import { getAccessToken } from "@/lib/cookies"
-import { RoleSelectionCombobox } from "@/components/dashboard/profile-settings/RoleSelectionCombobox"; // Updated import
+import { RoleSelectionCombobox } from "@/components/dashboard/profile-settings/RoleSelectionCombobox"
+import { getCharacters, Character } from "@/integrations/strapi/character"
+import { Skill } from "@/integrations/strapi/skill"
+import { uploadStrapiFile } from "@/integrations/strapi/utils"
 
 interface DashboardStats {
     coursesCreated: number
@@ -50,6 +58,8 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
     const { user, refreshUser } = useAuth()
     const access_token = getAccessToken()
     const strapiURL = process.env.NEXT_PUBLIC_STRAPI_URL
+    const [characters, setCharacters] = useState<Character[]>([])
+    const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
 
     // Helper to get avatar URL
     const getAvatarUrl = (avatar: StrapiMedia | string | null | undefined): string | null => {
@@ -78,7 +88,8 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
         bio: currentUser.bio || "",
         location: currentUser.location || "",
         website: currentUser.website || "",
-        charactor: currentUser.character?.code || "student" as UserRoleSlug, // Use character.code
+        charactorId: currentUser.character?.id?.toString() || "",
+        charactorCode: currentUser.character?.code || "student" as UserRoleSlug, // Keep code for display
         socialLinks: {
             twitter: currentUser.twister || "", // Map to Strapi's flat fields
             github: currentUser.github || "",
@@ -87,20 +98,36 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
             instagram: currentUser.instagram || "", // Added instagram
         },
         avatar: currentUser.avatar || null,
-        skills: currentUser.skills?.map(s => s.name) || [], // Map skills to array of names
+        skills: currentUser.skills?.map(s => s.documentId || s.name) || [], // Map skills to array of documentIds
         selectedBadgeIds: currentUser.badges?.map(b => b.id.toString()) || [], // Map badges to array of IDs
+        selectedLearningGoalIds: currentUser.learning_goals?.map(g => g.id.toString()) || [],
+        selectedInterestedIds: currentUser.interested?.map(i => i.id.toString()) || [],
+        selectedPreferToLearnIds: currentUser.prefer_to_learns?.map(p => p.id.toString()) || [],
     })
 
     const [isSavingProfile, setIsSavingProfile] = useState(false)
-    const [activeSection, setActiveSection] = useState<"profile" | "notifications" | "limits">("profile")
+    const [activeSection, setActiveSection] = useState<"profile" | "notifications" | "limits" | "devices" | "account">("profile")
+
+    // Fetch characters on mount
+    useEffect(() => {
+        const fetchChars = async () => {
+            try {
+                const chars = await getCharacters()
+                setCharacters(chars)
+            } catch (err) {
+                console.error("Failed to fetch characters:", err)
+            }
+        }
+        fetchChars()
+    }, [])
 
     // Sync with URL search params
     useEffect(() => {
         if (typeof window === "undefined") return
         const params = new URLSearchParams(window.location.search)
         const section = params.get("section")
-        if (section && ["profile", "notifications", "limits"].includes(section) && section !== activeSection) {
-            setActiveSection(section as "profile" | "notifications" | "limits")
+        if (section && ["profile", "notifications", "limits", "devices", "account"].includes(section) && section !== activeSection) {
+            setActiveSection(section as "profile" | "notifications" | "limits" | "devices" | "account")
         }
     }, [activeSection])
 
@@ -112,7 +139,8 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
             bio: currentUser.bio || "",
             location: currentUser.location || "",
             website: currentUser.website || "",
-            charactor: currentUser.character?.code || "student" as UserRoleSlug,
+            charactorId: currentUser.character?.id?.toString() || "",
+            charactorCode: currentUser.character?.code || "student" as UserRoleSlug,
             socialLinks: {
                 twitter: currentUser.twister || "",
                 github: currentUser.github || "",
@@ -121,8 +149,11 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                 instagram: currentUser.instagram || "",
             },
             avatar: currentUser.avatar || null,
-            skills: currentUser.skills?.map(s => s.name) || [],
+            skills: currentUser.skills?.map(s => s.documentId || s.name) || [],
             selectedBadgeIds: currentUser.badges?.map(b => b.id.toString()) || [],
+            selectedLearningGoalIds: currentUser.learning_goals?.map(g => g.id.toString()) || [],
+            selectedInterestedIds: currentUser.interested?.map(i => i.id.toString()) || [],
+            selectedPreferToLearnIds: currentUser.prefer_to_learns?.map(p => p.id.toString()) || [],
         })
         setAvatarPreview(getAvatarUrl(currentUser.avatar));
     }, [currentUser, strapiURL])
@@ -145,34 +176,29 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
         setIsUploadingAvatar(true)
 
         try {
-            const formData = new FormData()
-            formData.append("files", file)
-
-            const uploadResponse = await fetch(`${strapiURL}/api/upload`, {
-                method: "POST",
-                headers: { Authorization: `Bearer ${access_token}` },
-                body: formData,
-            })
-
-            if (!uploadResponse.ok) {
-                throw new Error("Failed to upload avatar.")
-            }
-
-            const [uploadedFile] = await uploadResponse.json()
-            const objectUrl = uploadedFile.url
-            setAvatarPreview(uploadedFile.formats?.thumbnail?.url ? `${strapiURL}${uploadedFile.formats.thumbnail.url}` : `${strapiURL}${objectUrl}`);
-            setFormData((prev) => ({ ...prev, avatar: uploadedFile })); // Store the full StrapiMedia object
-
             if (!user?.id) {
                 throw new Error("User not authenticated.")
             }
 
+            // Use the uploadStrapiFile utility which handles FormData properly
+            const uploadedFile = await uploadStrapiFile(
+                file,
+                'plugin::users-permissions.user',
+                user.id,
+                'avatar'
+            )
+
+            const objectUrl = uploadedFile.url
+            const previewUrl = uploadedFile.formats?.thumbnail?.url || uploadedFile.formats?.small?.url || uploadedFile.url
+            setAvatarPreview(previewUrl ? `${strapiURL}${previewUrl}` : `${strapiURL}${objectUrl}`)
+            setFormData((prev) => ({ ...prev, avatar: uploadedFile })) // Store the full StrapiMedia object
+
+            // Update user with avatar ID
             const updatePayload = {
                 avatar: uploadedFile.id, // Send the ID of the uploaded file
-                // Other fields are updated in handleSaveProfile
             }
 
-            const response = await fetch(`${strapiURL}/api/users/${user.id}`, {
+            const response = await fetch(`${strapiURL}/api/users/${user.id}?populate=*`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -183,6 +209,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
 
             if (!response.ok) {
                 const errorText = await response.text()
+                console.error("[handleAvatarChange] Error response:", errorText)
                 throw new Error(errorText || "Failed to update avatar.")
             }
 
@@ -214,6 +241,14 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                     [socialField]: value,
                 },
             }))
+        } else if (field === "charactorCode") {
+            // When character code changes, find and update the corresponding ID
+            const character = characters.find(c => c.code === value)
+            setFormData((prev) => ({ 
+                ...prev, 
+                charactorCode: value,
+                charactorId: character?.id.toString() || ""
+            }))
         } else {
             setFormData((prev) => ({ ...prev, [field]: value }))
         }
@@ -223,8 +258,24 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
         setFormData((prev) => ({ ...prev, skills: newSkills }))
     }
 
+    const handleAvailableSkills = (skills: Skill[]) => {
+        setAvailableSkills(skills)
+    }
+
     const handleBadgesChange = (newBadgeIds: string[]) => {
         setFormData((prev) => ({ ...prev, selectedBadgeIds: newBadgeIds }))
+    }
+
+    const handleLearningGoalsChange = (newGoalIds: string[]) => {
+        setFormData((prev) => ({ ...prev, selectedLearningGoalIds: newGoalIds }))
+    }
+
+    const handleInterestedsChange = (newInterestedIds: string[]) => {
+        setFormData((prev) => ({ ...prev, selectedInterestedIds: newInterestedIds }))
+    }
+
+    const handlePreferToLearnsChange = (newPreferToLearnIds: string[]) => {
+        setFormData((prev) => ({ ...prev, selectedPreferToLearnIds: newPreferToLearnIds }))
     }
 
     const handleSaveProfile = async (e: React.FormEvent) => {
@@ -241,23 +292,36 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
         setIsSavingProfile(true)
         try {
             // Construct payload for Strapi, mapping formData fields to Strapi's expected structure
+            // Deduplicate arrays to avoid sending duplicates
+            const uniqueSkills = [...new Set(formData.skills)]
+            const uniqueBadgeIds = [...new Set(formData.selectedBadgeIds)]
+            const uniqueLearningGoalIds = [...new Set(formData.selectedLearningGoalIds)]
+            const uniqueInterestedIds = [...new Set(formData.selectedInterestedIds)]
+            const uniquePreferToLearnIds = [...new Set(formData.selectedPreferToLearnIds)]
+            
             const updatePayload: any = {
                 username: formData.username,
                 email: formData.email,
                 bio: formData.bio,
                 location: formData.location,
                 website: formData.website,
-                character: formData.charactor, // Send character code
+                character: formData.charactorId ? parseInt(formData.charactorId) : null, // Send character ID
                 // Map social links back to top-level fields
                 twister: formData.socialLinks.twitter,
                 github: formData.socialLinks.github,
                 linkin: formData.socialLinks.linkedin,
                 facebook: formData.socialLinks.facebook,
                 instagram: formData.socialLinks.instagram,
-                // Map skills back to array of objects with 'name'
-                skills: formData.skills.map(name => ({ name })),
-                // Map badge IDs back to array of objects with 'id'
-                badges: formData.selectedBadgeIds.map(id => ({ id: parseInt(id) })),
+                // Map to simple arrays of IDs for Strapi v5
+                // For skills, we need to map documentId to numeric id
+                skills: uniqueSkills.map(docId => {
+                    const skill = availableSkills.find(s => s.documentId === docId)
+                    return skill ? skill.id : null
+                }).filter(id => id !== null),
+                badges: uniqueBadgeIds.map(id => parseInt(id)),
+                learning_goals: uniqueLearningGoalIds.map(id => parseInt(id)),
+                interested: uniqueInterestedIds.map(id => parseInt(id)),
+                prefer_to_learns: uniquePreferToLearnIds.map(id => parseInt(id)),
                 // Notification settings are handled separately by handleSaveNotifications
                 notice_new_enrollment: notificationSettings.newEnrollments,
                 notice_course_reviewer: notificationSettings.courseReviews,
@@ -277,18 +341,22 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                 updatePayload.avatar = null; // No avatar selected
             }
 
-
-            const response = await fetch(`${strapiURL}/api/users/${user.id}`, {
+            console.log("[DashboardSettings] Update payload:", JSON.stringify(updatePayload, null, 2))
+            
+            const response = await fetch(`${strapiURL}/api/users/${user.id}?populate=*`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${user?.jwt || access_token}`,
+                    Authorization: `Bearer ${access_token}`,
                 },
                 body: JSON.stringify(updatePayload),
             })
+            
+            console.log("[DashboardSettings] Response status:", response.status)
 
             if (!response.ok) {
                 const errorText = await response.text()
+                console.error("[DashboardSettings] Error response:", errorText)
                 throw new Error(errorText || "Failed to update profile.")
             }
 
@@ -333,7 +401,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${user?.jwt || access_token}`,
+                    Authorization: `Bearer ${access_token}`,
                 },
                 body: JSON.stringify(updatePayload),
             })
@@ -361,7 +429,8 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
         }
     }
 
-    const handleSectionChange = (section: "profile" | "notifications" | "limits") => {
+    const handleSectionChange = (value: string) => {
+        const section = value as "profile" | "notifications" | "limits" | "devices" | "account"
         if (section !== activeSection) {
             setActiveSection(section)
             if (typeof window !== "undefined") {
@@ -410,24 +479,36 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                         transition={{ delay: 0.3 }}
                     >
                         <Tabs value={activeSection} onValueChange={handleSectionChange} className="w-full">
-                            <TabsList className="grid w-full grid-cols-3">
+                            <TabsList className="grid w-full grid-cols-5 gap-1">
                                 <TabsTrigger
-                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-cyan-600 dark:data-[state=active]:to-emerald-500"
+                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-cyan-600 dark:data-[state=active]:to-emerald-500 text-xs sm:text-sm"
                                     value="profile"
                                 >
-                                    <FaRegUser className="w-4 h-4 mr-2" /> Profile
+                                    <FaRegUser className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Profile</span>
                                 </TabsTrigger>
                                 <TabsTrigger
-                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-cyan-600 dark:data-[state=active]:to-emerald-500"
+                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-cyan-600 dark:data-[state=active]:to-emerald-500 text-xs sm:text-sm"
                                     value="notifications"
                                 >
-                                    <FaCog className="w-4 h-4 mr-2" /> Notifications
+                                    <FaCog className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Notifications</span>
                                 </TabsTrigger>
                                 <TabsTrigger
-                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-cyan-600 dark:data-[state=active]:to-emerald-500"
+                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-cyan-600 dark:data-[state=active]:to-emerald-500 text-xs sm:text-sm"
                                     value="limits"
                                 >
-                                    <FaCrown className="w-4 h-4 mr-2" /> Limits
+                                    <FaCrown className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Limits</span>
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-cyan-600 dark:data-[state=active]:to-emerald-500 text-xs sm:text-sm"
+                                    value="devices"
+                                >
+                                    <FaDesktop className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Devices</span>
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-cyan-600 dark:data-[state=active]:to-emerald-500 text-xs sm:text-sm"
+                                    value="account"
+                                >
+                                    <FaTrash className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Account</span>
                                 </TabsTrigger>
                             </TabsList>
 
@@ -440,7 +521,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                         transition={{ delay: 0.3 }}
                                         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
                                     >
-                                        <Card className="glass-enhanced hover:scale-105 transition-all duration-300 border-cyan-500/20">
+                                        <Card className="liquid-glass-card border-cyan-500/20">
                                             <CardContent className="p-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="p-2 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-lg">
@@ -453,7 +534,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                                 </div>
                                             </CardContent>
                                         </Card>
-                                        <Card className="glass-enhanced hover:scale-105 transition-all duration-300 border-blue-500/20">
+                                        <Card className="liquid-glass-card border-blue-500/20">
                                             <CardContent className="p-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
@@ -466,7 +547,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                                 </div>
                                             </CardContent>
                                         </Card>
-                                        <Card className="glass-enhanced hover:scale-105 transition-all duration-300 border-yellow-500/20">
+                                        <Card className="liquid-glass-card border-yellow-500/20">
                                             <CardContent className="p-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="p-2 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg">
@@ -479,7 +560,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                                 </div>
                                             </CardContent>
                                         </Card>
-                                        <Card className="glass-enhanced hover:scale-105 transition-all duration-300 border-purple-500/20">
+                                        <Card className="liquid-glass-card border-purple-500/20">
                                             <CardContent className="p-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg">
@@ -495,7 +576,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                     </motion.div>
                                 )}
 
-                                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                                <Card className="liquid-glass-card">
                                     <CardHeader>
                                         <CardTitle>Edit Profile</CardTitle>
                                     </CardHeader>
@@ -507,8 +588,8 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                                 onInputChange={handleProfileInputChange}
                                             />
                                             <RoleSelectionCombobox // Using the new HeroUI-based component
-                                                charactor={formData.charactor}
-                                                onCharactorChange={(value) => handleProfileInputChange("charactor", value)}
+                                                charactor={formData.charactorCode}
+                                                onCharactorChange={(value) => handleProfileInputChange("charactorCode", value)}
                                             />
                                             <BioField bio={formData.bio} onBioChange={(value) => handleProfileInputChange("bio", value)} />
                                             <LocationWebsiteFields
@@ -521,29 +602,47 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                                 onInputChange={handleProfileInputChange}
                                             />
                                             <div className="space-y-6 mt-8">
-                                                <SkillsManagement selectedSkills={formData.skills} onSkillsChange={handleSkillsChange} />
+                                                <LearningGoalsManagement
+                                                    selectedLearningGoalIds={formData.selectedLearningGoalIds}
+                                                    onLearningGoalsChange={handleLearningGoalsChange}
+                                                />
+                                                <InterestedsManagement
+                                                    selectedInterestedIds={formData.selectedInterestedIds}
+                                                    onInterestedsChange={handleInterestedsChange}
+                                                />
+                                                <PreferToLearnsManagement
+                                                    selectedPreferToLearnIds={formData.selectedPreferToLearnIds}
+                                                    onPreferToLearnsChange={handlePreferToLearnsChange}
+                                                />
+                                                <SkillsManagement 
+                                                    selectedSkills={formData.skills} 
+                                                    onSkillsChange={handleSkillsChange}
+                                                    onAvailableSkills={handleAvailableSkills}
+                                                />
                                                 <BadgesManagement
                                                     selectedBadgeIds={formData.selectedBadgeIds}
                                                     onBadgesChange={handleBadgesChange}
                                                 />
                                             </div>
-                                            <Button
-                                                type="submit"
-                                                disabled={isSavingProfile || isUploadingAvatar}
-                                                className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 mt-8"
-                                            >
-                                                {isSavingProfile ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                        Saving...
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <Save className="w-4 h-4 mr-2" />
-                                                        Save Changes
-                                                    </>
-                                                )}
-                                            </Button>
+                                            <div className="flex justify-end mt-8">
+                                                <Button
+                                                    type="submit"
+                                                    disabled={isSavingProfile || isUploadingAvatar}
+                                                    className="px-8 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
+                                                >
+                                                    {isSavingProfile ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                            Saving...
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <Save className="w-4 h-4 mr-2" />
+                                                            Save Changes
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            </div>
                                         </form>
                                     </CardContent>
                                 </Card>
@@ -551,7 +650,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
 
                             {/* Notifications Tab Content */}
                             <TabsContent value="notifications" className="space-y-6 mt-6">
-                                <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300 border-cyan-500/20">
+                                <Card className="liquid-glass-card border-cyan-500/20">
                                     <CardHeader className="pb-4">
                                         <div className="flex items-center gap-3">
                                             <div className="p-2 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-lg">
@@ -644,7 +743,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
 
                             {/* Limits Tab Content */}
                             <TabsContent value="limits" className="space-y-6 mt-6">
-                                <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300 border-purple-500/20">
+                                <Card className="liquid-glass-card border-purple-500/20">
                                     <CardHeader className="pb-4">
                                         <div className="flex items-center gap-3">
                                             <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg">
@@ -705,6 +804,19 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                         </div>
                                     </CardContent>
                                 </Card>
+                            </TabsContent>
+
+                            {/* Devices Tab Content */}
+                            <TabsContent value="devices" className="space-y-6 mt-6">
+                                <ConnectedDevices />
+                            </TabsContent>
+
+                            {/* Account Tab Content */}
+                            <TabsContent value="account" className="space-y-6 mt-6">
+                                <AccountDeletion 
+                                    userEmail={currentUser.email}
+                                    userId={currentUser.id}
+                                />
                             </TabsContent>
                         </Tabs>
                     </motion.div>

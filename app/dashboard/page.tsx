@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Footer } from "@/components/ui/footers/footer"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { motion } from "framer-motion"
 import { useAuth } from "@/hooks/use-auth"
@@ -14,8 +13,10 @@ import { DashboardSettings } from "@/components/dashboard/DashboardSettings"
 import CreateCourseForm from "@/components/dashboard/CreateCourseForm"
 import { DashboardExpenditure } from "@/components/dashboard/DashboardExpenditure"
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
+import { DashboardMyReports } from "@/components/dashboard/DashboardMyReports"
+import { DashboardMyContacts } from "@/components/dashboard/DashboardMyContacts"
 import { User as StrapiUser } from "@/types/user"
-import {BookOpen, DollarSign, MessageCircle, Star, ThumbsUp, Users} from "lucide-react"; // Import the updated User interface
+import {BookOpen, DollarSign, MessageCircle, Star, ThumbsUp, Users} from "lucide-react"
 
 // Interfaces for mock data (keeping them here for context, but ideally they'd be in a types file)
 interface DashboardStats {
@@ -65,7 +66,6 @@ export default function DashboardPage() {
             <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading dashboard...</div>}>
                 <DashboardContent />
             </Suspense>
-            <Footer />
         </div>
     )
 }
@@ -309,7 +309,7 @@ function DashboardContent() {
     // Ensure user is treated as StrapiUser type for DashboardSettings
     const currentUserForSettings: StrapiUser = user as StrapiUser;
     return (
-        <div className="flex"> {/* Use flex to lay out sidebar and main content */}
+        <div className="min-h-screen">
             <DashboardSidebar
                 currentUser={currentUserForSettings}
                 selectedTab={selectedTab}
@@ -319,8 +319,10 @@ function DashboardContent() {
                 onExpandedChange={setIsExpanded}
             />
 
-            <main className={`flex-1 pt-10  sm:px-6 lg:px-8 transition-all duration-300 ${isExpanded ? "lg:ml-72" : "lg:ml-24"}`}>
-                <div className="container mx-auto">
+            <main 
+                className={`min-h-screen transition-all duration-300 ease-in-out pt-10 sm:px-4 md:px-6 lg:px-8 ${isExpanded ? "lg:ml-[18rem]" : "lg:ml-[6rem]"}`}
+            >
+                <div className="container mx-auto max-w-7xl">
                     <motion.div
                         key={selectedTab + (showCreateCourseForm ? '-create' : '-list')}
                         initial={{ opacity: 0, y: 20 }}
@@ -365,12 +367,12 @@ function DashboardContent() {
                                 <DashboardAnalytics stats={stats} enrollmentData={enrollmentData} lessonsCompletedData={lessonsCompletedData} />
                             </TabsContent>
 
-                            <TabsContent value="report">
-                                <div className="p-6 text-center text-muted-foreground">Report tab content</div>
+                            <TabsContent value="reports" className="mt-0">
+                                <DashboardMyReports currentUser={currentUserForSettings} />
                             </TabsContent>
 
-                            <TabsContent value="contact">
-                                <div className="p-6 text-center text-muted-foreground">Contact support</div>
+                            <TabsContent value="contact" className="mt-0">
+                                <DashboardMyContacts />
                             </TabsContent>
 
                             <TabsContent value="settings" className="mt-0">

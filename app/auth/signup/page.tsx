@@ -662,9 +662,7 @@ export default function MultiStepSignupPage() {
                                 stiffness: 200,
                                 damping: 25,
                             }}
-                            className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-2xl rounded-[2rem]
-                       shadow-2xl border border-white/60 dark:border-white/20 p-6 md:p-8
-                       shadow-black/5 dark:shadow-black/20"
+                            className="liquid-glass-card p-6 md:p-8"
                         >
                             <AnimatePresence mode="wait">{renderStep()}</AnimatePresence>
                         </motion.div>

@@ -251,7 +251,7 @@ export function Header() {
                                         className={`w-4 h-4 transition-transform duration-200 ${isExploreOpen ? "rotate-180" : ""}`}
                                     />
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-96 p-3 glass-enhanced border-0 shadow-2xl">
+                                <DropdownMenuContent className="w-96 p-3 liquid-glass border-0 shadow-2xl">
                                     <div className="grid grid-cols-2 gap-2">
                                         {exploreItems.map((item) => {
                                             const IconComponent = item.icon
@@ -308,7 +308,7 @@ export function Header() {
                                             />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-56 mt-2 glass-enhanced" align="end" side="bottom"> {/* Glass effect applied */}
+                                    <DropdownMenuContent className="w-56 mt-2 liquid-glass" align="end" side="bottom"> {/* Glass effect applied */}
                                         <div className="flex items-center justify-start gap-2 p-2">
                                             <div className="flex flex-col space-y-1 leading-none">
                                                 <p className="font-medium">{user.name}</p>

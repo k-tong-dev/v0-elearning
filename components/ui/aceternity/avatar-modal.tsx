@@ -42,7 +42,7 @@ export function AvatarModal({
                         exit={{ opacity: 0, scale: 0.8, rotateX: 10 }}
                         transition={{ duration: 0.4, type: "spring", stiffness: 260, damping: 15 }}
                         className={cn(
-                            "relative w-full max-w-md mx-auto rounded-3xl shadow-md bg-white dark:bg-gray-800 z-[101] p-2",
+                            "liquid-modal relative w-full max-w-md mx-auto z-[101] p-2",
                             className
                         )}
                         style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}

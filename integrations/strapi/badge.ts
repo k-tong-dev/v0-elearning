@@ -1,14 +1,14 @@
 import { strapiPublic } from './client';
 
-export interface PreferToLearn {
+export interface Badge {
     id: number;
     documentId: string;
     name: string;
 }
 
-export async function getPreferToLearns(): Promise<PreferToLearn[]> {
+export async function getBadges(): Promise<Badge[]> {
     try {
-        const res = await strapiPublic.get('/api/prefer-to-learns');
+        const res = await strapiPublic.get('/api/badges');
         return (res.data.data || []).map((item: any) => ({
             id: item.id,
             documentId: item.documentId,
@@ -18,3 +18,4 @@ export async function getPreferToLearns(): Promise<PreferToLearn[]> {
         return [];
     }
 }
+

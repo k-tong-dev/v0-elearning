@@ -16,6 +16,8 @@ import {
     Menu,
     X,
     Crown, DollarSign,
+    Bug,
+    MessageCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -45,6 +47,8 @@ const navItems = [
     { label: "Enrollments",   icon: GraduationCap,     value: "enrollments" },
     { label: "Expenditure",   icon: DollarSign,        value: "expenditure" },
     { label: "Analytics",     icon: BarChart3,         value: "analytics" },
+    { label: "My Reports",    icon: Bug,               value: "reports" },
+    { label: "Support",       icon: MessageCircle,     value: "contact" },
     { label: "Settings",      icon: Settings,          value: "settings" },
 ]
 
@@ -143,10 +147,7 @@ export function DashboardSidebar({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={cn(
-                        `w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-300 group`,
-                        `bg-white/8 dark:bg-white/4 backdrop-blur-2xl border border-white/30 dark:border-white/20`,
-                        `hover:bg-white/12 dark:hover:bg-white/8 hover:border-white/40 dark:hover:border-white/30`,
-                        `shadow-xl hover:shadow-2xl`,
+                        `w-full flex items-center gap-3 p-3.5 rounded-2xl liquid-transition group liquid-glass-surface`,
                         isExpanded ? "flex-row" : "flex-col justify-center",
                     )}
                 >
@@ -333,7 +334,7 @@ export function DashboardSidebar({
                 <motion.div
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="bg-white/10 dark:bg-white/5 backdrop-blur-xl rounded-full p-2 shadow-xl border border-white/30 dark:border-white/20"
+                    className="liquid-glass-surface rounded-full p-2"
                 >
                     <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(true)} className="hover:bg-white/10">
                         <Menu className="w-6 h-6" />
@@ -353,7 +354,7 @@ export function DashboardSidebar({
                         onClick={() => setIsMobileMenuOpen(false)}
                     >
                         <motion.div
-                            className="relative h-full w-72 bg-gradient-to-b from-slate-950/95 to-slate-900/95 dark:from-slate-950/95 dark:to-slate-900/95 backdrop-blur-2xl border-r border-white/20 shadow-2xl"
+                            className="liquid-sidebar relative h-full w-72"
                             onClick={(e) => e.stopPropagation()}
                             initial={{ x: "-100%" }}
                             animate={{ x: 0 }}
@@ -381,7 +382,7 @@ export function DashboardSidebar({
                 variants={sidebarVariants}
                 className={`
                     hidden lg:flex flex-col fixed top-0 left-0 h-screen z-40
-                    bg-gradient-to-b from-white/40 via-white/30 to-white/25 dark:from-slate-950/50 dark:to-slate-900/50 backdrop-blur-3xl border-r border-indigo-200/50 dark:border-white/20 shadow-lg
+                    liquid-sidebar
                     transition-all duration-300
                 `}
             >

@@ -41,6 +41,7 @@ export function HeaderDark() {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
     const [isScrolled, setIsScrolled] = useState(false)
+    const [isDarkMode, setIsDarkMode] = useState(false)
     const headerRef = useRef<HTMLDivElement>(null)
 
     /* ---------- Mouse liquid effect ---------- */
@@ -63,6 +64,20 @@ export function HeaderDark() {
         const onScroll = () => setIsScrolled(window.scrollY > 12)
         window.addEventListener("scroll", onScroll)
         return () => window.removeEventListener("scroll", onScroll)
+    }, [])
+
+    /* ---------- Detect dark mode ---------- */
+    useEffect(() => {
+        const checkDarkMode = () => {
+            setIsDarkMode(document.documentElement.classList.contains('dark'))
+        }
+        checkDarkMode()
+        const observer = new MutationObserver(checkDarkMode)
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class']
+        })
+        return () => observer.disconnect()
     }, [])
 
     const handleGetStartedClick = () => {
@@ -126,14 +141,50 @@ export function HeaderDark() {
         setIsUserMenuOpen(false)
     }
 
-    /* ---------- Explore items ---------- */
+    /* ---------- Explore items with card-style ---------- */
     const exploreItems = [
-        { title: "Forum", href: "/forum" },
-        { title: "About Us", href: "/about" },
-        { title: "Blog", href: "/blog" },
-        { title: "Services", href: "/services" },
-        { title: "Support", href: "/support" },
-        { title: "Contact", href: "/contact" },
+        { 
+            title: "Forum", 
+            href: "/forum",
+            description: "Join discussions and connect with learners",
+            icon: "💬",
+            gradient: "from-blue-500 to-cyan-500"
+        },
+        { 
+            title: "About Us", 
+            href: "/about",
+            description: "Learn about our mission and values",
+            icon: "🏢",
+            gradient: "from-purple-500 to-pink-500"
+        },
+        { 
+            title: "Blog", 
+            href: "/blog",
+            description: "Read latest articles and updates",
+            icon: "📝",
+            gradient: "from-emerald-500 to-teal-500"
+        },
+        { 
+            title: "Services", 
+            href: "/services",
+            description: "Explore our comprehensive offerings",
+            icon: "⚡",
+            gradient: "from-orange-500 to-red-500"
+        },
+        { 
+            title: "Support", 
+            href: "/support",
+            description: "Get help and find answers",
+            icon: "🛟",
+            gradient: "from-indigo-500 to-purple-500"
+        },
+        { 
+            title: "Contact", 
+            href: "/contact",
+            description: "Reach out to our team",
+            icon: "📧",
+            gradient: "from-violet-500 to-fuchsia-500"
+        },
     ]
 
     return (
@@ -144,10 +195,19 @@ export function HeaderDark() {
         transition-all duration-300
         ${
                 isScrolled
-                    ? "fixed top-0 bg-white/80 dark:bg-black/80 backdrop-blur-2xl border-b dark:border-white/10 border-gray-200/50 shadow-lg"
-                    : "absolute top-0 bg-white/10 dark:bg-black/40 backdrop-blur-2xl border-b dark:border-white/5 border-gray-200/50"
+                    ? "fixed top-0 backdrop-blur-2xl border-b shadow-lg"
+                    : "absolute top-0 backdrop-blur-2xl border-b"
             }
+        ${isScrolled 
+            ? "bg-white/95 dark:bg-slate-950/95 border-cyan-200/30 dark:border-cyan-800/30" 
+            : "bg-white/80 dark:bg-slate-950/80 border-cyan-200/20 dark:border-cyan-800/20"
+        }
       `}
+            style={{
+                boxShadow: isScrolled 
+                    ? "0 8px 32px rgba(8, 145, 178, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 0 rgba(8, 145, 178, 0.05)"
+                    : "0 1px 0 rgba(8, 145, 178, 0.05)",
+            }}
         >
             {/* ---- Liquid blobs ---- */}
             <div className="pointer-events-none absolute inset-0">
@@ -205,10 +265,10 @@ export function HeaderDark() {
             </span>
                     </Link>
 
-                    <nav className="hidden lg:flex items-center gap-2">
+                    <nav className="hidden lg:flex items-center gap-1">
                         <Link
                             href="/"
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-white/8 transition-all duration-200"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50/50 dark:hover:bg-cyan-950/20 transition-all duration-200"
                         >
                             <Home className="h-4 w-4" />
                             <span>Home</span>
@@ -216,39 +276,90 @@ export function HeaderDark() {
 
                         <Link
                             href="/courses"
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-white/8 transition-all duration-200"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50/50 dark:hover:bg-cyan-950/20 transition-all duration-200"
                         >
                             <GraduationCap className="h-4 w-4" />
                             <span>Courses</span>
                         </Link>
 
-                        {/* Explorers Dropdown */}
+                        {/* Explorers Dropdown - Elegant Vertical List Style */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-white/8 transition-all duration-200 group">
+                                <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50/50 dark:hover:bg-cyan-950/20 transition-all duration-200 group">
                                     <Compass className="h-4 w-4 transition-transform group-hover:rotate-12" />
                                     <span>Explorers</span>
                                 </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                                 align="start"
-                                className="w-52 mt-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-950/95 shadow-lg shadow-black/10 dark:shadow-black/40 p-1"
+                                className="w-[320px] p-2 mt-2 rounded-xl border-0 min-w-[280px]"
+                                style={isDarkMode ? {
+                                    background: "linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)",
+                                    backdropFilter: "blur(20px) saturate(180%)",
+                                    WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                                    border: "1px solid rgba(103, 232, 249, 0.2)",
+                                    boxShadow: "0 8px 32px rgba(103, 232, 249, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+                                } : {
+                                    background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%)",
+                                    backdropFilter: "blur(20px) saturate(180%)",
+                                    WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                                    border: "1px solid rgba(8, 145, 178, 0.12)",
+                                    boxShadow: "0 8px 32px rgba(8, 145, 178, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
+                                }}
                             >
-                                {exploreItems.map((item) => (
-                                    <DropdownMenuItem
-                                        key={item.title}
-                                        asChild
-                                        className="rounded-md hover:bg-gray-100 dark:hover:bg-white/10 transition-colors duration-150 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
-                                    >
-                                        <Link href={item.href}>{item.title}</Link>
-                                    </DropdownMenuItem>
-                                ))}
+                                <div className="space-y-1">
+                                    {exploreItems.map((item, idx) => (
+                                        <Link
+                                            key={item.title}
+                                            href={item.href}
+                                            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 hover:bg-gradient-to-r hover:from-cyan-50 hover:to-emerald-50 dark:hover:from-cyan-950/30 dark:hover:to-emerald-950/30"
+                                            style={{
+                                                border: "1px solid transparent",
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.borderColor = "rgba(8, 145, 178, 0.2)"
+                                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(8, 145, 178, 0.1)"
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.borderColor = "transparent"
+                                                e.currentTarget.style.boxShadow = "none"
+                                            }}
+                                        >
+                                            {/* Icon with gradient background */}
+                                            <div 
+                                                className={`w-10 h-10 rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center text-lg shadow-sm group-hover:scale-110 group-hover:shadow-md transition-all duration-200 flex-shrink-0`}
+                                            >
+                                                {item.icon}
+                                            </div>
+                                            {/* Content */}
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-sm font-semibold text-slate-800 dark:text-gray-200 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                                                    {item.title}
+                                                </h3>
+                                                <p className="text-xs text-slate-500 dark:text-gray-400 leading-tight mt-0.5 line-clamp-1">
+                                                    {item.description}
+                                                </p>
+                                            </div>
+                                            {/* Arrow indicator */}
+                                            <motion.div
+                                                className="opacity-0 group-hover:opacity-100 text-cyan-600 dark:text-cyan-400 flex-shrink-0"
+                                                initial={{ x: -4, opacity: 0 }}
+                                                whileHover={{ x: 0, opacity: 1 }}
+                                                transition={{ duration: 0.2 }}
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                </svg>
+                                            </motion.div>
+                                        </Link>
+                                    ))}
+                                </div>
                             </DropdownMenuContent>
                         </DropdownMenu>
 
                         <Link
                             href="/pricing"
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-white/8 transition-all duration-200"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50/50 dark:hover:bg-cyan-950/20 transition-all duration-200"
                         >
                             <DollarSign className="h-4 w-4" />
                             <span>Pricing</span>

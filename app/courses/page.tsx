@@ -713,7 +713,7 @@ export default function CoursesPage() {
                             animate={{ opacity: 1, height: "auto" }}
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.3 }}
-                            className="p-8 rounded-2xl glass-enhanced shadow-2xl space-y-6"
+                            className="p-8 rounded-2xl liquid-glass-card shadow-2xl space-y-6"
                         >
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
@@ -740,7 +740,7 @@ export default function CoursesPage() {
                                     </label>
                                     <Select value={selectedCategory} onValueChange={(value) => {setSelectedCategory(value); setCoursesToDisplayCount(initialCoursesToShow);}}>
                                         <SelectTrigger
-                                            className="glass-enhanced border-2 hover:border-cyan-300 rounded-lg">
+                                            className="liquid-glass-card border-2 hover:border-cyan-300 rounded-lg">
                                             <SelectValue/>
                                         </SelectTrigger>
                                         <SelectContent>
@@ -761,7 +761,7 @@ export default function CoursesPage() {
                                     </label>
                                     <Select value={selectedLevel} onValueChange={(value) => {setSelectedLevel(value); setCoursesToDisplayCount(initialCoursesToShow);}}>
                                         <SelectTrigger
-                                            className="glass-enhanced border-2 hover:border-cyan-300 rounded-lg">
+                                            className="liquid-glass-card border-2 hover:border-cyan-300 rounded-lg">
                                             <SelectValue/>
                                         </SelectTrigger>
                                         <SelectContent>
@@ -782,7 +782,7 @@ export default function CoursesPage() {
                                     </label>
                                     <Select value={selectedEducator} onValueChange={(value) => {setSelectedEducator(value); setCoursesToDisplayCount(initialCoursesToShow);}}>
                                         <SelectTrigger
-                                            className="glass-enhanced border-2 hover:border-cyan-300 rounded-lg">
+                                            className="liquid-glass-card border-2 hover:border-cyan-300 rounded-lg">
                                             <SelectValue/>
                                         </SelectTrigger>
                                         <SelectContent>

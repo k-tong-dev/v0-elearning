@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { BadgeDefinition } from '@/types/db';
-import { Select, SelectItem, Avatar, Chip } from "@heroui/react"; // Import HeroUI components
+import { Select, SelectItem, Avatar, Chip } from "@heroui/react";
+import { getBadges, Badge as StrapiBadge } from "@/integrations/strapi/badge";
 
 interface BadgesManagementProps {
     selectedBadgeIds: string[];
@@ -13,20 +13,20 @@ interface BadgesManagementProps {
 }
 
 export function BadgesManagement({ selectedBadgeIds, onBadgesChange }: BadgesManagementProps) {
-    const [allBadges, setAllBadges] = useState<BadgeDefinition[]>([]);
+    const [allBadges, setAllBadges] = useState<StrapiBadge[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchBadges = async () => {
             try {
-                const mockBadges: BadgeDefinition[] = [
-                    { id: "1", name: "Active Member", description: "Awarded for consistent activity", icon: "🌟", color: "bg-blue-500" },
-                    { id: "2", name: "Community Leader", description: "Recognized for leading discussions", icon: "🏆", color: "bg-purple-500" },
-                    { id: "3", name: "Expert", description: "Demonstrated expertise in a field", icon: "✨", color: "bg-yellow-500" },
-                    { id: "4", name: "Course Creator", description: "Published a course on the platform", icon: "📚", color: "bg-green-500" },
-                    { id: "5", name: "Helper", description: "Provided valuable assistance to others", icon: "🤝", color: "bg-indigo-500" },
-                    { id: "6", name: "Innovator", description: "Contributed new ideas or solutions", icon: "💡", color: "bg-red-500" },
-                ];
-                setAllBadges(mockBadges);
+                setLoading(true);
+                const badges = await getBadges();
+                const valid = Array.isArray(badges) ? badges : [];
+                // Deduplicate by documentId (important for i18n data)
+                const uniqueBadges = valid.filter((badge, index, self) => 
+                    index === self.findIndex(b => b.documentId === badge.documentId)
+                );
+                setAllBadges(uniqueBadges);
             } catch (error) {
                 console.error("Error fetching badges:", error);
                 toast.error("Failed to load available badges.", {
@@ -37,44 +37,58 @@ export function BadgesManagement({ selectedBadgeIds, onBadgesChange }: BadgesMan
                     },
                     closeButton: false,
                 });
+                setAllBadges([]);
+            } finally {
+                setLoading(false);
             }
         };
         fetchBadges();
     }, []);
 
-    const handleSelectionChange = (keys: Set<React.Key>) => {
-        onBadgesChange(Array.from(keys).map(String));
-    };
+    if (loading) {
+        return <div className="py-3 text-sm text-muted-foreground">Loading badges...</div>;
+    }
+
+    // Filter selected keys to only those that exist in available badges
+    const validSelectedKeys = selectedBadgeIds.filter(key => 
+        allBadges.some(badge => badge.id.toString() === key)
+    );
 
     return (
         <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Badges</h3>
+            <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-lg">Badges</h3>
+                <div className="text-xs text-muted-foreground">{validSelectedKeys.length} selected</div>
+            </div>
             <Select
                 classNames={{
                     base: "w-full",
-                    trigger: "min-h-12 py-2 border-2 hover:border-primary transition-colors rounded-lg",
-                    value: "text-foreground",
-                    popoverContent: "bg-card border-border shadow-lg rounded-xl",
+                    trigger: "min-h-12 py-2",
+                    popoverContent: "bg-card border-border shadow-lg rounded-xl max-w-[90vw] md:max-w-none",
                 }}
                 isMultiline={true}
                 items={allBadges}
+                label="Badges"
                 labelPlacement="outside"
                 placeholder="Select badges"
-                selectedKeys={new Set(selectedBadgeIds)}
-                onSelectionChange={handleSelectionChange}
+                selectedKeys={new Set(validSelectedKeys)}
+                onSelectionChange={(keys) => {
+                    onBadgesChange(Array.from(keys as Set<React.Key>).map(String));
+                }}
                 selectionMode="multiple"
                 variant="bordered"
                 renderValue={(items) => {
                     return (
                         <div className="flex flex-wrap gap-2">
                             {items.map((item) => {
-                                const badgeData = allBadges.find(b => b.id === item.key);
+                                const badgeData = allBadges.find(b => b.id.toString() === item.key);
                                 if (!badgeData) return null;
                                 return (
                                     <Chip
                                         key={item.key}
-                                        className={`${badgeData.color}/20 text-foreground dark:text-foreground`}
-                                        avatar={<Avatar icon={<span>{badgeData.icon}</span>} />}
+                                        onClose={() => onBadgesChange(validSelectedKeys.filter(id => id !== item.key))}
+                                        variant="flat"
+                                        color="default"
                                     >
                                         {badgeData.name}
                                     </Chip>
@@ -85,12 +99,10 @@ export function BadgesManagement({ selectedBadgeIds, onBadgesChange }: BadgesMan
                 }}
             >
                 {(badge) => (
-                    <SelectItem key={badge.id} textValue={badge.name}>
+                    <SelectItem key={badge.id.toString()} textValue={badge.name}>
                         <div className="flex gap-2 items-center">
-                            <Avatar icon={<span>{badge.icon}</span>} className="shrink-0" size="sm" />
                             <div className="flex flex-col">
                                 <span className="text-small text-foreground">{badge.name}</span>
-                                <span className="text-tiny text-default-400">{badge.description}</span>
                             </div>
                         </div>
                     </SelectItem>

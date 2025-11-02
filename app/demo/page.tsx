@@ -76,21 +76,21 @@ export default function DemoPage() {
                 >
                     <h2 className="text-3xl font-bold text-center mb-8">What You'll Discover</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                        <Card className="text-center glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                        <Card className="text-center liquid-glass-card">
                             <CardContent className="p-6">
                                 <Lightbulb className="w-12 h-12 text-orange-500 mx-auto mb-4" />
                                 <h3 className="font-semibold text-lg mb-2">Interactive Learning</h3>
                                 <p className="text-sm text-muted-foreground">Engage with quizzes, coding challenges, and hands-on projects.</p>
                             </CardContent>
                         </Card>
-                        <Card className="text-center glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                        <Card className="text-center liquid-glass-card">
                             <CardContent className="p-6">
                                 <Users className="w-12 h-12 text-purple-500 mx-auto mb-4" />
                                 <h3 className="font-semibold text-lg mb-2">Community Support</h3>
                                 <p className="text-sm text-muted-foreground">Connect with mentors and peers in our vibrant forum.</p>
                             </CardContent>
                         </Card>
-                        <Card className="text-center glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                        <Card className="text-center liquid-glass-card">
                             <CardContent className="p-6">
                                 <Settings className="w-12 h-12 text-blue-500 mx-auto mb-4" />
                                 <h3 className="font-semibold text-lg mb-2">Personalized Paths</h3>

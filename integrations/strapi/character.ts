@@ -10,11 +10,11 @@ export interface Character {
 export async function getCharacters(): Promise<Character[]> {
     try {
         const res = await strapiPublic.get('/api/charactors');
-        return (res.data || []).map((item: any) => ({
+        return (res.data.data || []).map((item: any) => ({
             id: item.id,
             documentId: item.documentId,
-            name: item.attributes.name,
-            code: item.attributes.code,
+            name: item.name,
+            code: item.code,
         }));
     } catch {
         return [];

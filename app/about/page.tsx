@@ -138,7 +138,7 @@ export default function AboutUsPage() {
                     transition={{ delay: 0.2 }}
                     className="mb-12 max-w-4xl mx-auto"
                 >
-                    <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                    <Card className="liquid-glass-card">
                         <CardHeader className="text-center">
                             <GraduationCap className="w-12 h-12 text-primary mx-auto mb-4" />
                             <CardTitle className="text-2xl">Our Mission</CardTitle>
@@ -166,7 +166,7 @@ export default function AboutUsPage() {
                                 viewport={{ once: true, amount: 0.3 }}
                                 transition={{ duration: 0.5, delay: index * 0.1 }}
                             >
-                                <Card className="text-center glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                                <Card className="text-center liquid-glass-card">
                                     <CardContent className="p-6">
                                         <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary shadow-md avatar-border-gradient">
                                             <AvatarImage src={member.avatar} alt={member.name} />
@@ -220,7 +220,7 @@ export default function AboutUsPage() {
                     transition={{ delay: 0.6 }}
                     className="max-w-4xl mx-auto"
                 >
-                    <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                    <Card className="liquid-glass-card">
                         <CardHeader className="text-center">
                             <img src="/placeholder-logo.png" alt="CMU Logo" className="h-16 mx-auto mb-4" /> {/* Replace with actual CMU logo */}
                             <CardTitle className="text-2xl">Cambodia Mekong University (CMU)</CardTitle>

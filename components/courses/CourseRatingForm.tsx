@@ -93,7 +93,7 @@ export function CourseRatingForm({
     }
 
     return (
-        <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+        <Card className="liquid-glass-card">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Star className="w-5 h-5 text-yellow-500" />

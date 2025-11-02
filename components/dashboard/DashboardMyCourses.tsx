@@ -75,7 +75,7 @@ export function DashboardMyCourses({ myCourses, onCreateCourse, showCreateButton
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 * index }}
                         >
-                            <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                            <Card className="liquid-glass-card hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
                                 <div className="relative">
                                     <img
                                         src={course.thumbnailUrl}

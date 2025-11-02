@@ -112,7 +112,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshUser();
         const { data: sub } = supabase.auth.onAuthStateChange(() => refreshUser());
         return () => sub?.subscription.unsubscribe();
-    }, [refreshUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Only run once on mount, not when refreshUser changes
 
     const loginWithGoogle = useCallback(async (credential: string): Promise<{ newUser: boolean; user: any }> => {
         setIsLoading(true);

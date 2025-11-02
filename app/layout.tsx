@@ -10,6 +10,7 @@ import { CookieConsent } from '@/components/CookieConsent';
 import "./globals.css"
 import "./fonts.css"
 import "@/styles/glass.style.css"
+import "@/styles/liquid-glass.css"
 
 import { Toaster } from "sonner"
 import { ChatWidget } from "@/components/chat-widget"

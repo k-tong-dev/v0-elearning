@@ -9,10 +9,10 @@ export interface LearningGoal {
 export async function getLearningGoals(): Promise<LearningGoal[]> {
     try {
         const res = await strapiPublic.get('/api/learning-goals');
-        return (res.data || []).map((item: any) => ({
+        return (res.data.data || []).map((item: any) => ({
             id: item.id,
             documentId: item.documentId,
-            name: item.attributes.name,
+            name: item.name,
         }));
     } catch {
         return [];

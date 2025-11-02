@@ -64,7 +64,7 @@ export default function AuthStartPage() {
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="w-full max-w-md bg-card rounded-2xl shadow-xl border border-border p-8 space-y-6"
+                className="w-full max-w-md liquid-glass-card p-8 space-y-6"
             >
                 <div className="text-center space-y-4">
                     <motion.div

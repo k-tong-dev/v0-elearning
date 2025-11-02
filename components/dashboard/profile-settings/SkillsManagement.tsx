@@ -26,9 +26,14 @@ export function SkillsManagement({
                 setLoading(true);
                 const skills = await getSkills();
                 const valid = Array.isArray(skills) ? skills : [];
-                setAvailableSkills(valid);
-                onAvailableSkills?.(valid);
+                // Deduplicate by documentId (important for i18n data)
+                const uniqueSkills = valid.filter((skill, index, self) => 
+                    index === self.findIndex(s => s.documentId === skill.documentId)
+                );
+                setAvailableSkills(uniqueSkills);
+                onAvailableSkills?.(uniqueSkills);
             } catch (err) {
+                console.error("[SkillsManagement] Error loading skills:", err);
                 toast.error("Failed to load skills");
                 setAvailableSkills([]);
                 onAvailableSkills?.([]);
@@ -37,32 +42,41 @@ export function SkillsManagement({
             }
         };
         fetchSkills();
-    }, [onAvailableSkills]);
-
-    const handleChange = (keys: Set<React.Key>) => {
-        onSkillsChange(Array.from(keys).map(String));
-    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Only fetch once on mount
 
     if (loading) {
         return <div className="py-3 text-sm text-muted-foreground">Loading skills...</div>;
     }
 
+    // Filter selected keys to only those that exist in available skills
+    const validSelectedKeys = selectedSkills.filter(key => 
+        availableSkills.some(skill => skill.documentId === key)
+    );
+
     return (
         <div className="space-y-3">
             <div className="flex items-center justify-between">
                 <h3 className="font-semibold">Skills</h3>
-                <div className="text-xs text-muted-foreground">{selectedSkills.length} selected</div>
+                <div className="text-xs text-muted-foreground">{validSelectedKeys.length} selected</div>
             </div>
 
             <Select
                 items={availableSkills}
-                selectedKeys={new Set(selectedSkills)}
-                onSelectionChange={handleChange}
+                label="Select Skills"
+                labelPlacement="outside"
                 selectionMode="multiple"
-                placeholder="Search or add a skill"
+                placeholder="Select skills"
+                selectedKeys={new Set(validSelectedKeys)}
+                onSelectionChange={(keys) => {
+                    onSkillsChange(Array.from(keys as Set<React.Key>).map(String));
+                }}
+                variant="bordered"
+                isMultiline={true}
                 classNames={{
-                    trigger: "min-h-12 py-2 border-2 hover:border-primary rounded-lg",
-                    popoverContent: "bg-card border-border shadow-lg rounded-xl",
+                    base: "w-full",
+                    trigger: "min-h-12 py-2",
+                    popoverContent: "bg-card border-border shadow-lg rounded-xl max-w-[90vw] md:max-w-none",
                 }}
                 renderValue={(items) => (
                     <div className="flex flex-wrap gap-2">
@@ -71,8 +85,9 @@ export function SkillsManagement({
                             return (
                                 <Chip
                                     key={item.key}
-                                    onClose={() => onSkillsChange(selectedSkills.filter(id => id !== item.key))}
-                                    className="bg-emerald-50/20 text-emerald-700 dark:text-emerald-300"
+                                    onClose={() => onSkillsChange(validSelectedKeys.filter(id => id !== item.key))}
+                                    variant="flat"
+                                    color="success"
                                 >
                                     {skill?.name || "Unknown"}
                                 </Chip>

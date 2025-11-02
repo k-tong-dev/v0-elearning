@@ -24,8 +24,12 @@ import {
 } from "lucide-react"
 import { HeaderDark } from "@/components/ui/headers/HeaderDark"
 import { Footer } from "@/components/ui/footers/footer"
+import { submitContactRequest } from "@/integrations/strapi/utils"
+import { toast } from "sonner"
+import { useAuth } from "@/hooks/use-auth"
 
 export default function ContactPage() {
+    const { user } = useAuth()
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -38,17 +42,34 @@ export default function ContactPage() {
         e.preventDefault()
         setIsSubmitting(true)
 
-        // Simulate form submission
-        await new Promise((resolve) => setTimeout(resolve, 2000))
+        try {
+            const payload = {
+                name: formData.name,
+                email: formData.email,
+                subject: formData.subject,
+                purpose: formData.message, // Map message to purpose field
+                ...(user?.id && { user: parseInt(user.id) }), // Include user if logged in
+            }
+            
+            console.log("[ContactPage] Submitting contact:", payload)
+            await submitContactRequest(payload)
 
-        console.log("[v0] Contact form submitted:", formData)
-        setIsSubmitting(false)
+            toast.success("Message sent successfully! We'll get back to you soon.", {
+                position: "top-center",
+                duration: 3000,
+            })
 
-        // Reset form
-        setFormData({ name: "", email: "", subject: "", message: "" })
-
-        // Show success message (in real app, use toast or notification)
-        alert("Thank you for your message! We'll get back to you soon.")
+            // Reset form
+            setFormData({ name: "", email: "", subject: "", message: "" })
+        } catch (error: any) {
+            console.error("[ContactPage] Failed to submit contact:", error)
+            toast.error(error.message || "Failed to send message. Please try again.", {
+                position: "top-center",
+                duration: 3000,
+            })
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

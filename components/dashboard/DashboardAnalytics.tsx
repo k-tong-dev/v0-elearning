@@ -61,7 +61,7 @@ export function DashboardAnalytics({ stats, enrollmentData, lessonsCompletedData
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
             >
-                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <BarChart3 className="w-5 h-5 text-green-500" />
@@ -88,7 +88,7 @@ export function DashboardAnalytics({ stats, enrollmentData, lessonsCompletedData
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
             >
-                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <BookOpen className="w-5 h-5 text-blue-500" />
@@ -111,7 +111,7 @@ export function DashboardAnalytics({ stats, enrollmentData, lessonsCompletedData
 
             {/* Performance Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
                     <CardContent className="p-6 text-center">
                         <div className="text-3xl font-bold text-blue-500 mb-2">{stats.totalViews.toLocaleString()}</div>
                         <div className="text-sm text-muted-foreground">Total Course Views</div>
@@ -119,7 +119,7 @@ export function DashboardAnalytics({ stats, enrollmentData, lessonsCompletedData
                     </CardContent>
                 </Card>
 
-                <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
                     <CardContent className="p-6 text-center">
                         <div className="text-3xl font-bold text-purple-500 mb-2">{stats.completionRate}%</div>
                         <div className="text-sm text-muted-foreground">Completion Rate</div>
@@ -127,7 +127,7 @@ export function DashboardAnalytics({ stats, enrollmentData, lessonsCompletedData
                     </CardContent>
                 </Card>
 
-                <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
                     <CardContent className="p-6 text-center">
                         <div className="text-3xl font-bold text-orange-500 mb-2">{stats.activeLearners.toLocaleString()}</div>
                         <div className="text-sm text-muted-foreground">Active Learners</div>

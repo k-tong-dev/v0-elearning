@@ -15,15 +15,19 @@ export interface Skill {
 export async function getSkills(): Promise<Skill[]> {
     try {
         const response = await strapiPublic.get('/api/skills');
-        const data = response?.data;
-        if (Array.isArray(data)) {
-            return data;
-        }
-        console.warn("Unexpected skills response:", response);
-        return [];
+        return (response.data.data || []).map((item: any) => ({
+            id: item.id,
+            documentId: item.documentId,
+            name: item.name,
+            code: item.code,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            publishedAt: item.publishedAt,
+            locale: item.locale,
+        }));
     } catch (error) {
         console.error("Error fetching skills:", error);
-        return []; // ← ALWAYS RETURN ARRAY
+        return [];
     }
 }
 

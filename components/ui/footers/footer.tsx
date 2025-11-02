@@ -3,7 +3,7 @@ import { BookOpen, Facebook, Twitter, Instagram, Linkedin, Youtube } from "lucid
 
 export function Footer() {
   return (
-      <footer className="bg-card border-t border-border">
+      <footer className="liquid-footer">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Brand */}

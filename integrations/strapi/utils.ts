@@ -100,13 +100,54 @@ export async function uploadStrapiFile(file: File, ref?: string, refId?: string,
     }
 }
 
-export async function reportIssue(issueData: { title: string; description: string; userEmail?: string }): Promise<any> {
+export async function reportIssue(issueData: { title: string; description: string; user?: number; userEmail?: string }): Promise<any> {
     try {
-        const response = await strapi.post('/api/report-problems', { data: issueData });
+        const payload: any = {
+            title: issueData.title,
+            description: issueData.description,
+            state: "draft", // Use "draft" as default state (valid values: draft, checking, done)
+        };
+        
+        // Include user ID if provided
+        if (issueData.user) {
+            payload.user = issueData.user;
+        }
+        
+        console.log("[reportIssue] Submitting report:", payload);
+        const response = await strapi.post('/api/report-issues?populate=*', { data: payload });
         return response.data;
     } catch (error: any) {
         console.error("Error reporting issue to Strapi:", error.response?.data || error.message);
         throw new Error(error.response?.data?.error?.message || "Failed to report issue.");
+    }
+}
+
+export async function submitContactRequest(contactData: { name: string; email: string; subject: string; purpose: string; user?: number }): Promise<any> {
+    try {
+        const payload: any = {
+            name: contactData.name,
+            email: contactData.email,
+            subject: contactData.subject,
+            purpose: contactData.purpose,
+        };
+        
+        // Include user ID if provided
+        if (contactData.user) {
+            payload.user = contactData.user;
+        }
+        
+        console.log("[submitContactRequest] Full payload being sent:", payload);
+        console.log("[submitContactRequest] Using endpoint: POST /api/contacts");
+        
+        const response = await strapi.post('/api/contacts?populate=*', { data: payload });
+        console.log("[submitContactRequest] Success response:", response.status);
+        return response.data;
+    } catch (error: any) {
+        console.error("Error submitting contact request to Strapi - Full error:", error.response || error);
+        console.error("Error response data:", error.response?.data);
+        console.error("Error response status:", error.response?.status);
+        console.error("Error message:", error.message);
+        throw new Error(error.response?.data?.error?.message || error.message || "Failed to submit contact request.");
     }
 }
 
