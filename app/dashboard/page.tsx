@@ -365,6 +365,14 @@ function DashboardContent() {
                                 <DashboardAnalytics stats={stats} enrollmentData={enrollmentData} lessonsCompletedData={lessonsCompletedData} />
                             </TabsContent>
 
+                            <TabsContent value="report">
+                                <div className="p-6 text-center text-muted-foreground">Report tab content</div>
+                            </TabsContent>
+
+                            <TabsContent value="contact">
+                                <div className="p-6 text-center text-muted-foreground">Contact support</div>
+                            </TabsContent>
+
                             <TabsContent value="settings" className="mt-0">
                                 <DashboardSettings
                                     currentUser={currentUserForSettings}

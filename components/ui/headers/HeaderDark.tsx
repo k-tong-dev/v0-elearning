@@ -286,7 +286,7 @@ export function HeaderDark() {
                                                 </div>
                                                 <div className="hidden sm:block text-left">
                                                     <p className="text-sm font-semibold dark:text-white text-gray-900 leading-tight">
-                                                        {user?.name || "User"}
+                                                        {user?.username || "User"}
                                                     </p>
                                                     <p className="text-xs text-gray-400 dark:text-gray-400 text-gray-600 leading-tight">
                                                         {user?.email || "user@example.com"}
@@ -310,7 +310,7 @@ export function HeaderDark() {
                                 >
                                     <div className="flex items-center justify-start gap-2 p-3">
                                         <div className="flex flex-col space-y-1 leading-none">
-                                            <p className="font-medium text-sm dark:text-white text-gray-900">{user.name}</p>
+                                            <p className="font-medium text-sm dark:text-white text-gray-900">{user.username}</p>
                                             <p className="w-[200px] truncate text-xs dark:text-gray-400 text-gray-600">{user.email}</p>
                                         </div>
                                     </div>
@@ -322,15 +322,13 @@ export function HeaderDark() {
                                         <User className="mr-2 h-4 w-4" />
                                         <span>Profile</span>
                                     </DropdownMenuItem>
-                                    {user.charactor?.code === "instructor" && (
-                                        <DropdownMenuItem
-                                            onClick={handleCreateCourseClick}
-                                            className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900"
-                                        >
-                                            <PlusCircle className="mr-2 h-4 w-4" />
-                                            <span>Create Course</span>
-                                        </DropdownMenuItem>
-                                    )}
+                                    <DropdownMenuItem
+                                        onClick={handleCreateCourseClick}
+                                        className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900"
+                                    >
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        <span>Create Course</span>
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={() => console.log("Settings clicked")}
                                         className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900"
