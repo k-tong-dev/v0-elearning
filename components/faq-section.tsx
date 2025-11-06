@@ -1,9 +1,8 @@
 "use client"
 
 import { useState } from "react"
-// import { Button } from "@/components/ui/button"
-import {Button} from "@heroui/react";
-
+import {Button} from "@heroui/react"
+import { motion } from "framer-motion"
 import { FaPlus, FaTimes, FaArrowRight } from "react-icons/fa"
 
 const faqs = [
@@ -35,22 +34,33 @@ export function FAQSection() {
     const [openIndex, setOpenIndex] = useState(0)
 
     return (
-        <section data-aos="fade-up" data-aos-delay="300" className="py-20 lg:py-40 bg-background">
-            <div className="container mx-auto px-4 lg:px-32">
-                <div className="grid md:grid-cols-2 gap-10">
+        <section data-aos="fade-up" data-aos-delay="300" className="py-32 lg:py-40 bg-white dark:bg-slate-950 relative">
+            {/* Light/Dark Mode Background */}
+            <div 
+                className="absolute inset-0 dark:opacity-30 opacity-10"
+                style={{
+                    backgroundImage: `
+                        radial-gradient(circle at 20% 50%, rgba(0, 0, 0, 0.03) 0%, transparent 60%),
+                        radial-gradient(circle at 80% 80%, rgba(0, 0, 0, 0.02) 0%, transparent 60%)
+                    `,
+                    backgroundSize: "100% 100%",
+                }}
+            />
+            <div className="container mx-auto px-4 lg:px-32 relative z-10">
+                <div className="grid md:grid-cols-2 gap-12">
                     {/* Left Column - Header */}
                     <div className="text-left">
-                        <h2 className="text-3xl font-semibold mb-4 flex flex-col text-gray-500">
+                        <h2 className="text-4xl sm:text-5xl font-bold mb-6 flex flex-col text-slate-900 dark:text-white uppercase tracking-wide">
                             Frequently
-                            <span>Asked Questions</span>
+                            <span className="bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-400 dark:to-purple-500 bg-clip-text text-transparent">Asked Questions</span>
                         </h2>
-                        <p className="text-muted-foreground mb-6 max-w-80">
+                        <p className="text-slate-600 dark:text-gray-300 mb-8 max-w-80 text-lg">
                             Still you have any questions? Contact our Team via
-                            <a href="mailto:support@camedu.com" className="text-primary ml-1">
+                            <a href="mailto:support@camedu.com" className="text-blue-500 dark:text-blue-400 ml-1 hover:underline">
                                 support@camedu.com
                             </a>
                         </p>
-                        <Button className="bg-muted text-foreground px-5 py-2 rounded-md text-sm font-normal hover:bg-muted/80">
+                        <Button className="liquid-glass-button text-slate-900 dark:text-white border-slate-200 dark:border-blue-400/50 hover:border-slate-300 dark:hover:border-blue-400/50 px-6 py-3 rounded-full text-sm font-normal">
                             See All FAQ's
                         </Button>
                     </div>
@@ -62,29 +72,35 @@ export function FAQSection() {
                             return (
                                 <div
                                     key={index}
-                                    className="bg-card p-4 border border-border rounded-lg shadow-sm transition-all hover:shadow-md"
+                                    className="liquid-glass-card p-6 rounded-2xl shadow-sm transition-all hover:border-blue-400/30"
                                 >
                                     <div
                                         className="flex justify-between items-center cursor-pointer"
                                         onClick={() => setOpenIndex(isOpen ? -1 : index)}
                                     >
-                                        <h3 className="font-medium text-left pr-4">{faq.question}</h3>
-                                        <div className="text-muted-foreground p-3 rounded-md text-sm bg-orange-50 dark:bg-gray-400 dark:text-black">
+                                        <h3 className="font-medium text-left pr-4 text-slate-900 dark:text-white text-lg">{faq.question}</h3>
+                                        <div className="text-slate-900 dark:text-white p-3 rounded-full text-sm bg-blue-100 dark:bg-blue-400/20 hover:bg-blue-200 dark:hover:bg-blue-400/30 transition-colors">
                                             {isOpen ? <FaTimes /> : <FaPlus />}
                                         </div>
                                     </div>
                                     {isOpen && (
-                                        <div className="mt-3 text-sm text-muted-foreground text-left">
-                                            <p className="py-5">{faq.answer}</p>
+                                        <motion.div 
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: "auto" }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="mt-4 text-slate-600 dark:text-gray-300 text-left"
+                                        >
+                                            <p className="py-4 text-base leading-relaxed">{faq.answer}</p>
                                             {faq.buttonText && (
-                                                <Button className="w-full py-6 mt-4 flex justify-between items-center bg-muted text-foreground text-sm dark:hover:shadow-cyan-500 hover:shadow-md font-normal mb-4 rounded-3xl">
+                                                <Button className="w-full py-6 mt-4 flex justify-between items-center liquid-glass-button text-slate-900 dark:text-white border-slate-200 dark:border-blue-400/50 hover:border-slate-300 dark:hover:border-blue-400/50 text-sm font-normal mb-4 rounded-3xl">
                                                     {faq.buttonText}
-                                                    <div className="w-9 h-9 bg-background rounded-full flex items-center justify-center">
-                                                        <FaArrowRight />
+                                                    <div className="w-9 h-9 bg-blue-400/20 hover:bg-blue-400/30 rounded-full flex items-center justify-center transition-colors">
+                                                        <FaArrowRight className="text-blue-400" />
                                                     </div>
                                                 </Button>
                                             )}
-                                        </div>
+                                        </motion.div>
                                     )}
                                 </div>
                             )

@@ -35,7 +35,7 @@ export function UserBadges({ badges }: UserBadgesProps) {
                         transition={{ delay: index * 0.05 }}
                         className=""
                     >
-                        <div key={badge.id} className="flex items-center gap-3 p-3 rounded-lg dark:hover:bg-cyan-100/10 transition-colors border dark:border-cyan-400">
+                        <div key={badge.id} className="flex items-center gap-3 p-3 rounded-lg dark:hover:bg-blue-500/10 transition-colors border dark:border-blue-500">
                             <div className={`w-10 h-10 rounded-full ${badge.color} flex items-center justify-center text-white text-lg shadow-md`}>
                                 {badge.icon}
                             </div>

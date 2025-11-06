@@ -30,7 +30,7 @@ export function UserSkills({ skills, userRole }: UserSkillsProps) {
                 </CardHeader>
                 <CardContent className="flex flex-wrap gap-2">
                     {skills.map((skill, index) => (
-                        <Badge key={index} variant="secondary" className="bg-emerald-50/20 text-emerald-700 dark:text-emerald-300">
+                        <Badge key={index} variant="secondary" className="bg-blue-50/20 text-blue-700 dark:text-blue-300">
                             {skill}
                         </Badge>
                     ))}

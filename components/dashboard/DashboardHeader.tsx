@@ -179,7 +179,7 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
                     className="flex items-center gap-3 px-6 py-3 rounded-full bg-white/60 dark:bg-white/10 backdrop-blur-xl border border-white/40 dark:border-white/20 shadow-lg"
                 >
                     <motion.div
-                        className="w-2.5 h-2.5 rounded-full bg-emerald-500"
+                        className="w-2.5 h-2.5 rounded-full bg-purple-500"
                         animate={{
                             scale: [1, 1.2, 1],
                             opacity: [1, 0.8, 1],

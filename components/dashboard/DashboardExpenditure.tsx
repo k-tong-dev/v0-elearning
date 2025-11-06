@@ -96,7 +96,7 @@ export function DashboardExpenditure() {
                 <Card className="liquid-glass-card hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
                     <CardContent className="p-6">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
                                 <DollarSign className="w-6 h-6 text-white" />
                             </div>
                             <div>
@@ -147,7 +147,7 @@ export function DashboardExpenditure() {
                     <Card className="liquid-glass-card hover:scale-[1.01] hover:shadow-xl transition-all duration-300">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <TrendingUp className="w-5 h-5 text-cyan-500" />
+                                <TrendingUp className="w-5 h-5 text-blue-500" />
                                 Monthly Spending Trend
                             </CardTitle>
                         </CardHeader>

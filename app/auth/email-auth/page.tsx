@@ -92,7 +92,7 @@ export default function EmailAuthPage() {
             >
                 <div className="text-center space-y-4">
                     <Mail className="mx-auto w-16 h-16 text-primary" />
-                    <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                         Continue with Email
                     </h2>
                     <p className="text-muted-foreground">
@@ -103,7 +103,7 @@ export default function EmailAuthPage() {
                 <form onSubmit={handleEmailSubmit} className="space-y-5">
                     <div className="space-y-2">
                         <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium">
-                            <Mail className="w-4 h-4 text-emerald-500" />
+                            <Mail className="w-4 h-4 text-purple-500" />
                             Email Address
                         </Label>
                         <Input
@@ -113,7 +113,7 @@ export default function EmailAuthPage() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            className="h-12 transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 pl-4 text-base border-2 hover:border-emerald-300"
+                            className="h-12 transition-all duration-200 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 pl-4 text-base border-2 hover:border-blue-300"
                         />
                     </div>
 
@@ -130,7 +130,7 @@ export default function EmailAuthPage() {
                     <Button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-12 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white font-semibold rounded-lg shadow-md transition-all hover:shadow-lg"
+                        className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-semibold rounded-lg shadow-md transition-all hover:shadow-lg"
                     >
                         {loading ? (
                             <div className="flex items-center gap-2">

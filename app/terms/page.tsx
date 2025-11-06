@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { BookOpen } from "lucide-react";
-import { HeaderDark } from "@/components/ui/headers/HeaderDark";
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra";
 import { Footer } from "@/components/ui/footers/footer";
 import {BackgroundBeamsWithCollision} from "@/components/ui/backgrounds/background-beams-with-collision";
 
@@ -20,7 +20,7 @@ export default function TermsOfServicePage() {
                     >
                         <div className="text-center space-y-4">
                             <BookOpen className="mx-auto w-16 h-16 text-primary" />
-                            <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+                            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                 Terms of Service
                             </h1>
                             <p className="text-muted-foreground">

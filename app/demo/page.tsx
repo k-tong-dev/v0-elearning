@@ -2,7 +2,7 @@
 
 import React from "react"
 import { useRouter } from "next/navigation"
-import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { Footer } from "@/components/ui/footers/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,7 +14,7 @@ export default function DemoPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-            <HeaderDark />
+            <HeaderUltra />
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
                 {/* Back Button */}
@@ -39,7 +39,7 @@ export default function DemoPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-center mb-12"
                 >
-                    <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+                    <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                         Experience CamEdu in Action
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -105,7 +105,7 @@ export default function DemoPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
-                    className="text-center max-w-3xl mx-auto p-8 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 rounded-xl shadow-lg border border-primary/20"
+                    className="text-center max-w-3xl mx-auto p-8 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl shadow-lg border border-primary/20"
                 >
                     <h2 className="text-3xl font-bold mb-4">Ready to Start Your Journey?</h2>
                     <p className="text-lg text-muted-foreground mb-6">
@@ -113,7 +113,7 @@ export default function DemoPage() {
                     </p>
                     <Button
                         size="lg"
-                        className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/25 hover:scale-105"
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/25 hover:scale-105"
                         onClick={() => router.push("/signup")}
                     >
                         Sign Up for Free

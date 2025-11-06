@@ -103,7 +103,7 @@ export function HeaderVibrant() {
                         <button className="group relative rounded-xl border border-pink-400/30 bg-white/10 p-2.5 backdrop-blur-xl transition-all duration-300 hover:border-pink-400/50 hover:bg-white/20 hover:scale-105 hover:shadow-lg hover:shadow-pink-500/30">
                             <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-pink-500/30 to-orange-500/30 opacity-0 blur transition-opacity duration-300 group-hover:opacity-100" />
                             <Bell className="relative h-5 w-5 text-pink-200 transition-colors group-hover:text-white" />
-                            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-lime-400 to-emerald-400 text-xs font-bold text-gray-900 shadow-lg shadow-lime-400/60 animate-pulse">
+                            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-lime-400 to-blue-500 text-xs font-bold text-gray-900 shadow-lg shadow-lime-400/60 animate-pulse">
                 3
               </span>
                         </button>

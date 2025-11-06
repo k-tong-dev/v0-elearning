@@ -37,11 +37,11 @@ export function UserProfileStats({ userStats, userRole }: UserProfileStatsProps)
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="text-center p-3 rounded-lg bg-accent/30 border border-accent/50">
-                            <div className="text-2xl font-bold text-cyan-600">{userStats.posts}</div>
+                            <div className="text-2xl font-bold text-blue-500">{userStats.posts}</div>
                             <div className="text-xs text-muted-foreground">Posts</div>
                         </div>
                         <div className="text-center p-3 rounded-lg bg-accent/30 border border-accent/50">
-                            <div className="text-2xl font-bold text-emerald-600">{userStats.replies}</div>
+                            <div className="text-2xl font-bold text-purple-600">{userStats.replies}</div>
                             <div className="text-xs text-muted-foreground">Replies</div>
                         </div>
                         <div className="text-center p-3 rounded-lg bg-accent/30 border border-accent/50">

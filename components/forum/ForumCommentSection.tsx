@@ -89,7 +89,7 @@ export function ForumCommentSection({
                                 <Button
                                     onClick={handleCommentSubmit}
                                     disabled={!newComment.trim()}
-                                    className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
+                                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                                 >
                                     <Send className="w-4 h-4 mr-2" />
                                     Comment

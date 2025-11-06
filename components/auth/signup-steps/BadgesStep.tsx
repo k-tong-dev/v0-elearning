@@ -61,7 +61,7 @@ export function BadgesStep({
             className="w-full max-w-2xl mx-auto"
         >
             <div className="text-center space-y-3 mb-8">
-                <h2 className="text-4xl font-bold bg-gradient-to-br from-cyan-600 via-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                <h2 className="text-4xl font-bold bg-gradient-to-br from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
                     Select Badges
                 </h2>
                 <p className="text-base text-muted-foreground/80">Choose badges that represent your achievements</p>
@@ -82,7 +82,7 @@ export function BadgesStep({
                                 variant="outline"
                                 className={`w-full h-16 justify-start text-left px-5 rounded-2xl border-0 font-medium transition-all duration-300 ${
                                     isSelected
-                                        ? "bg-gradient-to-r from-cyan-500/10 via-emerald-500/10 to-blue-500/10 text-foreground shadow-md ring-2 ring-cyan-500/50"
+                                        ? "bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 text-foreground shadow-md ring-2 ring-blue-500/50"
                                         : "bg-muted/30 hover:bg-muted/50 text-foreground/80 hover:text-foreground shadow-sm"
                                 }`}
                                 onClick={() => handleBadgeToggle(badge)}
@@ -90,7 +90,7 @@ export function BadgesStep({
                                 <div
                                     className={`w-10 h-10 rounded-xl flex items-center justify-center mr-3 transition-all duration-300 ${
                                         isSelected
-                                            ? "bg-gradient-to-br from-cyan-500 to-emerald-500 text-white"
+                                            ? "bg-gradient-to-br from-blue-500 to-purple-500 text-white"
                                             : "bg-muted text-muted-foreground"
                                     }`}
                                 >
@@ -101,7 +101,7 @@ export function BadgesStep({
                                     <motion.div
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
-                                        className="w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center ml-2"
+                                        className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center ml-2"
                                     >
                                         <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -132,7 +132,7 @@ export function BadgesStep({
                 <Button
                     onClick={onNext}
                     disabled={isLoading}
-                    className="flex-1 h-14 bg-gradient-to-r from-cyan-500 via-emerald-500 to-blue-500 hover:from-cyan-600 hover:via-emerald-600 hover:to-blue-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                    className="flex-1 h-14 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 hover:from-blue-600 hover:via-purple-600 hover:to-blue-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
                 >
                     {isLoading ? (
                         <div className="flex items-center gap-2">

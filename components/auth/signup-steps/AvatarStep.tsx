@@ -109,11 +109,11 @@ export function AvatarStep({
                 {/*    initial={{ scale: 0.8, opacity: 0 }}*/}
                 {/*    animate={{ scale: 1, opacity: 1 }}*/}
                 {/*    transition={{ delay: 0.1, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}*/}
-                {/*    className="mx-auto w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-500/10 via-emerald-500/10 to-blue-500/10 flex items-center justify-center backdrop-blur-sm border border-white/10 shadow-lg"*/}
+                {/*    className="mx-auto w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-blue-500/10 flex items-center justify-center backdrop-blur-sm border border-white/10 shadow-lg"*/}
                 {/*>*/}
-                {/*    <User className="w-10 h-10 text-cyan-500" />*/}
+                {/*    <User className="w-10 h-10 text-blue-500" />*/}
                 {/*</motion.div>*/}
-                {/*<h2 className="text-4xl font-bold bg-gradient-to-br from-cyan-600 via-emerald-600 to-blue-600 bg-clip-text text-transparent">*/}
+                {/*<h2 className="text-4xl font-bold bg-gradient-to-br from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">*/}
                 {/*    Choose Avatar*/}
                 {/*</h2>*/}
                 {/*<p className="text-base text-muted-foreground/80">Personalize your profile (optional)</p>*/}
@@ -127,17 +127,17 @@ export function AvatarStep({
                     className="flex flex-col items-center space-y-4"
                 >
                     <div onClick={() => setIsAvatarModalOpen(true)} className="relative group cursor-pointer">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-emerald-500 to-blue-500 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
+                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
                         <div className="relative w-36 h-36 md:w-44 md:h-44 rounded-3xl overflow-hidden bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-white/10 shadow-xl">
                             {isAvatarSaving ? (
                                 <div className="w-full h-full flex items-center justify-center">
-                                    <Loader2 className="w-10 h-10 animate-spin text-cyan-500" />
+                                    <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
                                 </div>
                             ) : (
                                 <>
                                     <Avatar className="w-full h-full rounded-3xl">
                                         <AvatarImage src={currentAvatarPreview || undefined} alt="User Avatar" className="object-cover" />
-                                        <AvatarFallback className="text-4xl md:text-5xl font-bold bg-gradient-to-br from-cyan-500/20 to-emerald-500/20">
+                                        <AvatarFallback className="text-4xl md:text-5xl font-bold bg-gradient-to-br from-blue-500/20 to-purple-500/20">
                                             {email.charAt(0).toUpperCase()}
                                         </AvatarFallback>
                                     </Avatar>
@@ -183,7 +183,7 @@ export function AvatarStep({
                     <Button
                         type="submit"
                         disabled={isLoading || isAvatarSaving}
-                        className="flex-1 h-14 bg-gradient-to-r from-cyan-500 via-emerald-500 to-blue-500 hover:from-cyan-600 hover:via-emerald-600 hover:to-blue-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                        className="flex-1 h-14 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 hover:from-blue-600 hover:via-purple-600 hover:to-blue-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
                     >
                         {isLoading ? (
                             <div className="flex items-center gap-2">

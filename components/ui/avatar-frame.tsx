@@ -122,7 +122,7 @@ export function AvatarFrame({
                         {/* Morphing background element */}
                         <motion.div
                             className={cn(
-                                "absolute inset-0 bg-gradient-to-br from-cyan-500 to-emerald-500 opacity-100 blur-lg animate-morph", // Increased opacity and blur
+                                "absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-500 opacity-100 blur-lg animate-morph", // Increased opacity and blur
                             )}
                             animate={{
                                 borderRadius: ["60% 40% 30% 70% / 60% 30% 70% 40%", "30% 60% 70% 40% / 50% 60% 30% 60%", "60% 40% 30% 70% / 60% 30% 70% 40%"],
@@ -276,32 +276,32 @@ export function AvatarFrame({
                         {/* Neon glow */}
                         <div
                             className={cn(
-                                "absolute inset-[-10px] rounded-full bg-cyan-500/30 blur-xl transition-all duration-500 group-hover:bg-cyan-500/50 group-hover:blur-2xl",
+                                "absolute inset-[-10px] rounded-full bg-blue-500/30 blur-xl transition-all duration-500 group-hover:bg-blue-500/50 group-hover:blur-2xl",
                             )}
                             style={{ animation: "pulse-scale 2s ease-in-out infinite" }}
                         />
                         {/* Scan line */}
                         <div className="absolute inset-0 rounded-full overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             <div
-                                className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent"
+                                className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-blue-400 to-transparent"
                                 style={{ animation: "scan-line 2s linear infinite" }}
                             />
                         </div>
                         {/* Neon border */}
                         <div
                             className={cn(
-                                "absolute inset-0 rounded-full border-2 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] transition-all duration-300 group-hover:shadow-[0_0_30px_rgba(34,211,238,0.9)]",
+                                "absolute inset-0 rounded-full border-2 border-blue-500 shadow-[0_0_20px_rgba(34,211,238,0.6)] transition-all duration-300 group-hover:shadow-[0_0_30px_rgba(34,211,238,0.9)]",
                                 baseSize,
                             )}
                         />
                         <div className={cn("absolute inset-[3px] rounded-full bg-black/90")} />
                         <Avatar className={cn("relative", baseSize)}>
                             <AvatarImage src={src || "/placeholder.svg"} alt={alt} />
-                            <AvatarFallback className="bg-black/90 text-cyan-400">{fallback}</AvatarFallback>
+                            <AvatarFallback className="bg-black/90 text-blue-500">{fallback}</AvatarFallback>
                         </Avatar>
                         {/* Corner accents */}
-                        <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-cyan-400 rounded-tr-lg" />
-                        <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-cyan-400 rounded-bl-lg" />
+                        <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-blue-500 rounded-tr-lg" />
+                        <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-blue-500 rounded-bl-lg" />
                     </div>
                 )
 

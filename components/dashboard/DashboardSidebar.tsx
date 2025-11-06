@@ -18,8 +18,11 @@ import {
     Crown, DollarSign,
     Bug,
     MessageCircle,
+    Users,
+    Bell,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenuAvatar } from "@/components/ui/enhanced-avatar"
 import { toast } from "sonner"
@@ -34,9 +37,10 @@ interface DashboardSidebarProps {
     currentUser: any
     selectedTab: string
     onTabChange: (tab: string) => void
-    onCreateCourse: () => void
+    onCreateCourse?: () => void
     isExpanded?: boolean
     onExpandedChange?: (expanded: boolean) => void
+    onNotificationClick?: () => void
 }
 
 
@@ -44,6 +48,7 @@ interface DashboardSidebarProps {
 const navItems = [
     { label: "Overview",      icon: LayoutDashboard,   value: "overview" },
     { label: "My Courses",    icon: BookOpenText,      value: "my-courses" },
+    { label: "Instructors",   icon: Users,             value: "instructors" },
     { label: "Enrollments",   icon: GraduationCap,     value: "enrollments" },
     { label: "Expenditure",   icon: DollarSign,        value: "expenditure" },
     { label: "Analytics",     icon: BarChart3,         value: "analytics" },
@@ -61,6 +66,7 @@ export function DashboardSidebar({
                                      onCreateCourse,
                                      isExpanded: propIsExpanded,
                                      onExpandedChange,
+                                     onNotificationClick,
                                  }: DashboardSidebarProps) {
     const { logout } = useAuth()
     const router = useRouter()
@@ -105,6 +111,15 @@ export function DashboardSidebar({
     }
 
     const handleTabChange = (tab: string, isMobile = false) => {
+        // Check if monetization is locked and user is trying to access instructor features
+        const isMonetizationLocked = currentUser?.monetization === "locked"
+        const isInstructorTab = tab === "instructors"
+        
+        if (isMonetizationLocked && isInstructorTab) {
+            toast.error("Instructor features are locked. Please contact support to unlock monetization.")
+            return
+        }
+        
         setActiveTab(tab)
         onTabChange(tab)
         if (isMobile) setIsMobileMenuOpen(false)
@@ -115,7 +130,7 @@ export function DashboardSidebar({
         <div className="flex h-full flex-col justify-between p-4 overflow-y-auto scrollbar-hide">
             {/* Top Section: Logo, User Info */}
             <div className="flex flex-col items-center gap-4">
-                <Link href="/" className="flex items-center space-x-2 group w-full justify-center flex-shrink-0">
+                <Link href="/" className="flex items-center space-x-2 group w-full justify-center flex-shrink-0 sticky top-0 z-10 bg-white dark:bg-gray-400/30 backdrop-blur-5xl py-4 rounded-md">
                     <motion.div
                         className="w-12 h-12 rounded-2xl flex items-center justify-center relative overflow-hidden flex-shrink-0"
                         style={{
@@ -147,7 +162,7 @@ export function DashboardSidebar({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={cn(
-                        `w-full flex items-center gap-3 p-3.5 rounded-2xl liquid-transition group liquid-glass-surface`,
+                        `w-full flex items-center gap-3 p-3.5 rounded-2xl liquid-transition group liquid-glass-surface sticky top-auto`,
                         isExpanded ? "flex-row" : "flex-col justify-center",
                     )}
                 >
@@ -172,6 +187,9 @@ export function DashboardSidebar({
                     {navItems.map((item, idx) => {
                         const IconComponent = item.icon
                         const isActive = activeTab === item.value
+                        const isMonetizationLocked = currentUser?.monetization === "locked"
+                        const isInstructorItem = item.value === "instructors"
+                        const isDisabled = isMonetizationLocked && isInstructorItem
 
                         return (
                             <motion.div
@@ -185,7 +203,7 @@ export function DashboardSidebar({
                                 <motion.div
                                     className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500/40 via-purple-500/40 to-pink-500/40 blur-xl"
                                     initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: isActive ? 1 : 0, scale: isActive ? 1 : 0.95 }}
+                                    animate={{ opacity: isActive && !isDisabled ? 1 : 0, scale: isActive && !isDisabled ? 1 : 0.95 }}
                                     transition={{ duration: 0.3 }}
                                     style={{ pointerEvents: "none" }}
                                 />
@@ -193,10 +211,13 @@ export function DashboardSidebar({
                                 <Button
                                     variant="ghost"
                                     onClick={() => handleTabChange(item.value, isMobile)}
+                                    disabled={isDisabled}
                                     className={cn(
                                         `w-full relative transition-all duration-300 rounded-xl py-2.5 h-auto group overflow-hidden font-medium`,
-                                        isActive
+                                        isActive && !isDisabled
                                             ? "bg-gradient-to-r from-indigo-500/30 to-purple-500/30 dark:from-indigo-500/40 dark:to-purple-500/40 backdrop-blur-xl border border-indigo-400/50 dark:border-indigo-300/50 text-indigo-900 dark:text-white shadow-lg"
+                                            : isDisabled
+                                            ? "text-muted-foreground/50 opacity-50 cursor-not-allowed"
                                             : "text-muted-foreground hover:bg-white/8 dark:hover:bg-white/6 hover:backdrop-blur-lg hover:border hover:border-indigo-300/30 dark:hover:border-white/20 hover:shadow-lg hover:text-foreground transition-colors",
                                         isExpanded ? "px-4 justify-start" : "px-2 py-2 justify-center",
                                     )}
@@ -215,10 +236,19 @@ export function DashboardSidebar({
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: -10 }}
                                             transition={{ duration: 0.2 }}
-                                            className="text-sm"
+                                            className="text-sm flex-1"
                                         >
                                             {item.label}
                                         </motion.span>
+                                    )}
+                                    {isDisabled && (isExpanded || isMobile) && (
+                                        <Badge 
+                                            variant="outline" 
+                                            className="ml-auto bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-500 dark:text-purple-400 border-purple-500/30 text-xs px-1.5 py-0.5"
+                                        >
+                                            <Crown className="w-3 h-3 mr-1" />
+                                            Pro
+                                        </Badge>
                                     )}
                                 </Button>
                             </motion.div>
@@ -269,6 +299,42 @@ export function DashboardSidebar({
                                     className="text-sm font-medium"
                                 >
                                     Create Course
+                                </motion.span>
+                            )}
+                        </Button>
+                    </motion.div>
+                )}
+
+                {/* Notification Button */}
+                {onNotificationClick && (
+                    <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="w-full"
+                        layout
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <Button
+                            variant="ghost"
+                            onClick={onNotificationClick}
+                            className={cn(
+                                `w-full rounded-xl py-2.5 h-auto text-foreground hover:bg-primary/10 dark:hover:bg-primary/5 hover:text-primary transition-all duration-300 border border-transparent hover:border-primary/30 font-medium relative`,
+                                isExpanded ? "px-4 justify-start" : "px-2 py-2 justify-center",
+                            )}
+                        >
+                            <div className="relative">
+                                <Bell className={cn(`w-5 h-5`, isExpanded ? "mr-3" : "")} />
+                                {/* Badge for notification count - can be added later */}
+                            </div>
+                            {(isExpanded || isMobile) && (
+                                <motion.span
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="text-sm"
+                                >
+                                    Notifications
                                 </motion.span>
                             )}
                         </Button>

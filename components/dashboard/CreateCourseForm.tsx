@@ -555,7 +555,7 @@ export default function CreateCourseForm({ onCancel, onSuccess }: CreateCourseFo
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center">
                 <Card className="w-full max-w-4xl p-6 md:p-8 border-2 shadow-lg">
                     <CardHeader className="text-center">
-                        <CardTitle className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+                        <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                             Create New Course
                         </CardTitle>
                         <p className="text-muted-foreground">Step {currentStep} of 3</p>
@@ -598,7 +598,7 @@ export default function CreateCourseForm({ onCancel, onSuccess }: CreateCourseFo
                                 <Button
                                     onClick={handleSubmitCourse}
                                     disabled={isSubmitting}
-                                    className="ml-auto bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
+                                    className="ml-auto bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                                 >
                                     {isSubmitting ? (
                                         <div className="flex items-center gap-2">

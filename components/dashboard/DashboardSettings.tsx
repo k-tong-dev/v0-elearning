@@ -17,6 +17,7 @@ import {
     Star,
     CheckCircle,
     AlertCircle,
+  X,
 } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { BasicInfoFields } from "@/components/dashboard/profile-settings/BasicInfoFields"
@@ -40,7 +41,10 @@ import { getAccessToken } from "@/lib/cookies"
 import { RoleSelectionCombobox } from "@/components/dashboard/profile-settings/RoleSelectionCombobox"
 import { getCharacters, Character } from "@/integrations/strapi/character"
 import { Skill } from "@/integrations/strapi/skill"
-import { uploadStrapiFile } from "@/integrations/strapi/utils"
+import { uploadStrapiFile, deleteStrapiFile } from "@/integrations/strapi/utils"
+import { getAllUserSubscriptions, UserSubscription, Subscription } from "@/integrations/strapi/subscription"
+import { getInstructors } from "@/integrations/strapi/instructor"
+import { getUserInstructorGroups } from "@/integrations/strapi/instructor-group"
 
 interface DashboardStats {
     coursesCreated: number
@@ -60,6 +64,10 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
     const strapiURL = process.env.NEXT_PUBLIC_STRAPI_URL
     const [characters, setCharacters] = useState<Character[]>([])
     const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
+    const [userSubscriptions, setUserSubscriptions] = useState<UserSubscription[]>([])
+    const [loadingSubscriptions, setLoadingSubscriptions] = useState(false)
+    const [instructorsCount, setInstructorsCount] = useState(0)
+    const [instructorGroupsCount, setInstructorGroupsCount] = useState(0)
 
     // Helper to get avatar URL
     const getAvatarUrl = (avatar: StrapiMedia | string | null | undefined): string | null => {
@@ -121,6 +129,35 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
         fetchChars()
     }, [])
 
+    // Fetch user subscriptions and counts
+    useEffect(() => {
+        const fetchUserSubscriptions = async () => {
+            if (!user?.id) {
+                setUserSubscriptions([])
+                setInstructorsCount(0)
+                setInstructorGroupsCount(0)
+                return
+            }
+            setLoadingSubscriptions(true)
+            try {
+                const [subscriptions, instructors, groups] = await Promise.all([
+                    getAllUserSubscriptions(user.id),
+                    getInstructors(user.id),
+                    getUserInstructorGroups(user.id)
+                ])
+                setUserSubscriptions(subscriptions)
+                setInstructorsCount(instructors.length)
+                setInstructorGroupsCount(groups.length)
+            } catch (err) {
+                console.error("Failed to fetch user subscriptions:", err)
+                toast.error("Failed to load subscriptions")
+            } finally {
+                setLoadingSubscriptions(false)
+            }
+        }
+        fetchUserSubscriptions()
+    }, [user?.id])
+
     // Sync with URL search params
     useEffect(() => {
         if (typeof window === "undefined") return
@@ -172,7 +209,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
         setNotificationSettings((prev) => ({ ...prev, [key]: checked }))
     }
 
-    const handleAvatarChange = async (file: File) => {
+    const handleAvatarChange = async (file: File | string) => {
         setIsUploadingAvatar(true)
 
         try {
@@ -180,13 +217,50 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                 throw new Error("User not authenticated.")
             }
 
+            // Get the old avatar ID before updating (for cleanup)
+            // Only delete if it's a Strapi media object (not a template URL string)
+            let oldAvatarId: number | string | null = null;
+            if (currentUser.avatar && typeof currentUser.avatar === 'object') {
+                // Check if it has an id (numeric) or documentId (string)
+                if (currentUser.avatar.id) {
+                    oldAvatarId = currentUser.avatar.id;
+                } else if (currentUser.avatar.documentId) {
+                    oldAvatarId = currentUser.avatar.documentId;
+                }
+            }
+
+            let fileToUpload: File;
+            
+            // If it's a string (template URL), convert it to a File object
+            if (typeof file === 'string') {
+                try {
+                    // Fetch the image from the URL
+                    const response = await fetch(file);
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch image: ${response.statusText}`);
+                    }
+                    const blob = await response.blob();
+                    // Extract filename from URL or use default
+                    const urlParts = file.split('/');
+                    const filename = urlParts[urlParts.length - 1] || 'avatar.png';
+                    // Determine MIME type from blob or default to image/png
+                    const mimeType = blob.type || 'image/png';
+                    fileToUpload = new File([blob], filename, { type: mimeType });
+                } catch (error: any) {
+                    console.error("Error converting template URL to File:", error);
+                    throw new Error(`Failed to load template avatar: ${error.message}`);
+                }
+            } else {
+                fileToUpload = file;
+            }
+
+            // Validate file object
+            if (!fileToUpload || !(fileToUpload instanceof File)) {
+                throw new Error("Invalid file provided");
+            }
+
             // Use the uploadStrapiFile utility which handles FormData properly
-            const uploadedFile = await uploadStrapiFile(
-                file,
-                'plugin::users-permissions.user',
-                user.id,
-                'avatar'
-            )
+            const uploadedFile = await uploadStrapiFile(fileToUpload)
 
             const objectUrl = uploadedFile.url
             const previewUrl = uploadedFile.formats?.thumbnail?.url || uploadedFile.formats?.small?.url || uploadedFile.url
@@ -211,6 +285,14 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                 const errorText = await response.text()
                 console.error("[handleAvatarChange] Error response:", errorText)
                 throw new Error(errorText || "Failed to update avatar.")
+            }
+
+            // Delete old avatar file after successful update (non-blocking)
+            if (oldAvatarId && oldAvatarId !== uploadedFile.id) {
+                // Delete asynchronously - don't wait for it or let it break the flow
+                deleteStrapiFile(oldAvatarId).catch((error) => {
+                    console.warn("[handleAvatarChange] Failed to delete old avatar, but continuing:", error);
+                });
             }
 
             await refreshUser()
@@ -466,8 +548,8 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                             name={currentUser.username || currentUser.email}
                             email={currentUser.email}
                             role={currentUser.character?.code || "student"}
-                            followers={currentUser.followers || 0}
-                            following={currentUser.following || 0}
+                            followers={0}
+                            following={0}
                             onAvatarChange={handleAvatarChange}
                             isUploadingAvatar={isUploadingAvatar}
                         />
@@ -481,31 +563,31 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                         <Tabs value={activeSection} onValueChange={handleSectionChange} className="w-full">
                             <TabsList className="grid w-full grid-cols-5 gap-1">
                                 <TabsTrigger
-                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-cyan-600 dark:data-[state=active]:to-emerald-500 text-xs sm:text-sm"
+                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-blue-600 dark:data-[state=active]:to-purple-500 text-xs sm:text-sm"
                                     value="profile"
                                 >
                                     <FaRegUser className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Profile</span>
                                 </TabsTrigger>
                                 <TabsTrigger
-                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-cyan-600 dark:data-[state=active]:to-emerald-500 text-xs sm:text-sm"
+                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-blue-600 dark:data-[state=active]:to-purple-500 text-xs sm:text-sm"
                                     value="notifications"
                                 >
                                     <FaCog className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Notifications</span>
                                 </TabsTrigger>
                                 <TabsTrigger
-                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-cyan-600 dark:data-[state=active]:to-emerald-500 text-xs sm:text-sm"
+                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-blue-600 dark:data-[state=active]:to-purple-500 text-xs sm:text-sm"
                                     value="limits"
                                 >
-                                    <FaCrown className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Limits</span>
+                                    <FaCrown className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Subscription</span>
                                 </TabsTrigger>
                                 <TabsTrigger
-                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-cyan-600 dark:data-[state=active]:to-emerald-500 text-xs sm:text-sm"
+                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-blue-600 dark:data-[state=active]:to-purple-500 text-xs sm:text-sm"
                                     value="devices"
                                 >
                                     <FaDesktop className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Devices</span>
                                 </TabsTrigger>
                                 <TabsTrigger
-                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-cyan-600 dark:data-[state=active]:to-emerald-500 text-xs sm:text-sm"
+                                    className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-blue-600 dark:data-[state=active]:to-purple-500 text-xs sm:text-sm"
                                     value="account"
                                 >
                                     <FaTrash className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Account</span>
@@ -521,10 +603,10 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                         transition={{ delay: 0.3 }}
                                         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
                                     >
-                                        <Card className="liquid-glass-card border-cyan-500/20">
+                                        <Card className="liquid-glass-card border-blue-500/20">
                                             <CardContent className="p-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="p-2 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-lg">
+                                                    <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
                                                         <BookOpen className="w-5 h-5 text-white" />
                                                     </div>
                                                     <div>
@@ -628,7 +710,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                                 <Button
                                                     type="submit"
                                                     disabled={isSavingProfile || isUploadingAvatar}
-                                                    className="px-8 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
+                                                    className="px-8 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                                                 >
                                                     {isSavingProfile ? (
                                                         <div className="flex items-center gap-2">
@@ -650,10 +732,10 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
 
                             {/* Notifications Tab Content */}
                             <TabsContent value="notifications" className="space-y-6 mt-6">
-                                <Card className="liquid-glass-card border-cyan-500/20">
+                                <Card className="liquid-glass-card border-blue-500/20">
                                     <CardHeader className="pb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-lg">
+                                            <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
                                                 <Bell className="w-5 h-5 text-white" />
                                             </div>
                                             <div>
@@ -714,7 +796,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                                     onCheckedChange={(checked) =>
                                                         handleNotificationChange(setting.key as keyof typeof notificationSettings, checked)
                                                     }
-                                                    className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-cyan-500 data-[state=checked]:to-emerald-500"
+                                                    className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-500 data-[state=checked]:to-purple-500"
                                                 />
                                             </motion.div>
                                         ))}
@@ -722,7 +804,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                             <Button
                                                 onClick={handleSaveNotifications}
                                                 disabled={isSavingNotifications}
-                                                className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
+                                                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                                             >
                                                 {isSavingNotifications ? (
                                                     <div className="flex items-center gap-2">
@@ -741,7 +823,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                 </Card>
                             </TabsContent>
 
-                            {/* Limits Tab Content */}
+                            {/* Subscription Tab Content */}
                             <TabsContent value="limits" className="space-y-6 mt-6">
                                 <Card className="liquid-glass-card border-purple-500/20">
                                     <CardHeader className="pb-4">
@@ -750,56 +832,150 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                                 <Crown className="w-5 h-5 text-white" />
                                             </div>
                                             <div>
-                                                <CardTitle className="text-xl">Course Creation Limits</CardTitle>
-                                                <p className="text-sm text-muted-foreground">Manage your course creation plan</p>
+                                                <CardTitle className="text-xl">My Subscriptions</CardTitle>
+                                                <p className="text-sm text-muted-foreground">View all your subscription plans</p>
                                             </div>
                                         </div>
                                     </CardHeader>
                                     <CardContent className="space-y-6">
-                                        <div className="p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/20">
-                                            <div className="flex items-center justify-between mb-4">
-                                                <div className="flex items-center gap-2">
-                                                    <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                                                        <Crown className="w-3 h-3 mr-1" /> {currentUser.subscription === "unlock" ? "Pro Plan" : "Basic Plan"}
-                                                    </Badge>
-                                                    <span className="text-sm text-muted-foreground">Current Plan</span>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="text-2xl font-bold">{stats?.coursesCreated ?? defaultStats.coursesCreated}/50</p>
-                                                    <p className="text-sm text-muted-foreground">Courses Created</p>
-                                                </div>
+                                        {loadingSubscriptions ? (
+                                            <div className="flex items-center justify-center py-8">
+                                                <Loader2 className="w-6 h-6 animate-spin text-primary" />
                                             </div>
-                                            <div className="space-y-3">
-                                                <div className="flex justify-between text-sm">
-                                                    <span>Course Creation Progress</span>
-                                                    <span>{Math.round(((stats?.coursesCreated ?? defaultStats.coursesCreated) / 50) * 100)}%</span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-3">
-                                                    <div
-                                                        className="h-3 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full transition-all duration-300"
-                                                        style={{ width: `${((stats?.coursesCreated ?? defaultStats.coursesCreated) / 50) * 100}%` }}
-                                                    />
-                                                </div>
+                                        ) : userSubscriptions.length === 0 ? (
+                                            <div className="p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/20 text-center">
+                                                <Crown className="w-12 h-12 mx-auto mb-4 text-purple-500 opacity-50" />
+                                                <p className="text-muted-foreground mb-4">No active subscriptions</p>
+                                                <Button 
+                                                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                                                    onClick={() => window.location.href = '/pricing'}
+                                                >
+                                                    Browse Plans
+                                                </Button>
                                             </div>
-                                            <div className="mt-4 space-y-2 text-sm">
-                                                <div className="flex items-center gap-2">
-                                                    <CheckCircle className="w-4 h-4 text-green-500" />
-                                                    <span>Up to 50 courses</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <CheckCircle className="w-4 h-4 text-green-500" />
-                                                    <span>Basic analytics</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <AlertCircle className="w-4 h-4 text-yellow-500" />
-                                                    <span>Limited customization</span>
-                                                </div>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                {userSubscriptions.map((userSub) => {
+                                                    const subscriptionPlan = typeof userSub.subscription === 'object' 
+                                                        ? userSub.subscription as Subscription
+                                                        : null
+                                                    
+                                                    const isActive = userSub.state === 'active'
+                                                    const isCancelled = userSub.state === 'cancelled'
+                                                    
+                                                    return (
+                                                        <motion.div
+                                                            key={userSub.id}
+                                                            initial={{ opacity: 0, y: 20 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            className="p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/20"
+                                                        >
+                                                            <div className="flex items-start justify-between mb-4">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className={`p-2 rounded-lg ${
+                                                                        isActive 
+                                                                            ? 'bg-gradient-to-r from-green-500 to-emerald-500' 
+                                                                            : isCancelled 
+                                                                            ? 'bg-gray-500' 
+                                                                            : 'bg-yellow-500'
+                                                                    }`}>
+                                                                        <Crown className="w-5 h-5 text-white" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <h3 className="text-lg font-semibold">
+                                                                                {subscriptionPlan?.name || 'Unknown Plan'}
+                                                                            </h3>
+                                                                            <Badge className={
+                                                                                isActive
+                                                                                    ? 'bg-green-500'
+                                                                                    : isCancelled
+                                                                                    ? 'bg-gray-500'
+                                                                                    : 'bg-yellow-500'
+                                                                            }>
+                                                                                {userSub.state.charAt(0).toUpperCase() + userSub.state.slice(1)}
+                                                                            </Badge>
+                                                                        </div>
+                                                                        {subscriptionPlan && (
+                                                                            <p className="text-sm text-muted-foreground">
+                                                                                ${subscriptionPlan.price.toFixed(2)} / Unlimited
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                                                <div>
+                                                                    <p className="text-xs text-muted-foreground mb-1">Current Instructors</p>
+                                                                    <p className="text-lg font-semibold">
+                                                                        {instructorsCount}
+                                                                        {subscriptionPlan?.amount_instructor && subscriptionPlan.amount_instructor > 0 && (
+                                                                            <span className="text-sm text-muted-foreground ml-1">
+                                                                                / {subscriptionPlan.amount_instructor}
+                                                                            </span>
+                                                                        )}
+                                                                    </p>
+                                                                </div>
+                                                                {subscriptionPlan?.amount_instructor && subscriptionPlan.amount_instructor > 0 && userSub.next_billing_date && (
+                                                                    <div>
+                                                                        <p className="text-xs text-muted-foreground mb-1">Next Billing Date</p>
+                                                                        <p className="text-lg font-semibold">
+                                                                            {new Date(userSub.next_billing_date).toLocaleDateString()}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                                {userSub.createdAt && (
+                                                                    <div>
+                                                                        <p className="text-xs text-muted-foreground mb-1">Subscription Start Date</p>
+                                                                        <p className="text-lg font-semibold">
+                                                                            {new Date(userSub.createdAt).toLocaleDateString()}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                                <div>
+                                                                    <p className="text-xs text-muted-foreground mb-1">Auto Renew</p>
+                                                                    <div className="flex items-center gap-2">
+                                                                        {userSub.auto_renew ? (
+                                                                            <CheckCircle className="w-5 h-5 text-green-500" />
+                                                                        ) : (
+                                                                            <X className="w-5 h-5 text-gray-500" />
+                                                                        )}
+                                                                        <span className="text-lg font-semibold">
+                                                                            {userSub.auto_renew ? 'Enabled' : 'Disabled'}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {subscriptionPlan?.subscription_benefits && subscriptionPlan.subscription_benefits.length > 0 && (
+                                                                <div className="mt-4 pt-4 border-t border-purple-500/20">
+                                                                    <p className="text-xs text-muted-foreground mb-2">Benefits</p>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {subscriptionPlan.subscription_benefits
+                                                                            .filter((benefit: any) => !benefit.locked)
+                                                                            .map((benefit: any, idx: number) => (
+                                                                                <Badge key={idx} variant="outline" className="text-xs">
+                                                                                    <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
+                                                                                    {benefit.name}
+                                                                                </Badge>
+                                                                            ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </motion.div>
+                                                    )
+                                                })}
                                             </div>
-                                        </div>
-                                        <div className="flex justify-end">
-                                            <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">
+                                        )}
+                                        
+                                        <div className="flex justify-end pt-4 border-t">
+                                            <Button 
+                                                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                                                onClick={() => window.location.href = '/pricing'}
+                                            >
                                                 <Crown className="w-4 h-4 mr-2" />
-                                                Upgrade to Pro
+                                                Browse All Plans
                                             </Button>
                                         </div>
                                     </CardContent>

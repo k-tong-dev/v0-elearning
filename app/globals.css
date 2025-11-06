@@ -7,46 +7,46 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-    /* Updated color tokens to match eLearning design brief with cyan/emerald theme */
+    /* Updated color tokens to match eLearning design brief with iOS 26 liquid glass theme */
     --background: oklch(1 0 0);
     --foreground: oklch(0.2 0 0);
     --card: oklch(0.98 0 0);
     --card-foreground: oklch(0.25 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.2 0 0);
-    --primary: oklch(0.55 0.15 200); /* Cyan-600 equivalent */
+    --primary: oklch(0.55 0.15 260); /* Blue-600 equivalent */
     --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.65 0.15 160); /* Emerald equivalent */
+    --secondary: oklch(0.65 0.15 300); /* Purple equivalent */
     --secondary-foreground: oklch(1 0 0);
     --muted: oklch(0.96 0 0);
     --muted-foreground: oklch(0.45 0 0);
-    --accent: oklch(0.65 0.15 160); /* Emerald for highlights */
+    --accent: oklch(0.65 0.15 300); /* Purple for highlights */
     --accent-foreground: oklch(1 0 0);
     --destructive: oklch(0.577 0.245 27.325);
     --destructive-foreground: oklch(1 0 0);
     --border: oklch(0.9 0 0);
     --input: oklch(1 0 0);
-    --ring: oklch(0.55 0.15 200);
-    --chart-1: oklch(0.65 0.15 160);
-    --chart-2: oklch(0.55 0.15 200);
-    --chart-3: oklch(0.45 0.12 180);
-    --chart-4: oklch(0.75 0.18 140);
-    --chart-5: oklch(0.6 0.14 220);
+    --ring: oklch(0.55 0.15 260);
+    --chart-1: oklch(0.65 0.15 300);
+    --chart-2: oklch(0.55 0.15 260);
+    --chart-3: oklch(0.45 0.12 280);
+    --chart-4: oklch(0.75 0.18 320);
+    --chart-5: oklch(0.6 0.14 240);
     --radius: 0.75rem;
     --sidebar: oklch(0.98 0 0);
     --sidebar-foreground: oklch(0.25 0 0);
-    --sidebar-primary: oklch(0.55 0.15 200);
+    --sidebar-primary: oklch(0.55 0.15 260);
     --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.65 0.15 160);
+    --sidebar-accent: oklch(0.65 0.15 300);
     --sidebar-accent-foreground: oklch(1 0 0);
     --sidebar-border: oklch(0.9 0 0);
-    --sidebar-ring: oklch(0.55 0.15 200);
+    --sidebar-ring: oklch(0.55 0.15 260);
 
     /* RGB values for gradients */
-    --primary-rgb: 8, 145, 178; /* Example: Cyan-600 */
-    --accent-rgb: 16, 185, 129; /* Example: Emerald-600 */
-    --purple-rgb: 139, 92, 246; /* Example: Purple-500 */
-    --pink-rgb: 236, 72, 153; /* Example: Pink-500 */
+    --primary-rgb: 59, 130, 246; /* Blue-500 */
+    --accent-rgb: 139, 92, 246; /* Purple-500 */
+    --purple-rgb: 139, 92, 246; /* Purple-500 */
+    --pink-rgb: 236, 72, 153; /* Pink-500 */
 }
 
 .dark {
@@ -57,32 +57,32 @@
     --card-foreground: oklch(0.95 0 0);
     --popover: oklch(0.12 0 0);
     --popover-foreground: oklch(0.95 0 0);
-    --primary: oklch(0.3 0.15 200); /* Darker cyan for primary in dark mode */
+    --primary: oklch(0.6 0.15 260); /* Blue for primary in dark mode */
     --primary-foreground: oklch(0.95 0 0); /* Light text on primary in dark mode */
-    --secondary: oklch(0.7 0.15 160);
+    --secondary: oklch(0.7 0.15 300);
     --secondary-foreground: oklch(0.08 0 0);
     --muted: oklch(0.15 0 0);
     --muted-foreground: oklch(0.65 0 0);
-    --accent: oklch(0.7 0.15 160);
+    --accent: oklch(0.7 0.15 300);
     --accent-foreground: oklch(0.08 0 0);
     --destructive: oklch(0.6 0.2 25);
     --destructive-foreground: oklch(0.95 0 0);
     --border: oklch(0.2 0 0);
     --input: oklch(0.15 0 0);
-    --ring: oklch(0.6 0.15 200);
-    --chart-1: oklch(0.7 0.15 160);
-    --chart-2: oklch(0.6 0.15 200);
-    --chart-3: oklch(0.5 0.12 180);
-    --chart-4: oklch(0.8 0.18 140);
-    --chart-5: oklch(0.65 0.14 220);
+    --ring: oklch(0.6 0.15 260);
+    --chart-1: oklch(0.7 0.15 300);
+    --chart-2: oklch(0.6 0.15 260);
+    --chart-3: oklch(0.5 0.12 280);
+    --chart-4: oklch(0.8 0.18 320);
+    --chart-5: oklch(0.65 0.14 240);
     --sidebar: oklch(0.1 0 0);
     --sidebar-foreground: oklch(0.95 0 0);
-    --sidebar-primary: oklch(0.6 0.15 200);
+    --sidebar-primary: oklch(0.6 0.15 260);
     --sidebar-primary-foreground: oklch(0.08 0 0);
-    --sidebar-accent: oklch(0.7 0.15 160);
+    --sidebar-accent: oklch(0.7 0.15 300);
     --sidebar-accent-foreground: oklch(0.08 0 0);
     --sidebar-border: oklch(0.2 0 0);
-    --sidebar-ring: oklch(0.6 0.15 200);
+    --sidebar-ring: oklch(0.6 0.15 260);
 }
 
 @theme inline {
@@ -135,10 +135,63 @@
     }
 }
 
+/* Scrollbar Utilities */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
 /* General Animations */
 @keyframes float {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-10px); }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fadeInUp {
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+@keyframes blob {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+    }
+    25% {
+        transform: translate(20px, -20px) scale(1.1);
+    }
+    50% {
+        transform: translate(-20px, 20px) scale(0.9);
+    }
+    75% {
+        transform: translate(20px, 20px) scale(1.05);
+    }
+}
+
+.animate-blob {
+    animation: blob 7s ease-in-out infinite;
+}
+
+.animation-delay-2000 {
+    animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+    animation-delay: 4s;
 }
 
 @keyframes glow {
@@ -290,8 +343,8 @@
         rgba(255, 255, 255, 0.05) 50%,
         rgba(255, 255, 255, 0.1) 100%
     );
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.18);
     box-shadow: 
         0 8px 32px rgba(0, 0, 0, 0.1),
@@ -306,8 +359,8 @@
         rgba(255, 255, 255, 0.01) 50%,
         rgba(255, 255, 255, 0.03) 100%
     );
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 
         0 8px 32px rgba(0, 0, 0, 0.3),
@@ -315,58 +368,7 @@
         inset 0 -1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.liquid-glass-card {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.12) 0%,
-        rgba(255, 255, 255, 0.06) 50%,
-        rgba(255, 255, 255, 0.12) 100%
-    );
-    backdrop-filter: blur(24px) saturate(200%);
-    -webkit-backdrop-filter: blur(24px) saturate(200%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 
-        0 12px 40px rgba(0, 0, 0, 0.08),
-        inset 0 2px 0 rgba(255, 255, 255, 0.3),
-        inset 0 -2px 0 rgba(255, 255, 255, 0.15),
-        0 0 0 1px rgba(255, 255, 255, 0.05);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.liquid-glass-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 
-        0 16px 48px rgba(0, 0, 0, 0.12),
-        inset 0 2px 0 rgba(255, 255, 255, 0.35),
-        inset 0 -2px 0 rgba(255, 255, 255, 0.2),
-        0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
-.dark .liquid-glass-card {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.04) 0%,
-        rgba(255, 255, 255, 0.02) 50%,
-        rgba(255, 255, 255, 0.04) 100%
-    );
-    backdrop-filter: blur(24px) saturate(200%);
-    -webkit-backdrop-filter: blur(24px) saturate(200%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 
-        0 12px 40px rgba(0, 0, 0, 0.4),
-        inset 0 2px 0 rgba(255, 255, 255, 0.1),
-        inset 0 -2px 0 rgba(255, 255, 255, 0.05),
-        0 0 0 1px rgba(255, 255, 255, 0.03);
-}
-
-.dark .liquid-glass-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 
-        0 16px 48px rgba(0, 0, 0, 0.5),
-        inset 0 2px 0 rgba(255, 255, 255, 0.15),
-        inset 0 -2px 0 rgba(255, 255, 255, 0.08),
-        0 0 0 1px rgba(255, 255, 255, 0.06);
-}
+/* liquid-glass-card is now defined in styles/liquid-glass.css */
 
 /* Floating Liquid Animation */
 @keyframes liquid-float {
@@ -404,6 +406,10 @@
     perspective: 1000px;
 }
 
+.transform-style-preserve-3d {
+    transform-style: preserve-3d;
+}
+
 .transform-gpu {
     transform: translateZ(0);
     backface-visibility: hidden;
@@ -436,16 +442,16 @@
 
 /* Define custom properties for gradient colors for the animation */
 :root {
-    --cyan-500: oklch(0.65 0.15 200);
-    --emerald-500: oklch(0.65 0.15 160);
-    --purple-500: oklch(0.55 0.15 280);
+    --blue-500: oklch(0.65 0.15 260);
+    --indigo-500: oklch(0.6 0.15 280);
+    --purple-500: oklch(0.65 0.15 300);
     --pink-500: oklch(0.65 0.15 330);
 }
 
 .dark {
-    --cyan-500: oklch(0.7 0.15 200);
-    --emerald-500: oklch(0.7 0.15 160);
-    --purple-500: oklch(0.6 0.15 280);
+    --blue-500: oklch(0.7 0.15 260);
+    --indigo-500: oklch(0.65 0.15 280);
+    --purple-500: oklch(0.7 0.15 300);
     --pink-500: oklch(0.7 0.15 330);
 }
 
@@ -475,11 +481,11 @@
 
 /* New animation for avatar border gradient */
 @keyframes avatar-border-gradient {
-    0% { border-color: var(--cyan-500); }
-    25% { border-color: var(--emerald-500); }
+    0% { border-color: var(--blue-500); }
+    25% { border-color: var(--indigo-500); }
     50% { border-color: var(--purple-500); }
     75% { border-color: var(--pink-500); }
-    100% { border-color: var(--cyan-500); }
+    100% { border-color: var(--blue-500); }
 }
 
 .avatar-border-gradient {
@@ -765,6 +771,29 @@
     100% {
         transform: translateX(200%) rotate(-360deg);
         opacity: 0.4;
+    }
+}
+
+/* Modal slide-up animation from bottom to center */
+@keyframes slideUpFromBottom {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(calc(50vh + 100px));
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-50%);
+    }
+}
+
+@keyframes slideDownFadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-50%);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(calc(50vh + 100px));
     }
 }
 

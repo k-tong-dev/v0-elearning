@@ -40,10 +40,10 @@ export function HeroSection() {
     return (
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
             <div
-                className="absolute inset-0 bg-gradient-to-br from-cyan-50/20 via-emerald-50/10 to-blue-50/20 dark:from-cyan-950/20 dark:via-emerald-950/10 dark:to-blue-950/20">
+                className="absolute inset-0 bg-gradient-to-br from-blue-50/20 via-blue-50/10 to-blue-50/20 dark:from-blue-950/20 dark:via-blue-950/10 dark:to-blue-950/20">
                 {/* Floating 3D Cubes */}
                 <div
-                    className="absolute top-20 left-10 w-16 h-16 bg-gradient-to-br from-cyan-400/20 to-emerald-400/20 rounded-lg animate-float-3d transform-gpu perspective-1000 rotate-12 hover:rotate-45 transition-transform duration-1000"
+                    className="absolute top-20 left-10 w-16 h-16 bg-gradient-to-br from-blue-400/20 to-blue-500/20 rounded-lg animate-float-3d transform-gpu perspective-1000 rotate-12 hover:rotate-45 transition-transform duration-1000"
                     style={{
                         animationDelay: "0s",
                         transform: `translateX(${mousePosition.x * 0.01}px) translateY(${mousePosition.y * 0.01}px)`,
@@ -51,7 +51,7 @@ export function HeroSection() {
                 />
 
                 <div
-                    className="absolute top-40 right-20 w-20 h-20 bg-gradient-to-br from-emerald-400/20 to-blue-400/20 rounded-xl animate-float-3d transform-gpu perspective-1000 -rotate-12 hover:rotate-12 transition-transform duration-1000"
+                    className="absolute top-40 right-20 w-20 h-20 bg-gradient-to-br from-blue-500/20 to-blue-400/20 rounded-xl animate-float-3d transform-gpu perspective-1000 -rotate-12 hover:rotate-12 transition-transform duration-1000"
                     style={{
                         animationDelay: "1s",
                         transform: `translateX(${mousePosition.x * -0.02}px) translateY(${mousePosition.y * 0.015}px)`,
@@ -76,11 +76,11 @@ export function HeroSection() {
 
                 {/* Animated Particles */}
                 <div
-                    className="absolute top-1/4 left-1/4 w-2 h-2 bg-cyan-400 rounded-full animate-ping"
+                    className="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-500 rounded-full animate-ping"
                     style={{animationDelay: "0s"}}
                 />
                 <div
-                    className="absolute top-1/3 right-1/3 w-1 h-1 bg-emerald-400 rounded-full animate-ping"
+                    className="absolute top-1/3 right-1/3 w-1 h-1 bg-blue-500 rounded-full animate-ping"
                     style={{animationDelay: "1s"}}
                 />
                 <div
@@ -90,9 +90,9 @@ export function HeroSection() {
 
                 {/* Gradient Orbs */}
                 <div
-                    className="absolute top-10 right-1/4 w-32 h-32 bg-gradient-to-r from-cyan-400/10 to-emerald-400/10 rounded-full blur-xl animate-pulse"/>
+                    className="absolute top-10 right-1/4 w-32 h-32 bg-gradient-to-r from-blue-400/10 to-blue-500/10 rounded-full blur-xl animate-pulse"/>
                 <div
-                    className="absolute bottom-10 left-1/4 w-40 h-40 bg-gradient-to-r from-emerald-400/10 to-blue-400/10 rounded-full blur-xl animate-pulse"
+                    className="absolute bottom-10 left-1/4 w-40 h-40 bg-gradient-to-r from-blue-500/10 to-blue-400/10 rounded-full blur-xl animate-pulse"
                     style={{animationDelay: "1s"}}
                 />
             </div>
@@ -108,21 +108,21 @@ export function HeroSection() {
                         >
                                 <span className="inline-flex items-center rounded-full
                                     bg-primary/10 px-4 py-2 text-sm font-medium text-primary
-                                    dark:bg-none dark:border-1 dark:border-cyan-500 dark:text-white">
+                                    dark:bg-none dark:border-1 dark:border-blue-500 dark:text-white">
                                     <Sparkles className="mr-2 h-4 w-4"/>
                                     New courses added weekly
                                 </span>
                         </motion.div>
                         <h1 className="text-5xl lg:text-7xl font-bold mb-8 leading-tight">
-                            <span className="font-saira bg-gradient-to-r from-cyan-400 via-emerald-400 to-blue-500 bg-clip-text text-transparent animate-glow-text relative">
+                            <span className="font-saira bg-gradient-to-r from-blue-400 via-blue-500 to-blue-500 bg-clip-text text-transparent animate-glow-text relative">
                                 Camedu Learning
-                                <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400/20 via-emerald-400/20 to-blue-500/20 rounded-lg blur opacity-30 animate-pulse"/>
+                                <div className="absolute -inset-1 bg-gradient-to-r from-blue-400/20 via-blue-500/20 to-blue-500/20 rounded-lg blur opacity-30 animate-pulse"/>
                             </span>
                             <span className="block mb-4"></span>
                             <motion.div
                                 className="font-saira text-gray-400 relative mx-4 my-4 flex flex-col items-center justify-center gap-4 text-center sm:mx-0 sm:mb-0 sm:flex-row">
                                 <LayoutTextFlip
-                                    className="text-cyan-600"
+                                    className="text-blue-500"
                                     text="Unlock Potential With"
                                     words={[
                                         "Fight Club",
@@ -165,7 +165,7 @@ export function HeroSection() {
                             <div
                                 className="relative rounded-2xl p-2 shadow-sm bg-white
                                 dark:bg-transparent dark:border-gray-400/30
-                                hover:shadow-cyan-500/25 transition-all duration-300
+                                hover:shadow-blue-500/25 transition-all duration-300
                                 border-1 border-gray-200">
                                 <Input
                                     type="text"
@@ -173,14 +173,14 @@ export function HeroSection() {
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyPress={handleKeyPress}
-                                    className="w-full pl-6 pr-16 py-4 bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:ring-0 focus:ring-cyan-transparent text-lg focus-visible:border-none focus-visible:ring-0"
+                                    className="w-full pl-6 pr-16 py-4 bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:ring-0 focus:ring-blue-transparent text-lg focus-visible:border-none focus-visible:ring-0"
                                 />
                                 <Button
                                     onClick={handleSearch}
                                     className="absolute right-2 top-2 bottom-2
                                     dark:bg-gray-400/50 dark:text-white
                                     bg-gray-400/10 text-gray-500 rounded-xl transition-all duration-300
-                                    hover:shadow-lg hover:shadow-cyan-500/25"
+                                    hover:shadow-lg hover:shadow-blue-500/25"
                                 >
                                     Go
                                     <GrLinkNext/>
@@ -197,9 +197,9 @@ export function HeroSection() {
                     >
                         <Button
                             size="md"
-                            className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600
+                            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600
                             text-white px-10 py-4 rounded-2xl text-xl font-normal font-saira
-                            transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/25
+                            transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/25
                             hover:scale-105 transform-gpu hover:gap-5"
                             onClick={() => router.push("/courses")}
                         >
@@ -208,8 +208,8 @@ export function HeroSection() {
                         </Button>
                         <Button
                             size="md"
-                            className="border-2 border-cyan-500 text-cyan-600 dark:text-cyan-400
-                            hover:bg-cyan-500 hover:text-white px-10 py-4
+                            className="border-2 border-blue-500 text-blue-500 dark:text-blue-500
+                            hover:bg-blue-500 hover:text-white px-10 py-4
                             rounded-2xl text-xl font-normal font-saira
                             hover:shadow-2xl hover:scale-105 bg-transparent backdrop-blur-sm"
                             onClick={() => router.push("/demo")}
@@ -227,16 +227,16 @@ export function HeroSection() {
                     >
                         <div className="text-center group">
                             <div
-                                className="w-16 h-16 bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                                <Users className="w-8 h-8 text-cyan-500"/>
+                                className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                                <Users className="w-8 h-8 text-blue-500"/>
                             </div>
                             <div className="text-3xl font-bold text-foreground mb-1">50K+</div>
                             <div className="text-muted-foreground">Active Students</div>
                         </div>
                         <div className="text-center group">
                             <div
-                                className="w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                                <BookOpen className="w-8 h-8 text-emerald-500"/>
+                                className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                                <BookOpen className="w-8 h-8 text-purple-500"/>
                             </div>
                             <div className="text-3xl font-bold text-foreground mb-1">1,200+</div>
                             <div className="text-muted-foreground">Expert Courses</div>

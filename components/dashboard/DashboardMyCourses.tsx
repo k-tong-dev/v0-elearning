@@ -57,7 +57,7 @@ export function DashboardMyCourses({ myCourses, onCreateCourse, showCreateButton
                 {showCreateButton && (
                     <Button
                         onClick={onCreateCourse}
-                        className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         Create New Course

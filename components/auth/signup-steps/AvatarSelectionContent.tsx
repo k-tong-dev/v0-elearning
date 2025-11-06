@@ -83,16 +83,16 @@ export function AvatarSelectionContent({ currentAvatarUrl, onSave, onClose, isLo
             transition={{ duration: 0.3 }}
             className="p-6 space-y-6"
         >
-            <h3 className="text-3xl font-bold text-center bg-gradient-to-br from-cyan-600 via-emerald-600 to-blue-600 bg-clip-text text-transparent">
+            <h3 className="text-3xl font-bold text-center bg-gradient-to-br from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
                 Choose Avatar
             </h3>
 
             <div className="flex flex-col items-center space-y-4">
                 <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-emerald-500 to-blue-500 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
+                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
                     <Avatar className="relative w-36 h-36 border-4 border-white/10 shadow-2xl rounded-3xl">
                         <AvatarImage src={previewUrl || defaultAvatar} alt="Avatar Preview" className="object-cover" />
-                        <AvatarFallback className="text-5xl font-bold bg-gradient-to-br from-cyan-500/20 to-emerald-500/20">
+                        <AvatarFallback className="text-5xl font-bold bg-gradient-to-br from-blue-500/20 to-purple-500/20">
                             <ImageIcon className="w-16 h-16 text-muted-foreground" />
                         </AvatarFallback>
                     </Avatar>
@@ -113,8 +113,8 @@ export function AvatarSelectionContent({ currentAvatarUrl, onSave, onClose, isLo
                                        file:mr-4 file:py-3 file:px-5
                                        file:rounded-xl file:border-0
                                        file:text-sm file:font-semibold
-                                       file:bg-gradient-to-r file:from-cyan-500/10 file:to-emerald-500/10 file:text-foreground
-                                       hover:file:from-cyan-500/20 hover:file:to-emerald-500/20
+                                       file:bg-gradient-to-r file:from-blue-500/10 file:to-purple-500/10 file:text-foreground
+                                       hover:file:from-blue-500/20 hover:file:to-purple-500/20
                                        file:transition-all file:duration-300
                                        border-0 bg-muted/30 rounded-xl h-14"
                             disabled={isLoading}
@@ -137,8 +137,8 @@ export function AvatarSelectionContent({ currentAvatarUrl, onSave, onClose, isLo
                                 className={cn(
                                     "relative w-16 h-16 rounded-2xl overflow-hidden cursor-pointer border-2 transition-all duration-300",
                                     selectedTemplateUrl === src.src
-                                        ? "border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.5)] scale-110"
-                                        : "border-white/10 hover:border-cyan-300 hover:scale-105",
+                                        ? "border-blue-500 shadow-[0_0_20px_rgba(6,182,212,0.5)] scale-110"
+                                        : "border-white/10 hover:border-blue-500 hover:scale-105",
                                 )}
                             >
                                 <Image src={src || "/placeholder.svg"} alt={name} fill className="object-cover" />
@@ -171,7 +171,7 @@ export function AvatarSelectionContent({ currentAvatarUrl, onSave, onClose, isLo
                 <Button
                     onClick={handleSaveClick}
                     disabled={isSaveDisabled}
-                    className="h-12 px-5 bg-gradient-to-r from-cyan-500 via-emerald-500 to-blue-500 hover:from-cyan-600 hover:via-emerald-600 hover:to-blue-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                    className="h-12 px-5 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 hover:from-blue-600 hover:via-purple-600 hover:to-blue-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
                 >
                     {isLoading ? (
                         <div className="flex items-center gap-2">

@@ -25,17 +25,17 @@ const roleColors: Record<UserRoleSlug | "student", string> = { // Updated to use
     instructor: "from-blue-500 to-purple-500",
     admin: "from-red-500 to-pink-500",
     expert: "from-yellow-500 to-orange-500",
-    mentor: "from-green-500 to-emerald-500",
+    mentor: "from-green-500 to-purple-500",
     student: "from-gray-500 to-slate-500",
-    company: "from-indigo-500 to-cyan-500",
-    job_seeker: "from-teal-500 to-blue-500",
+    company: "from-indigo-500 to-blue-500",
+    job_seeker: "from-indigo-600 to-blue-500",
     other: "from-pink-500 to-red-500",
     developer: "from-blue-600 to-violet-600", // Added developer
     designer: "from-purple-600 to-pink-600", // Added designer
     authenticated: "from-gray-500 to-slate-500", // Added authenticated
     public: "from-gray-500 to-slate-500", // Added public
     creator: "from-purple-500 to-pink-500", // Added creator
-    viewer: "from-blue-500 to-cyan-500", // Added viewer
+    viewer: "from-blue-500 to-blue-500", // Added viewer
 }
 
 interface ProfileHeaderDisplayProps {
@@ -45,7 +45,7 @@ interface ProfileHeaderDisplayProps {
     followers: number;
     following: number;
     role: UserRoleSlug; // Changed to UserRoleSlug
-    onAvatarChange: (file: File) => Promise<void>;
+    onAvatarChange: (file: File | string) => Promise<void>;
     isUploadingAvatar: boolean;
 }
 
@@ -74,7 +74,7 @@ export function ProfileHeaderDisplay({avatar,name,email,followers,following,role
                 </div>
                 <div className="flex flex-col justify-center items-center w-full text-center md:text-left">
                     <motion.div
-                        className="relative w-36 h-36 rounded-full overflow-hidden cursor-pointer group border-2 border-transparent bg-gradient-to-br from-cyan-500/30 to-purple-500/30"
+                        className="relative w-36 h-36 rounded-full overflow-hidden cursor-pointer group border-2 border-transparent bg-gradient-to-br from-blue-500/30 to-purple-500/30"
                         animate={{
                             scale: [1, 1.02, 1],
                             rotate: [0, 2, -2, 0],
@@ -112,14 +112,6 @@ export function ProfileHeaderDisplay({avatar,name,email,followers,following,role
                         </Badge>
                     </div>
 
-                    <div className="flex justify-center md:justify-start gap-6 text-sm text-gray-600 dark:text-gray-300 mt-4">
-                        <span className="flex items-center gap-1">
-                            <Users className="w-4 h-4" /> {followers} Followers
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <Users className="w-4 h-4" /> {following} Following
-                        </span>
-                    </div>
                 </div>
             </div>
 
@@ -154,7 +146,7 @@ export function ProfileHeaderDisplay({avatar,name,email,followers,following,role
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <Button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="bg-gradient-to-r from-cyan-500/20 to-purple-500/20 dark:from-cyan-500/30 dark:to-purple-500/30 hover:from-cyan-500/30 hover:to-purple-500/30 dark:hover:from-cyan-500/40 dark:hover:to-purple-500/40 text-white rounded-full px-10 py-3 font-semibold tracking-tight shadow-md hover:shadow-lg"
+                                className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 dark:from-blue-500/30 dark:to-purple-500/30 hover:from-blue-500/30 hover:to-purple-500/30 dark:hover:from-blue-500/40 dark:hover:to-purple-500/40 text-white rounded-full px-10 py-3 font-semibold tracking-tight shadow-md hover:shadow-lg"
                             >
                                 <ImageIcon className="w-5 h-5 mr-2" />
                                 Upload Photo
@@ -164,7 +156,7 @@ export function ProfileHeaderDisplay({avatar,name,email,followers,following,role
                             <Button
                                 onClick={handleSave}
                                 disabled={isUploadingAvatar}
-                                className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white rounded-full px-10 py-3 font-semibold tracking-tight shadow-md hover:shadow-lg"
+                                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-full px-10 py-3 font-semibold tracking-tight shadow-md hover:shadow-lg"
                             >
                                 {isUploadingAvatar ? (
                                     <Loader2 className="animate-spin w-5 h-5" />
@@ -195,8 +187,8 @@ export function ProfileHeaderDisplay({avatar,name,email,followers,following,role
                                         className={cn(
                                             "relative w-16 h-16 rounded-xl overflow-hidden cursor-pointer border",
                                             selectedImage === src.src
-                                                ? "border-cyan-500 shadow-[0_0_15px_rgba(0,255,255,0.5)]"
-                                                : "border-white/20 hover:border-cyan-300"
+                                                ? "border-blue-500 shadow-[0_0_15px_rgba(0,255,255,0.5)]"
+                                                : "border-white/20 hover:border-blue-500"
                                         )}
                                     >
                                         <Image src={src} alt={name} fill className="object-cover" />

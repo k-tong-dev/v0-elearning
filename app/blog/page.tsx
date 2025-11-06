@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { HeaderDark } from "@/components/ui/headers/HeaderDark";
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra";
 import { Footer } from "@/components/ui/footers/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,14 +59,14 @@ export default function BlogPage() {
       name: "Tutorials",
       description: "Step-by-step coding tutorials",
       postCount: 67,
-      color: "bg-emerald-500"
+      color: "bg-purple-500"
     },
     {
       id: "industry-news",
       name: "Industry News",
       description: "Latest trends and tech news",
       postCount: 29,
-      color: "bg-cyan-500"
+      color: "bg-blue-500"
     }
   ];
 
@@ -565,7 +565,7 @@ export default function BlogPage() {
 
   return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-        <HeaderDark />
+        <HeaderUltra />
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
           <BlogHeroSection

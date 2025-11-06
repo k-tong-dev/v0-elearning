@@ -638,7 +638,7 @@ export default function MultiStepSignupPage() {
                                                     <motion.div
                                                         initial={{ y: 5, opacity: 0 }}
                                                         whileHover={{ y: 0, opacity: 1 }}
-                                                        className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl text-foreground
+                                                        className="bg-white/60 dark:bg-slate-900/10 backdrop-blur-xl text-foreground
                                      text-xs rounded-2xl py-2.5 px-4 shadow-xl
                                      border border-white/60 dark:border-white/20 whitespace-nowrap"
                                                     >

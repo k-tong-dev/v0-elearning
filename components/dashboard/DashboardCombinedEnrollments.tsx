@@ -121,7 +121,7 @@ export function DashboardCombinedEnrollments({ recentEnrollments, myLearningProg
                             setViewMode('my-students');
                             setSearchQuery(""); // Clear search when switching views
                         }}
-                        className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white"
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
                     >
                         <Users className="w-4 h-4 mr-2" />
                         Students in My Courses
@@ -279,7 +279,7 @@ export function DashboardCombinedEnrollments({ recentEnrollments, myLearningProg
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {filteredAndSortedMyCourses.map((course, index) => {
                                     const TypeIcon = getTypeIcon(course.type);
-                                    const progressColor = course.progress === 100 ? 'bg-green-500' : 'bg-gradient-to-r from-cyan-500 to-emerald-500';
+                                    const progressColor = course.progress === 100 ? 'bg-green-500' : 'bg-gradient-to-r from-blue-500 to-purple-500';
                                     return (
                                         <motion.div
                                             key={course.id}

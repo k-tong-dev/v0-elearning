@@ -218,7 +218,7 @@ export function PageLoading({ message = "Loading..." }: PageLoadingProps) {
 
             <motion.div
                 className="mt-20 text-center space-y-3 relative z-10 px-12 py-8 rounded-[2rem]
-                   bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl
+                   bg-white/40 dark:bg-slate-900/10 backdrop-blur-2xl
                    border border-white/60 dark:border-white/20
                    shadow-2xl shadow-black/5 dark:shadow-black/20"
                 initial={{ opacity: 0, y: 30, scale: 0.9 }}

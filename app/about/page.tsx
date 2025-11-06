@@ -2,7 +2,7 @@
 
 import React from "react"
 import { useRouter } from "next/navigation"
-import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { Footer } from "@/components/ui/footers/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -98,7 +98,7 @@ export default function AboutUsPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-            <HeaderDark />
+            <HeaderUltra />
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
                 {/* Back Button */}
@@ -123,7 +123,7 @@ export default function AboutUsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-center mb-12"
                 >
-                    <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+                    <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                         About CamEdu
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -200,8 +200,8 @@ export default function AboutUsPage() {
                                             )}
                                             {member.social.website && (
                                                 <a href={member.social.website} target="_blank" rel="noopener noreferrer">
-                                                    <Button variant="ghost" size="icon" className="hover:bg-emerald-50 dark:hover:bg-emerald-950">
-                                                        <Globe className="w-5 h-5 text-emerald-500" />
+                                                    <Button variant="ghost" size="icon" className="hover:bg-blue-50 dark:hover:bg-blue-950">
+                                                        <Globe className="w-5 h-5 text-purple-500" />
                                                     </Button>
                                                 </a>
                                             )}

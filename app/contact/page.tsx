@@ -22,7 +22,7 @@ import {
     Globe,
     GraduationCap,
 } from "lucide-react"
-import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { Footer } from "@/components/ui/footers/footer"
 import { submitContactRequest } from "@/integrations/strapi/utils"
 import { toast } from "sonner"
@@ -81,7 +81,7 @@ export default function ContactPage() {
 
     return (
         <div className="min-h-screen bg-background">
-            <HeaderDark />
+            <HeaderUltra />
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
                 {/* Breadcrumbs */}

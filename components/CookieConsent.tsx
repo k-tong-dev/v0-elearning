@@ -80,7 +80,7 @@ export function CookieConsent() {
                     >
                         <div className="relative z-10 text-center space-y-4">
                             <Cookie className="mx-auto w-16 h-16 text-primary mb-4" />
-                            <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+                            <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-blue-500 bg-clip-text text-transparent">
                                 We Value Your Privacy
                             </h2>
                             <p className="text-foreground/90 text-base">
@@ -96,7 +96,7 @@ export function CookieConsent() {
                             >
                                 <Button
                                     onClick={handleAcceptAll}
-                                    className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white rounded-full px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-300"
+                                    className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-full px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-300"
                                 >
                                     <CheckCircle className="w-4 h-4 mr-2" />
                                     Accept All

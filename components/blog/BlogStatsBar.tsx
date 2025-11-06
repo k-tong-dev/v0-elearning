@@ -27,11 +27,11 @@ export function BlogStatsBar({ posts }: BlogStatsBarProps) {
                 <CardContent className="p-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
                         <div>
-                            <div className="text-2xl font-bold text-cyan-600">{posts.length}</div>
+                            <div className="text-2xl font-bold text-blue-500">{posts.length}</div>
                             <div className="text-sm text-muted-foreground">Total Articles</div>
                         </div>
                         <div>
-                            <div className="text-2xl font-bold text-emerald-600">
+                            <div className="text-2xl font-bold text-purple-600">
                                 {totalViews.toLocaleString()}
                             </div>
                             <div className="text-sm text-muted-foreground">Total Views</div>

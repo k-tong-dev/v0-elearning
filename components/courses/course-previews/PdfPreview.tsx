@@ -50,7 +50,7 @@ export function PdfPreview({ url, onError, isRestricted = false }: PdfPreviewPro
                     <p className="text-lg mb-6">Enroll in the course to unlock the full document.</p>
                     <Button
                         onClick={() => { /* TODO: Implement enrollment action */ }}
-                        className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white hover:opacity-90 rounded-full px-6 py-2"
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:opacity-90 rounded-full px-6 py-2"
                     >
                         Enroll Now
                     </Button>

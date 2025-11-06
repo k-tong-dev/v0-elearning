@@ -75,28 +75,229 @@ export async function strapiLogin(identifier: string, password: string) {
     }
 }
 
-export async function uploadStrapiFile(file: File, ref?: string, refId?: string, field?: string): Promise<any> {
+/**
+ * Create a folder in Strapi media library
+ * @param folderName - Name of the folder to create
+ * @param parentId - Optional parent folder ID (for nested folders)
+ * @returns Folder object with id and name
+ */
+export async function createStrapiFolder(folderName: string, parentId?: number | string): Promise<any> {
+    try {
+        const accessToken = getCookieToken();
+        if (!accessToken) throw new Error("Missing access token for folder creation");
+
+        if (!folderName || folderName.trim() === '') {
+            throw new Error("Folder name is required");
+        }
+
+        const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+        const axiosInstance = (await import('axios')).default;
+
+        const payload: any = {
+            name: folderName.trim(),
+        };
+
+        // Add parent folder if specified
+        if (parentId) {
+            payload.parent = parentId;
+        }
+
+        const response = await axiosInstance.post(
+            `${STRAPI_BASE_URL}/api/upload/folders`,
+            payload,
+            {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        console.log("[createStrapiFolder] Folder created:", response.data);
+        return response.data;
+    } catch (error: any) {
+        const errorMessage = error.response?.data?.error?.message 
+            || error.response?.data?.message 
+            || error.message 
+            || "Failed to create folder in Strapi";
+        console.error("Strapi folder creation error:", {
+            message: errorMessage,
+            status: error.response?.status,
+            data: error.response?.data,
+            error: error.message
+        });
+        throw new Error(errorMessage);
+    }
+}
+
+/**
+ * Step 1: Upload file to Strapi media library
+ * This uploads the file and returns the file object with ID
+ * @param file - File to upload
+ * @param folderPath - Optional folder path (e.g., 'users/avatars' or folder ID)
+ */
+export async function uploadStrapiFile(file: File, folderPath?: string | number): Promise<any> {
     try {
         const accessToken = getCookieToken();
         if (!accessToken) throw new Error("Missing access token for upload");
 
+        if (!file || !(file instanceof File)) {
+            throw new Error("Invalid file provided");
+        }
+
         const formData = new FormData();
         formData.append('files', file);
-        if (ref) formData.append('ref', ref);
-        if (refId) formData.append('refId', refId);
-        if (field) formData.append('field', field);
 
-        const response = await strapi.post('/api/upload', formData, {
+        // Add folder path if specified
+        if (folderPath) {
+            // If folderPath is a number, it's a folder ID
+            // If it's a string, it's a folder path
+            if (typeof folderPath === 'number') {
+                formData.append('folder', folderPath.toString());
+            } else {
+                formData.append('path', folderPath);
+            }
+        }
+
+        console.log("[uploadStrapiFile] Uploading file:", {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            folderPath: folderPath || 'root'
+        });
+
+        // Upload to media library (don't attach to any entity yet)
+        // Use axios directly to avoid default Content-Type header from strapi client
+        // The strapi client sets 'Content-Type: application/json' which breaks FormData uploads
+        const axiosInstance = (await import('axios')).default;
+        const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+        
+        // Create a new axios instance for file uploads without default Content-Type
+        const uploadClient = axiosInstance.create({
+            baseURL: STRAPI_BASE_URL,
+            // Don't set Content-Type - axios will set it automatically with boundary
+        });
+        
+        const response = await uploadClient.post('/api/upload', formData, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                // Don't set Content-Type header - axios will set it automatically with boundary
+            },
+        });
+
+        console.log("[uploadStrapiFile] Response:", response.data);
+        
+        if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+            const uploadedFile = response.data[0];
+            // Return the file object with ID - this will be used in step 2
+            return {
+                id: uploadedFile.id,
+                documentId: uploadedFile.documentId,
+                ...uploadedFile
+            };
+        }
+        throw new Error("No file returned from upload");
+    } catch (error: any) {
+        const errorMessage = error.response?.data?.error?.message 
+            || error.response?.data?.message 
+            || error.message 
+            || "Failed to upload file to Strapi";
+        console.error("Strapi file upload error:", {
+            message: errorMessage,
+            status: error.response?.status,
+            data: error.response?.data,
+            error: error.message
+        });
+        throw new Error(errorMessage);
+    }
+}
+
+/**
+ * Delete a file from Strapi media library
+ * This removes the file from the media library to prevent unused files
+ */
+export async function deleteStrapiFile(fileId: number | string): Promise<boolean> {
+    try {
+        const accessToken = getCookieToken();
+        if (!accessToken) {
+            console.warn("Missing access token for file deletion, skipping...");
+            return false;
+        }
+
+        if (!fileId) {
+            console.warn("No file ID provided for deletion");
+            return false;
+        }
+
+        const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+        const axiosInstance = (await import('axios')).default;
+        
+        // Determine the file identifier (numeric ID or documentId)
+        // For Strapi v5, we can use either numeric ID or documentId
+        const fileIdentifier = fileId;
+        
+        // Try to delete using the file ID
+        // Strapi v5 supports both numeric IDs and documentIds in the URL
+        const response = await axiosInstance.delete(
+            `${STRAPI_BASE_URL}/api/upload/files/${fileIdentifier}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        console.log("[deleteStrapiFile] File deleted successfully:", fileIdentifier);
+        return true;
+    } catch (error: any) {
+        // Log error but don't throw - file deletion failure shouldn't break the flow
+        console.warn("[deleteStrapiFile] Failed to delete file:", {
+            fileId,
+            error: error.response?.data?.error?.message || error.message,
+            status: error.response?.status,
+        });
+        return false;
+    }
+}
+
+/**
+ * Step 2: Attach uploaded file to an entity field
+ * This updates the entity with the file ID
+ */
+export async function attachFileToEntity(
+    contentType: string,
+    entityId: string | number,
+    field: string,
+    fileId: number
+): Promise<any> {
+    try {
+        const accessToken = getCookieToken();
+        if (!accessToken) throw new Error("Missing access token");
+
+        // Update the entity with the file ID
+        const response = await strapi.put(`/api/${contentType}/${entityId}`, {
+            data: {
+                [field]: fileId,
+            }
+        }, {
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
             },
         });
 
-        console.log("[uploadStrapiFile] Response:", response.data);
-        return response.data[0];
+        return response.data;
     } catch (error: any) {
-        console.error("Strapi file upload error:", error.response?.data || error.message);
-        throw new Error(error.response?.data?.error?.message || "Failed to upload file to Strapi.");
+        const errorMessage = error.response?.data?.error?.message 
+            || error.response?.data?.message 
+            || error.message 
+            || "Failed to attach file to entity";
+        console.error("Error attaching file:", {
+            message: errorMessage,
+            status: error.response?.status,
+            data: error.response?.data,
+        });
+        throw new Error(errorMessage);
     }
 }
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { Footer } from "@/components/ui/footers/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -180,7 +180,7 @@ function PaymentContent() {
   if (paymentStep === "success") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-        <HeaderDark />
+        <HeaderUltra />
         
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
           <motion.div
@@ -201,7 +201,7 @@ function PaymentContent() {
                 
                 <div className="space-y-4">
                   <Button 
-                    className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                     onClick={() => router.push('/dashboard')}
                   >
                     Go to Dashboard
@@ -223,7 +223,7 @@ function PaymentContent() {
   if (paymentStep === "processing") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-        <HeaderDark />
+        <HeaderUltra />
         
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
           <motion.div
@@ -257,7 +257,7 @@ function PaymentContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-      <HeaderDark />
+      <HeaderUltra />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         {/* Header */}
@@ -276,7 +276,7 @@ function PaymentContent() {
               Back to Plans
             </Button>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Complete Your Purchase
               </h1>
               <p className="text-muted-foreground">
@@ -399,7 +399,7 @@ function PaymentContent() {
                     <Button 
                       type="submit"
                       disabled={isLoading}
-                      className="w-full h-12 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-lg font-semibold"
+                      className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-lg font-semibold"
                     >
                       {isLoading ? (
                         <div className="flex items-center gap-2">
@@ -437,7 +437,7 @@ function PaymentContent() {
                     <div className={`w-10 h-10 rounded-full ${
                       selectedPlan.id === 'free' ? 'bg-gray-500' :
                       selectedPlan.id === 'basic' ? 'bg-blue-500' :
-                      selectedPlan.id === 'pro' ? 'bg-purple-500' : 'bg-emerald-500'
+                      selectedPlan.id === 'pro' ? 'bg-purple-500' : 'bg-purple-500'
                     } flex items-center justify-center`}>
                       <IconComponent className="w-5 h-5 text-white" />
                     </div>
@@ -535,7 +535,7 @@ function PaymentContent() {
 function PaymentFallback() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-      <HeaderDark />
+      <HeaderUltra />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">

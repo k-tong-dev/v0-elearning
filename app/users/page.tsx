@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import { useRouter } from "next/navigation"
-import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { Footer } from "@/components/ui/footers/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -216,7 +216,7 @@ export default function UsersDirectoryPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-      <HeaderDark />
+      <HeaderUltra />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         {/* Header */}
@@ -226,7 +226,7 @@ export default function UsersDirectoryPage() {
           className="mb-8"
         >
           <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Community Members
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -431,11 +431,11 @@ export default function UsersDirectoryPage() {
                     {/* Stats */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center p-2 rounded-lg bg-accent/30">
-                        <div className="text-lg font-bold text-cyan-600">{user.stats.reputation}</div>
+                        <div className="text-lg font-bold text-blue-500">{user.stats.reputation}</div>
                         <div className="text-xs text-muted-foreground">Reputation</div>
                       </div>
                       <div className="text-center p-2 rounded-lg bg-accent/30">
-                        <div className="text-lg font-bold text-emerald-600">{user.stats.posts}</div>
+                        <div className="text-lg font-bold text-purple-600">{user.stats.posts}</div>
                         <div className="text-xs text-muted-foreground">Posts</div>
                       </div>
                     </div>
@@ -480,7 +480,7 @@ export default function UsersDirectoryPage() {
                     <div className="flex gap-2 pt-2">
                       <Button 
                         size="sm" 
-                        className="flex-1 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
+                        className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleUserClick(user.id)

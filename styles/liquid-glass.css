@@ -147,8 +147,8 @@
 /* Base Glass Surface */
 .liquid-glass-surface {
     background: var(--glass-gradient-light);
-    backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturation));
-    -webkit-backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturation));
+    backdrop-filter: blur(var(--glass-blur-light));
+    -webkit-backdrop-filter: blur(var(--glass-blur-light));
     border: 1px solid rgba(255, 255, 255, var(--glass-border-light));
     box-shadow: var(--glass-shadow-medium), var(--glass-shadow-inset-top), var(--glass-shadow-inset-bottom);
     border-radius: var(--glass-radius-md);
@@ -158,8 +158,8 @@
 /* Light Glass Surface */
 .liquid-glass-light {
     background: var(--glass-gradient-light);
-    backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturation));
-    -webkit-backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturation));
+    backdrop-filter: blur(var(--glass-blur-light));
+    -webkit-backdrop-filter: blur(var(--glass-blur-light));
     border: 1px solid rgba(255, 255, 255, var(--glass-border-subtle));
     box-shadow: var(--glass-shadow-soft);
     border-radius: var(--glass-radius-md);
@@ -203,35 +203,104 @@
 
 /* ==================== INTERACTIVE GLASS ELEMENTS ==================== */
 
-/* Glass Card with Hover */
+/* New Liquid Glass Card - True Frosted Glass Effect */
 .liquid-glass-card {
-    background: var(--glass-gradient-medium);
-    backdrop-filter: blur(var(--glass-blur-medium)) saturate(var(--glass-saturation-high));
-    -webkit-backdrop-filter: blur(var(--glass-blur-medium)) saturate(var(--glass-saturation-high));
-    border: 1px solid rgba(255, 255, 255, var(--glass-border-medium));
+    /* Base translucent background with gradient */
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.05) 50%,
+        rgba(255, 255, 255, 0.08) 100%
+    );
+    
+    /* Frosted glass blur effect */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    
+    /* Glass border */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    
+    /* Layered shadows for depth */
     box-shadow: 
-        var(--glass-shadow-medium),
-        var(--glass-shadow-inset-top),
-        var(--glass-shadow-inset-bottom),
+        0 8px 32px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.1),
         0 0 0 1px rgba(255, 255, 255, 0.05);
-    border-radius: var(--glass-radius-lg);
-    transition: all var(--glass-duration-normal) var(--glass-ease);
+    
+    border-radius: 20px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.liquid-glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        transparent
+    );
+    pointer-events: none;
 }
 
 .liquid-glass-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.15) 0%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(255, 255, 255, 0.12) 100%
+    );
+    border-color: rgba(255, 255, 255, 0.3);
     box-shadow: 
-        var(--glass-shadow-deep),
-        var(--glass-shadow-inset-top),
-        var(--glass-shadow-inset-bottom),
+        0 12px 48px rgba(0, 0, 0, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Dark mode adjustments */
+.dark .liquid-glass-card {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.04) 0%,
+        rgba(255, 255, 255, 0.01) 50%,
+        rgba(255, 255, 255, 0.03) 100%
+    );
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.dark .liquid-glass-card:hover {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.06) 0%,
+        rgba(255, 255, 255, 0.02) 50%,
+        rgba(255, 255, 255, 0.05) 100%
+    );
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 
+        0 12px 48px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.08),
         0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 /* Glass Button */
 .liquid-glass-button {
     background: var(--glass-gradient-medium);
-    backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturation));
-    -webkit-backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturation));
+    backdrop-filter: blur(var(--glass-blur-light));
+    -webkit-backdrop-filter: blur(var(--glass-blur-light));
     border: 1px solid rgba(255, 255, 255, var(--glass-border-medium));
     box-shadow: 
         var(--glass-shadow-inset-top),
@@ -257,8 +326,8 @@
 /* Glass Input */
 .liquid-glass-input {
     background: var(--glass-gradient-light);
-    backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturation));
-    -webkit-backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturation));
+    backdrop-filter: blur(var(--glass-blur-light));
+    -webkit-backdrop-filter: blur(var(--glass-blur-light));
     border: 1px solid rgba(255, 255, 255, var(--glass-border-light));
     box-shadow: var(--glass-shadow-inset-top);
     border-radius: var(--glass-radius-md);
@@ -474,8 +543,8 @@
 /* Glass Navigation Bar */
 .liquid-navbar {
     background: var(--glass-gradient-light);
-    backdrop-filter: blur(var(--glass-blur-medium)) saturate(var(--glass-saturation));
-    -webkit-backdrop-filter: blur(var(--glass-blur-medium)) saturate(var(--glass-saturation));
+    backdrop-filter: blur(var(--glass-blur-medium));
+    -webkit-backdrop-filter: blur(var(--glass-blur-medium));
     border-bottom: 1px solid rgba(255, 255, 255, var(--glass-border-light));
     box-shadow: 
         0 4px 20px rgba(0, 0, 0, 0.05),
@@ -498,8 +567,8 @@
 /* Glass Sidebar */
 .liquid-sidebar {
     background: var(--glass-gradient-light);
-    backdrop-filter: blur(var(--glass-blur-medium)) saturate(var(--glass-saturation));
-    -webkit-backdrop-filter: blur(var(--glass-blur-medium)) saturate(var(--glass-saturation));
+    backdrop-filter: blur(var(--glass-blur-medium));
+    -webkit-backdrop-filter: blur(var(--glass-blur-medium));
     border-right: 1px solid rgba(255, 255, 255, var(--glass-border-light));
     box-shadow: 
         var(--glass-shadow-inset-top),
@@ -509,8 +578,8 @@
 /* Glass Footer */
 .liquid-footer {
     background: var(--glass-gradient-light);
-    backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturation));
-    -webkit-backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturation));
+    backdrop-filter: blur(var(--glass-blur-light));
+    -webkit-backdrop-filter: blur(var(--glass-blur-light));
     border-top: 1px solid rgba(255, 255, 255, var(--glass-border-light));
     box-shadow: 
         var(--glass-shadow-inset-bottom);
@@ -519,8 +588,8 @@
 /* Glass Badge */
 .liquid-badge {
     background: var(--glass-gradient-medium);
-    backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturation));
-    -webkit-backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturation));
+    backdrop-filter: blur(var(--glass-blur-light));
+    -webkit-backdrop-filter: blur(var(--glass-blur-light));
     border: 1px solid rgba(255, 255, 255, var(--glass-border-light));
     box-shadow: var(--glass-shadow-soft);
     border-radius: var(--glass-radius-full);
@@ -532,8 +601,8 @@
 /* Glass Tooltip */
 .liquid-tooltip {
     background: var(--glass-gradient-medium);
-    backdrop-filter: blur(var(--glass-blur-medium)) saturate(var(--glass-saturation));
-    -webkit-backdrop-filter: blur(var(--glass-blur-medium)) saturate(var(--glass-saturation));
+    backdrop-filter: blur(var(--glass-blur-medium));
+    -webkit-backdrop-filter: blur(var(--glass-blur-medium));
     border: 1px solid rgba(255, 255, 255, var(--glass-border-light));
     box-shadow: var(--glass-shadow-medium);
     border-radius: var(--glass-radius-md);

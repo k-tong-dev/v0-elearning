@@ -74,7 +74,7 @@ export function CharacterStep({
             className="w-full max-w-2xl mx-auto"
         >
             <div className="text-center space-y-3 mb-8">
-                <h2 className="text-4xl font-bold bg-gradient-to-br from-cyan-600 via-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                <h2 className="text-4xl font-bold bg-gradient-to-br from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
                     What describes you?
                 </h2>
                 <p className="text-base text-muted-foreground/80">Choose your role to personalize your experience</p>
@@ -94,7 +94,7 @@ export function CharacterStep({
                             <Card
                                 className={`cursor-pointer transition-all duration-300 border-0 overflow-hidden group ${
                                     isSelected
-                                        ? "bg-gradient-to-br from-cyan-500/10 via-emerald-500/10 to-blue-500/10 shadow-lg ring-2 ring-cyan-500/50"
+                                        ? "bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-blue-500/10 shadow-lg ring-2 ring-blue-500/50"
                                         : "bg-muted/30 hover:bg-muted/50 hover:shadow-md"
                                 }`}
                                 onClick={() => handleCharactorSelect(charactor)}
@@ -104,7 +104,7 @@ export function CharacterStep({
                                         <div
                                             className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${
                                                 isSelected
-                                                    ? "bg-gradient-to-br from-cyan-500 to-emerald-500 text-white shadow-lg"
+                                                    ? "bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg"
                                                     : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/10"
                                             }`}
                                         >
@@ -120,7 +120,7 @@ export function CharacterStep({
                                             <motion.div
                                                 initial={{ scale: 0 }}
                                                 animate={{ scale: 1 }}
-                                                className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center"
+                                                className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center"
                                             >
                                                 <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -153,7 +153,7 @@ export function CharacterStep({
                 <Button
                     onClick={handleNextClick}
                     disabled={isLoading}
-                    className="flex-1 h-14 bg-gradient-to-r from-cyan-500 via-emerald-500 to-blue-500 hover:from-cyan-600 hover:via-emerald-600 hover:to-blue-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                    className="flex-1 h-14 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 hover:from-blue-600 hover:via-purple-600 hover:to-blue-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
                 >
                     {isLoading ? (
                         <div className="flex items-center gap-2">

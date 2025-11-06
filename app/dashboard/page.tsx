@@ -12,10 +12,14 @@ import { DashboardAnalytics } from "@/components/dashboard/DashboardAnalytics"
 import { DashboardSettings } from "@/components/dashboard/DashboardSettings"
 import CreateCourseForm from "@/components/dashboard/CreateCourseForm"
 import { DashboardExpenditure } from "@/components/dashboard/DashboardExpenditure"
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
+import { DashboardSidebarResizable } from "@/components/dashboard/DashboardSidebarResizable"
 import { DashboardMyReports } from "@/components/dashboard/DashboardMyReports"
 import { DashboardMyContacts } from "@/components/dashboard/DashboardMyContacts"
+import { DashboardInstructors } from "@/components/dashboard/DashboardInstructors"
+import { NotificationSidebar } from "@/components/dashboard/NotificationSidebar"
+import { DashboardFriends } from "@/components/dashboard/DashboardFriends"
 import { User as StrapiUser } from "@/types/user"
+import { getUserSubscription } from "@/integrations/strapi/subscription"
 import {BookOpen, DollarSign, MessageCircle, Star, ThumbsUp, Users} from "lucide-react"
 
 // Interfaces for mock data (keeping them here for context, but ideally they'd be in a types file)
@@ -74,12 +78,53 @@ function DashboardContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { user, isLoading: authLoading } = useAuth()
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [userSubscription, setUserSubscription] = useState<any>(null);
+    const [userTier, setUserTier] = useState<string>("Free");
 
     const initialTab = searchParams?.get("tab") || "overview"
     const initialCreateCourse = searchParams?.get("create") === "true"
     const [selectedTab, setSelectedTab] = useState(initialTab)
     const [showCreateCourseForm, setShowCreateCourseForm] = useState(initialCreateCourse && initialTab === 'my-courses')
+    const [isNotificationSidebarOpen, setIsNotificationSidebarOpen] = useState(false)
+
+    // Listen for notification button clicks from header
+    useEffect(() => {
+        const handleOpenNotification = () => {
+            setIsNotificationSidebarOpen(true)
+        }
+
+        window.addEventListener('openNotificationSidebar', handleOpenNotification)
+        return () => {
+            window.removeEventListener('openNotificationSidebar', handleOpenNotification)
+        }
+    }, [])
+
+    // Fetch user subscription to get dynamic tier
+    useEffect(() => {
+        const fetchUserSubscription = async () => {
+            if (user?.id) {
+                try {
+                    const subscription = await getUserSubscription(user.id);
+                    if (subscription) {
+                        setUserSubscription(subscription);
+                        // Get subscription type from the subscription relation
+                        if (subscription.subscription && typeof subscription.subscription === 'object') {
+                            const subType = subscription.subscription.type || "Free";
+                            setUserTier(subType);
+                        } else {
+                            setUserTier("Free");
+                        }
+                    } else {
+                        setUserTier("Free");
+                    }
+                } catch (error) {
+                    console.error("Error fetching user subscription:", error);
+                    setUserTier("Free");
+                }
+            }
+        };
+        fetchUserSubscription();
+    }, [user?.id]);
 
     useEffect(() => {
         const tab = searchParams?.get("tab")
@@ -301,26 +346,34 @@ function DashboardContent() {
     if (authLoading || !user) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500"></div>
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
             </div>
         )
     }
 
     // Ensure user is treated as StrapiUser type for DashboardSettings
     const currentUserForSettings: StrapiUser = user as StrapiUser;
+    // Add userTier to user object for components that need it
+    const currentUserWithTier = { ...currentUserForSettings, userTier, userSubscription };
     return (
-        <div className="min-h-screen">
-            <DashboardSidebar
-                currentUser={currentUserForSettings}
+        <div className="min-h-screen flex flex-col lg:flex-row">
+            <NotificationSidebar 
+                isOpen={isNotificationSidebarOpen}
+                onClose={() => setIsNotificationSidebarOpen(false)}
+            />
+            <div className="lg:sticky lg:top-0 lg:self-start lg:h-screen w-fit">
+                <DashboardSidebarResizable
+                currentUser={currentUserWithTier}
                 selectedTab={selectedTab}
                 onTabChange={handleTabChange}
                 onCreateCourse={handleCreateCourseClick}
-                isExpanded={isExpanded}
-                onExpandedChange={setIsExpanded}
+                    onNotificationClick={() => setIsNotificationSidebarOpen(true)}
             />
+            </div>
 
             <main 
-                className={`min-h-screen transition-all duration-300 ease-in-out pt-10 sm:px-4 md:px-6 lg:px-8 ${isExpanded ? "lg:ml-[18rem]" : "lg:ml-[6rem]"}`}
+                className="flex-1 min-h-screen transition-all duration-300 ease-in-out pt-10 sm:px-4 md:px-6 lg:px-8"
+                style={{ minWidth: 0 }}
             >
                 <div className="container mx-auto max-w-7xl">
                     <motion.div
@@ -359,6 +412,10 @@ function DashboardContent() {
                                 )}
                             </TabsContent>
 
+                            <TabsContent value="instructors" className="mt-0">
+                                <DashboardInstructors />
+                            </TabsContent>
+
                             <TabsContent value="expenditure" className="mt-0">
                                 <DashboardExpenditure />
                             </TabsContent>
@@ -373,6 +430,10 @@ function DashboardContent() {
 
                             <TabsContent value="contact" className="mt-0">
                                 <DashboardMyContacts />
+                            </TabsContent>
+
+                            <TabsContent value="friends" className="mt-0">
+                                <DashboardFriends />
                             </TabsContent>
 
                             <TabsContent value="settings" className="mt-0">

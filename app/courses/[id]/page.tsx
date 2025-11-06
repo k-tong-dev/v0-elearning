@@ -25,7 +25,7 @@ import {
     ChevronDown,
     ChevronUp,
 } from "lucide-react"
-import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { Footer } from "@/components/ui/footers/footer"
 import { Button } from "@heroui/react"
 import Link from "next/link"
@@ -126,7 +126,7 @@ export default function CourseDetailPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-            <HeaderDark />
+            <HeaderUltra />
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
                 <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
                     <Breadcrumbs size="lg" separator={<ChevronRight className="w-4 h-4" />} className="mb-4">
@@ -139,7 +139,7 @@ export default function CourseDetailPage() {
                     <div className="lg:col-span-2 space-y-8">
                         {/* Course Header */}
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                            <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+                            <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                 {course.title}
                             </h1>
                             <p className="text-lg text-muted-foreground mb-6 leading-relaxed">{course.description}</p>
@@ -198,7 +198,7 @@ export default function CourseDetailPage() {
                                                 className="w-full p-4 text-left hover:bg-muted/50 transition-colors flex items-center justify-between"
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 flex items-center justify-center text-white text-sm font-semibold">
+                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-semibold">
                                                         {index + 1}
                                                     </div>
                                                     <div>
@@ -330,12 +330,12 @@ export default function CourseDetailPage() {
                                     <div className="text-center">
                                         <p className="text-red-500 text-sm font-medium mb-2">{course.lastUpdated}</p>
                                         <div className="flex items-center justify-center gap-2 mb-4">
-                                            <span className="text-3xl font-bold text-cyan-600">{course.price}</span>
+                                            <span className="text-3xl font-bold text-blue-500">{course.price}</span>
                                             <span className="text-lg text-muted-foreground line-through">{course.originalPrice}</span>
                                         </div>
                                         <Button
                                             size="lg"
-                                            className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white mb-3 duration-300 hover:scale-105"
+                                            className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white mb-3 duration-300 hover:scale-105"
                                         >
                                             Enroll Now
                                         </Button>

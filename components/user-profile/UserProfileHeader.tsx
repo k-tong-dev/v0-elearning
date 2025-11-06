@@ -102,12 +102,12 @@ export function UserProfileHeader({ user, isFollowing, setIsFollowing }: UserPro
 
                     {/* Organic, pulsating blobs for 3D effect - Refined colors and opacity */}
                     <motion.div
-                        className="absolute w-64 h-64 bg-cyan-400/10 animate-organic-blob-pulse"
+                        className="absolute w-64 h-64 bg-blue-500/10 animate-organic-blob-pulse"
                         style={{ top: '10%', left: '5%' }}
                         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
                     />
                     <motion.div
-                        className="absolute w-80 h-80 bg-emerald-400/10 animate-organic-blob-pulse"
+                        className="absolute w-80 h-80 bg-blue-500/10 animate-organic-blob-pulse"
                         style={{ top: '30%', left: '50%', transform: 'translateX(-50%)', animationDelay: '5s' }}
                         transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
                     />
@@ -117,12 +117,12 @@ export function UserProfileHeader({ user, isFollowing, setIsFollowing }: UserPro
                         transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
                     />
                     <motion.div
-                        className="absolute w-72 h-72 bg-cyan-400/10 animate-organic-blob-pulse"
+                        className="absolute w-72 h-72 bg-blue-500/10 animate-organic-blob-pulse"
                         style={{ top: '0%', left: '30%', animationDelay: '15s' }}
                         transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
                     />
                     <motion.div
-                        className="absolute w-48 h-48 bg-emerald-400/10 animate-organic-blob-pulse"
+                        className="absolute w-48 h-48 bg-blue-500/10 animate-organic-blob-pulse"
                         style={{ top: '70%', left: '15%', animationDelay: '20s' }}
                         transition={{ duration: 23, repeat: Infinity, ease: "easeInOut" }}
                     />
@@ -150,12 +150,12 @@ export function UserProfileHeader({ user, isFollowing, setIsFollowing }: UserPro
                         <div className="flex-1 space-y-2 text-center md:text-left">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div>
-                                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+                                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                     {user.name}
                                 </h1>
                                 <p className="text-muted-foreground text-lg">{user.username}</p>
                                 <div className="flex items-center justify-center md:justify-start gap-2 mt-2">
-                                    <Badge variant="outline" className="bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 text-cyan-700 dark:text-cyan-300">
+                                    <Badge variant="outline" className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-500 dark:text-blue-500">
                                         {user?.chanracter}
                                     </Badge>
                                     <span className="text-sm text-muted-foreground">
@@ -169,7 +169,7 @@ export function UserProfileHeader({ user, isFollowing, setIsFollowing }: UserPro
                                     onClick={handleFollow}
                                     className={isFollowing
                                         ? "bg-gray-500 hover:bg-gray-600 text-white"
-                                        : "bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white"
+                                        : "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
                                     }
                                 >
                                     {isFollowing ? "Following" : "Follow"}
@@ -235,8 +235,8 @@ export function UserProfileHeader({ user, isFollowing, setIsFollowing }: UserPro
                                 )}
                                 {user.socialLinks.website && (
                                     <a href={user.socialLinks.website} target="_blank" rel="noopener noreferrer">
-                                        <Button variant="ghost" size="icon" className="hover:bg-emerald-50 dark:hover:bg-emerald-950">
-                                            <Globe className="w-5 h-5 text-emerald-500" />
+                                        <Button variant="ghost" size="icon" className="hover:bg-blue-50 dark:hover:bg-blue-950">
+                                            <Globe className="w-5 h-5 text-purple-500" />
                                         </Button>
                                     </a>
                                 )}

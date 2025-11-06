@@ -132,7 +132,7 @@ export function CourseRatingForm({
                     <Button
                         type="submit"
                         disabled={hasRated || isLoading || isSubmitting || currentRating === 0}
-                        className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
+                        className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                     >
                         {isSubmitting ? (
                             <div className="flex items-center gap-2">

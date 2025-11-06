@@ -108,7 +108,7 @@ export const CoursePreviewModal: React.FC<CoursePreviewModalProps> = ({
                                 <p className="text-lg mb-6">Enroll in the course to watch the full video.</p>
                                 <Button
                                     onClick={() => { /* TODO: Implement enrollment action */ }}
-                                    className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white hover:opacity-90 rounded-full px-6 py-2"
+                                    className="bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:opacity-90 rounded-full px-6 py-2"
                                 >
                                     Enroll Now
                                 </Button>
@@ -200,7 +200,7 @@ export const CoursePreviewModal: React.FC<CoursePreviewModalProps> = ({
                         </div>
 
                         <div className="p-6 text-center">
-                            <h2 className="text-xl md:text-2xl font-semibold mb-1 bg-gradient-to-r from-cyan-500 to-emerald-500 bg-clip-text text-transparent">
+                            <h2 className="text-xl md:text-2xl font-semibold mb-1 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
                                 {courseTitle}
                             </h2>
                             <p className="text-muted-foreground text-sm md:text-base mb-4">
@@ -213,7 +213,7 @@ export const CoursePreviewModal: React.FC<CoursePreviewModalProps> = ({
                                         // router.push(`/courses/${courseId}/enroll`);
                                     }
                                 }}
-                                className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white hover:opacity-90 rounded-full px-6 py-2"
+                                className="bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:opacity-90 rounded-full px-6 py-2"
                             >
                                 Close Preview
                             </Button>

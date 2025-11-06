@@ -101,22 +101,33 @@ export function CoursesSection() {
   }
   
   return (
-    <section className="py-20 bg-muted/30">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-32 bg-white dark:bg-slate-950 relative">
+      {/* Light/Dark Mode Background */}
+      <div 
+        className="absolute inset-0 dark:opacity-30 opacity-10"
+        style={{
+          backgroundImage: `
+            radial-gradient(circle at 20% 50%, rgba(0, 0, 0, 0.03) 0%, transparent 60%),
+            radial-gradient(circle at 80% 80%, rgba(0, 0, 0, 0.02) 0%, transparent 60%)
+          `,
+          backgroundSize: "100% 100%",
+        }}
+      />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4 uppercase font-saira text-gray-500">
+        <div className="text-center mb-20">
+          <h2 className="text-4xl sm:text-5xl font-bold mb-6 uppercase tracking-wide text-slate-900 dark:text-white">
             Learn from the{" "}
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">best</span>
+            <span className="bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-400 dark:to-purple-500 bg-clip-text text-transparent">best</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-slate-600 dark:text-gray-300 max-w-2xl mx-auto">
             Discover our top-rated courses across various categories. From coding and design to business and wellness,
             our courses are crafted to deliver results.
           </p>
         </div>
 
         {/* Courses Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {courses.map((course, index) => (
             <CourseCard
               key={course.id}
@@ -132,10 +143,7 @@ export function CoursesSection() {
         <div className="text-center">
           <Button
             size="md"
-            className="group text-md font-normal font-saira text-gray-500
-            hover:shadow-xl hover:scale-105
-            px-8 py-4 rounded-xl transition-all duration-300
-            bg-gray-400/10"
+            className="group text-md font-normal liquid-glass-button text-slate-900 dark:text-white border-slate-200 dark:border-blue-400/50 hover:border-slate-300 dark:hover:border-blue-400/50 hover:scale-105 px-8 py-4 rounded-full transition-all duration-300"
           >
             <Link href="/courses" className="flex items-center gap-2">
               See All Courses

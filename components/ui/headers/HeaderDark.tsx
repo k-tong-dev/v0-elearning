@@ -16,6 +16,7 @@ import {
     GraduationCap,
     Compass,
     DollarSign,
+    Users,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useEffect, useRef, useState } from "react"
@@ -148,7 +149,7 @@ export function HeaderDark() {
             href: "/forum",
             description: "Join discussions and connect with learners",
             icon: "💬",
-            gradient: "from-blue-500 to-cyan-500"
+            gradient: "from-blue-500 to-indigo-500"
         },
         { 
             title: "About Us", 
@@ -162,7 +163,7 @@ export function HeaderDark() {
             href: "/blog",
             description: "Read latest articles and updates",
             icon: "📝",
-            gradient: "from-emerald-500 to-teal-500"
+            gradient: "from-purple-500 to-pink-500"
         },
         { 
             title: "Services", 
@@ -195,18 +196,18 @@ export function HeaderDark() {
         transition-all duration-300
         ${
                 isScrolled
-                    ? "fixed top-0 backdrop-blur-2xl border-b shadow-lg"
-                    : "absolute top-0 backdrop-blur-2xl border-b"
+                    ? "fixed top-0 backdrop-blur-xl border-b shadow-lg"
+                    : "absolute top-0 backdrop-blur-xl border-b"
             }
         ${isScrolled 
-            ? "bg-white/95 dark:bg-slate-950/95 border-cyan-200/30 dark:border-cyan-800/30" 
-            : "bg-white/80 dark:bg-slate-950/80 border-cyan-200/20 dark:border-cyan-800/20"
+            ? "bg-transparent dark:bg-slate-950/95 border-transparent dark:border-blue-800/30" 
+            : "bg-transparent dark:bg-slate-950/80 border-transparent dark:border-blue-800/20"
         }
       `}
             style={{
                 boxShadow: isScrolled 
-                    ? "0 8px 32px rgba(8, 145, 178, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 0 rgba(8, 145, 178, 0.05)"
-                    : "0 1px 0 rgba(8, 145, 178, 0.05)",
+                    ? "0 8px 32px rgba(0, 0, 0, 0.05), 0 1px 0 rgba(0, 0, 0, 0.05)"
+                    : "none",
             }}
         >
             {/* ---- Liquid blobs ---- */}
@@ -219,7 +220,7 @@ export function HeaderDark() {
                     }}
                 />
                 <div
-                    className="absolute -right-20 top-0 h-80 w-80 animate-[blob_10s_ease-in-out_infinite_2s] rounded-full bg-gradient-to-bl from-cyan-500/30 via-blue-600/20 to-transparent dark:from-cyan-500/30 dark:via-blue-600/20 blur-3xl"
+                    className="absolute -right-20 top-0 h-80 w-80 animate-[blob_10s_ease-in-out_infinite_2s] rounded-full bg-gradient-to-bl from-blue-500/30 via-purple-600/20 to-transparent dark:from-blue-500/30 dark:via-purple-600/20 blur-3xl"
                     style={{
                         transform: `translate(${mousePosition.x * -0.015}px, ${mousePosition.y * 0.015}px)`,
                         transition: "transform .3s cubic-bezier(.4,0,.2,1)",
@@ -258,34 +259,73 @@ export function HeaderDark() {
                             />
                         </motion.div>
                         <span
-                            className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 bg-clip-text text-transparent"
+                            className="text-xl font-bold text-slate-900 dark:bg-gradient-to-r dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 dark:bg-clip-text dark:text-transparent"
                             style={{ backgroundSize: "200% auto", animation: "gradient-shift 3s ease infinite" }}
                         >
-              CamEdu
-            </span>
+                          CamEdu
+                        </span>
                     </Link>
 
-                    <nav className="hidden lg:flex items-center gap-1">
-                        <Link
-                            href="/"
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50/50 dark:hover:bg-cyan-950/20 transition-all duration-200"
-                        >
-                            <Home className="h-4 w-4" />
-                            <span>Home</span>
-                        </Link>
-
-                        <Link
-                            href="/courses"
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50/50 dark:hover:bg-cyan-950/20 transition-all duration-200"
-                        >
-                            <GraduationCap className="h-4 w-4" />
-                            <span>Courses</span>
-                        </Link>
+                    <nav className="hidden lg:flex items-center gap-2">
+                        {[
+                            { href: "/", label: "Home", icon: Home },
+                            { href: "/about", label: "About", icon: null },
+                            { href: "/instructors", label: "Instructors", icon: Users, special: true },
+                            { href: "/courses", label: "Courses", icon: GraduationCap },
+                            { href: "/pricing", label: "Pricing", icon: DollarSign },
+                            { href: "/career", label: "Career", icon: null },
+                        ].map((item) => {
+                            const Icon = item.icon
+                            const isSpecial = item.special
+                            
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className="relative group px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 overflow-hidden"
+                                >
+                                    {/* Background gradient on hover */}
+                                    <motion.div
+                                        className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 dark:from-blue-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                        whileHover={{ scale: 1.05 }}
+                                    />
+                                    
+                                    {/* Special glow effect for Instructors */}
+                                    {isSpecial && (
+                                        <motion.div
+                                            className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 dark:from-blue-500/30 dark:via-purple-500/30 dark:to-pink-500/30 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                                            animate={{
+                                                opacity: [0, 0.3, 0],
+                                            }}
+                                            transition={{
+                                                duration: 2,
+                                                repeat: Infinity,
+                                                ease: "easeInOut",
+                                            }}
+                                        />
+                                    )}
+                                    
+                                    {/* Content */}
+                                    <span className="relative z-10 flex items-center gap-2 text-slate-900 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+                                        {Icon && <Icon className="w-4 h-4" />}
+                                        {item.label}
+                                    </span>
+                                    
+                                    {/* Underline animation */}
+                                    <motion.div
+                                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full"
+                                        initial={{ scaleX: 0 }}
+                                        whileHover={{ scaleX: 1 }}
+                                        transition={{ duration: 0.3 }}
+                                    />
+                                </Link>
+                            )
+                        })}
 
                         {/* Explorers Dropdown - Elegant Vertical List Style */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50/50 dark:hover:bg-cyan-950/20 transition-all duration-200 group">
+                                <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-900 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100/50 dark:hover:bg-blue-950/20 transition-all duration-200 group">
                                     <Compass className="h-4 w-4 transition-transform group-hover:rotate-12" />
                                     <span>Explorers</span>
                                 </button>
@@ -300,11 +340,11 @@ export function HeaderDark() {
                                     border: "1px solid rgba(103, 232, 249, 0.2)",
                                     boxShadow: "0 8px 32px rgba(103, 232, 249, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
                                 } : {
-                                    background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%)",
+                                    background: "rgba(255, 255, 255, 0.9)",
                                     backdropFilter: "blur(20px) saturate(180%)",
                                     WebkitBackdropFilter: "blur(20px) saturate(180%)",
-                                    border: "1px solid rgba(8, 145, 178, 0.12)",
-                                    boxShadow: "0 8px 32px rgba(8, 145, 178, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
+                                    border: "1px solid rgba(148, 163, 184, 0.2)",
+                                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)",
                                 }}
                             >
                                 <div className="space-y-1">
@@ -312,7 +352,7 @@ export function HeaderDark() {
                                         <Link
                                             key={item.title}
                                             href={item.href}
-                                            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 hover:bg-gradient-to-r hover:from-cyan-50 hover:to-emerald-50 dark:hover:from-cyan-950/30 dark:hover:to-emerald-950/30"
+                                            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 hover:bg-slate-100 dark:hover:bg-gradient-to-r dark:hover:from-blue-950/30 dark:hover:to-purple-950/30"
                                             style={{
                                                 border: "1px solid transparent",
                                             }}
@@ -333,16 +373,16 @@ export function HeaderDark() {
                                             </div>
                                             {/* Content */}
                                             <div className="flex-1 min-w-0">
-                                                <h3 className="text-sm font-semibold text-slate-800 dark:text-gray-200 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                                                <h3 className="text-sm font-semibold text-slate-900 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                                     {item.title}
                                                 </h3>
-                                                <p className="text-xs text-slate-500 dark:text-gray-400 leading-tight mt-0.5 line-clamp-1">
+                                                <p className="text-xs text-slate-600 dark:text-gray-400 leading-tight mt-0.5 line-clamp-1">
                                                     {item.description}
                                                 </p>
                                             </div>
                                             {/* Arrow indicator */}
                                             <motion.div
-                                                className="opacity-0 group-hover:opacity-100 text-cyan-600 dark:text-cyan-400 flex-shrink-0"
+                                                className="opacity-0 group-hover:opacity-100 text-blue-600 dark:text-blue-400 flex-shrink-0"
                                                 initial={{ x: -4, opacity: 0 }}
                                                 whileHover={{ x: 0, opacity: 1 }}
                                                 transition={{ duration: 0.2 }}
@@ -356,14 +396,6 @@ export function HeaderDark() {
                                 </div>
                             </DropdownMenuContent>
                         </DropdownMenu>
-
-                        <Link
-                            href="/pricing"
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50/50 dark:hover:bg-cyan-950/20 transition-all duration-200"
-                        >
-                            <DollarSign className="h-4 w-4" />
-                            <span>Pricing</span>
-                        </Link>
                     </nav>
 
                     {/* ---- RIGHT: ICONS + USER MENU ---- */}
@@ -372,13 +404,58 @@ export function HeaderDark() {
                             <ThemeToggle />
                         </motion.div>
 
-                        {/* Notification */}
-                        <button className="group relative rounded-full border border-gray-300/30 dark:border-white/15 bg-gray-50 dark:bg-white/8 p-2.5 backdrop-blur-lg transition-all duration-300 hover:border-gray-400/50 dark:hover:border-white/25 hover:bg-gray-100 dark:hover:bg-white/12 hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20">
-                            <Bell className="h-5 w-5 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
-                            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-xs font-bold text-white shadow-lg shadow-blue-500/40">
-                3
-              </span>
-                        </button>
+                        {/* Notification - Ultra Creative Design */}
+                        <motion.button 
+                            onClick={() => {
+                                // Check if we're in dashboard, if so trigger notification sidebar
+                                if (typeof window !== 'undefined' && window.location.pathname.includes('/dashboard')) {
+                                    // Dispatch custom event that dashboard can listen to
+                                    window.dispatchEvent(new CustomEvent('openNotificationSidebar'))
+                                }
+                            }}
+                            whileHover={{ scale: 1.05, rotate: 5 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="group relative rounded-2xl border-2 border-border/50 dark:border-slate-700/50 bg-gradient-to-br from-background/80 to-muted/40 dark:from-slate-900/80 dark:to-slate-800/40 backdrop-blur-xl p-2.5 transition-all duration-300 hover:border-primary/50 dark:hover:border-blue-500/50 hover:shadow-xl hover:shadow-primary/20 dark:hover:shadow-blue-500/20 overflow-hidden"
+                        >
+                            {/* Animated background */}
+                            <motion.div
+                                className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 dark:from-blue-500/20 dark:via-purple-500/20 dark:to-pink-500/20"
+                                animate={{
+                                    backgroundPosition: ["0% 0%", "100% 100%"],
+                                }}
+                                transition={{
+                                    duration: 3,
+                                    repeat: Infinity,
+                                    repeatType: "reverse",
+                                    ease: "easeInOut",
+                                }}
+                                style={{
+                                    backgroundSize: "200% 200%",
+                                }}
+                            />
+                            
+                            <Bell className="h-5 w-5 text-foreground dark:text-gray-300 group-hover:text-primary dark:group-hover:text-blue-400 transition-colors relative z-10" />
+                            
+                            {/* Notification badge with pulse animation */}
+                            <motion.span 
+                                className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-red-500 via-pink-500 to-red-500 dark:from-red-600 dark:via-pink-600 dark:to-red-600 text-xs font-bold text-white shadow-lg shadow-red-500/50 dark:shadow-red-600/50 relative z-10"
+                                animate={{
+                                    scale: [1, 1.1, 1],
+                                    boxShadow: [
+                                        "0 0 0 0 rgba(239, 68, 68, 0.7)",
+                                        "0 0 0 8px rgba(239, 68, 68, 0)",
+                                        "0 0 0 0 rgba(239, 68, 68, 0)",
+                                    ],
+                                }}
+                                transition={{
+                                    duration: 2,
+                                    repeat: Infinity,
+                                    ease: "easeOut",
+                                }}
+                            >
+                                3
+                            </motion.span>
+                        </motion.button>
 
                         {/* USER MENU / GET STARTED */}
                         {isLoading ? (
@@ -390,9 +467,9 @@ export function HeaderDark() {
                                 <DropdownMenuTrigger className="w-fit">
                                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                                         <div className="group relative">
-                                            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/30 to-cyan-500/30 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
+                                            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/30 to-blue-500/30 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
                                             <div className="relative flex items-center gap-3 rounded-2xl border border-white/10 dark:border-white/10 border-gray-300/50 bg-white/5 dark:bg-white/5 bg-gray-100/80 py-2 pl-3 pr-4 backdrop-blur-xl transition-all duration-300 group-hover:border-white/20 dark:group-hover:border-white/20 group-hover:border-gray-400/50 group-hover:bg-white/10 dark:group-hover:bg-white/10 group-hover:bg-gray-200/80">
-                                                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 via-violet-500 to-cyan-500 shadow-lg shadow-purple-500/30 flex items-center justify-center">
+                                                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 via-violet-500 to-blue-500 shadow-lg shadow-purple-500/30 flex items-center justify-center">
                                                     <UserMenuAvatar user={user} />
                                                 </div>
                                                 <div className="hidden sm:block text-left">
@@ -521,11 +598,35 @@ export function HeaderDark() {
                             <Home className="h-4 w-4" /> Home
                         </Link>
                         <Link
+                            href="/about"
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg"
+                        >
+                            About
+                        </Link>
+                        <Link
+                            href="/instructors"
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gradient-to-r hover:from-blue-500/10 hover:via-purple-500/10 hover:to-pink-500/10 dark:hover:bg-white/10 rounded-lg transition-all duration-300 relative group"
+                        >
+                            <Users className="w-4 h-4 text-blue-500 group-hover:text-purple-500 transition-colors" />
+                            <span className="relative z-10 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">
+                                Instructors
+                            </span>
+                        </Link>
+                        <Link
                             href="/courses"
                             onClick={() => setIsMenuOpen(false)}
                             className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg"
                         >
                             <GraduationCap className="h-4 w-4" /> Courses
+                        </Link>
+                        <Link
+                            href="/career"
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg"
+                        >
+                            Career
                         </Link>
                         <div className="space-y-2">
                             <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white">
@@ -544,13 +645,6 @@ export function HeaderDark() {
                                 ))}
                             </div>
                         </div>
-                        <Link
-                            href="/pricing"
-                            onClick={() => setIsMenuOpen(false)}
-                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg"
-                        >
-                            <DollarSign className="h-4 w-4" /> Pricing
-                        </Link>
                     </motion.nav>
                 )}
             </div>

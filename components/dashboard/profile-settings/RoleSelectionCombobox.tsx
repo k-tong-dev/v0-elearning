@@ -56,7 +56,7 @@ export function RoleSelectionCombobox({ charactor, onCharactorChange }: RoleSele
                     return (
                         <Chip
                             key={item.key}
-                            className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white font-medium"
+                            className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium"
                             avatar={IconComponent ? <Avatar icon={<IconComponent className="w-4 h-4" />} /> : undefined}
                         >
                             {item.data.label}

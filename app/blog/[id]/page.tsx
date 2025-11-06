@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link" // Import Link for navigation
-import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { Footer } from "@/components/ui/footers/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -813,7 +813,7 @@ Happy coding!
   if (isLoading) {
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
         </div>
     )
   }
@@ -821,7 +821,7 @@ Happy coding!
   if (!post) {
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-          <HeaderDark />
+          <HeaderUltra />
           <div className="container mx-auto px-4 py-8 pt-24 text-center">
             <h1 className="text-2xl font-bold mb-4">Post not found</h1>
             <Button onClick={() => router.back()}>Go Back</Button>
@@ -833,7 +833,7 @@ Happy coding!
 
   return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-        <HeaderDark />
+        <HeaderUltra />
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
           {/* Back Button */}
@@ -855,7 +855,7 @@ Happy coding!
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-3">
-              {/* Article HeaderDark */}
+              {/* Article HeaderUltra */}
               <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -894,7 +894,7 @@ Happy coding!
                 </div>
 
                 {/* Title */}
-                <h1 className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   {post.title}
                 </h1>
 

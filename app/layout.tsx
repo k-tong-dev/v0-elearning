@@ -14,6 +14,7 @@ import "@/styles/liquid-glass.css"
 
 import { Toaster } from "sonner"
 import { ChatWidget } from "@/components/chat-widget"
+import { ActivityTracker } from "@/components/ActivityTracker"
 
 
 export const metadata: Metadata = {
@@ -53,6 +54,7 @@ export default function RootLayout({
         <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange={false}>
             <AuthProvider>
+                <ActivityTracker />
                 <Toaster position="top-center" richColors/>
                 <AuthRedirector>
                     <CookieConsent/>

@@ -166,7 +166,7 @@ export function GoogleAuthButton({ onSuccess, onError, text = "signin_with", cla
 
             {(!isGoogleLoaded || !googleClientId || internalError) && (
                 <Button
-                    className="w-full h-12 bg-gradient-to-r from-cyan-500/10 via-emerald-500/10 to-cyan-500/10 hover:from-cyan-600/20 hover:via-emerald-600/20 hover:to-cyan-600/20 text-foreground transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/25 hover:scale-[1.02] text-lg font-semibold"
+                    className="w-full h-12 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 hover:from-blue-600/20 hover:via-purple-600/20 hover:to-blue-600/20 text-foreground transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-[1.02] text-lg font-semibold"
                     onClick={handleFallbackClick}
                     disabled={currentLoading}
                 >

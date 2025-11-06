@@ -16,12 +16,12 @@ export function FollowStatsDisplay({ followers, following }: FollowStatsDisplayP
             <CardContent className="p-4">
                 <div className="flex items-center justify-around">
                     <div className="text-center p-2 rounded-lg transition-colors">
-                        <div className="text-xl font-bold text-cyan-600">{followers}</div>
+                        <div className="text-xl font-bold text-blue-500">{followers}</div>
                         <div className="text-xs text-muted-foreground">Followers</div>
                     </div>
                     <Separator orientation="vertical" className="h-12" />
                     <div className="text-center p-2 rounded-lg transition-colors">
-                        <div className="text-xl font-bold text-emerald-600">{following}</div>
+                        <div className="text-xl font-bold text-purple-600">{following}</div>
                         <div className="text-xs text-muted-foreground">Following</div>
                     </div>
                 </div>

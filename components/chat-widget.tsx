@@ -271,7 +271,7 @@ export function ChatWidget() {
                                                 </span>
                                             </div>
                                             {msg.sender === "user" && (
-                                                <Avatar className="w-8 h-8 shrink-0 border border-border dark:border-cyan-500">
+                                                <Avatar className="w-8 h-8 shrink-0 border border-border dark:border-blue-500">
                                                     <AvatarFallback className="bg-none text-gray-400">
                                                         <User className="w-4 h-4" />
                                                     </AvatarFallback>

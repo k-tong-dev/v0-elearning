@@ -1,23 +1,19 @@
 "use client"
 
 import React from "react"
-import {motion} from "framer-motion"
-import {Card, CardContent, CardFooter, CardHeader} from "@/components/ui/card"
+import {Card} from "@/components/ui/card"
 import {Badge} from "@/components/ui/badge"
 import {Button} from "@heroui/react"
 import {
     Star,
     Clock,
     Users,
-    Heart,
     BookOpen,
     TrendingUp,
     Award,
     Play,
-    ChevronRight,
-    Sparkles
+    Sparkles,
 } from "lucide-react"
-import Link from "next/link"
 import Image from "next/image"
 
 interface CourseCardProps {
@@ -52,255 +48,168 @@ interface CourseCardProps {
 export function CourseCard({
                                course,
                                index = 0,
-                               onCourseClick,
-                               onToggleFavorite,
                                onEnrollClick,
-                               isFavorite = false
                            }: CourseCardProps) {
-    const handleCardClick = () => {
-        onCourseClick?.(course.id)
-    }
-
-    const handleFavoriteClick = (e: React.MouseEvent) => {
-        e.stopPropagation()
-        onToggleFavorite?.(course.id)
-    }
-
     const handleEnrollButtonClick = (e: React.MouseEvent) => {
         e.stopPropagation()
         onEnrollClick?.(course.id)
     }
 
+    const lessons = course.lectures || 30
+
     return (
-        <motion.div
-            initial={{opacity: 0, y: 20, scale: 0.95}}
-            animate={{opacity: 1, y: 0, scale: 1}}
-            transition={{
-                delay: 0.1 * (index % 4),
-                duration: 0.4,
-                ease: "easeOut"
-            }}
-            whileHover={{
-                y: -8,
-                scale: 1.02,
-                transition: {duration: 0.2}
-            }}
-            className="group h-full"
-        >
-            <Card
-                className="relative overflow-hidden h-full bg-gradient-to-br from-white/80 via-white/60 to-cyan-50/30
-              dark:from-gray-900/80 dark:via-gray-800/60 dark:to-cyan-900/20 dark:group-hover:border-cyan-800/50
-                backdrop-blur-xl border-0 shadow-xl hover:shadow-2xl transition-all duration-500
-                cursor-pointer py-0
-              group-hover:border-cyan-200/50 "
-                // onClick={handleCardClick}
-            >
-                {/* Animated background gradient */}
-                <div
-                    className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"/>
-
-                {/* Floating particles effect */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-4 right-4 w-2 h-2 bg-cyan-400/30 rounded-full animate-pulse"/>
-                    <div
-                        className="absolute top-8 right-8 w-1 h-1 bg-emerald-400/40 rounded-full animate-pulse delay-1000"/>
-                    <div
-                        className="absolute bottom-6 left-6 w-1.5 h-1.5 bg-cyan-300/20 rounded-full animate-pulse delay-2000"/>
+        <div className="group relative">
+            <Card className="relative overflow-visible border border-slate-200 dark:border-white/20 bg-gradient-to-br from-white/20 via-white/10 to-white/5 dark:from-white/10 dark:via-white/5 dark:to-white/[0.03] backdrop-blur-2xl shadow-lg dark:shadow-[0_8px_32px_0_rgba(255,255,255,0.1)] hover:shadow-xl dark:hover:shadow-[0_16px_48px_0_rgba(255,255,255,0.2)] hover:border-blue-400 dark:hover:border-white/40 transition-all duration-700 hover:-translate-y-2 rounded-2xl">
+                {/* Multiple layered glass effects */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-2xl" />
+                <div className="absolute inset-0 bg-gradient-to-tl from-pink-400/10 via-transparent to-purple-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-2xl" />
+                
+                {/* Shimmer effect */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 overflow-hidden rounded-2xl">
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />
                 </div>
-
-                {/* Status badges */}
-                {(course.trending || course.bestseller) && (
-                    <div className="absolute top-2 right-4 z-20 flex flex-col gap-2">
-                        {course.trending && (
-                            <motion.div
-                                initial={{scale: 0, rotate: -180}}
-                                animate={{scale: 1, rotate: 0}}
-                                transition={{delay: 0.2, type: "spring", stiffness: 200}}
-                            >
-                                <Badge
-                                    className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg border-0">
-                                    <TrendingUp className="w-3 h-3 mr-1"/>
-                                    Trending
-                                </Badge>
-                            </motion.div>
-                        )}
-                        {course.bestseller && (
-                            <motion.div
-                                initial={{scale: 0, rotate: 180}}
-                                animate={{scale: 1, rotate: 0}}
-                                transition={{delay: 0.3, type: "spring", stiffness: 200}}
-                            >
-                                <Badge
-                                    className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg border-0">
-                                    <Award className="w-3 h-3 mr-1"/>
-                                    Bestseller
-                                </Badge>
-                            </motion.div>
-                        )}
+                
+                {/* Trending badge - floating outside card */}
+                {course.trending && (
+                    <div className="absolute -top-3 -right-3 z-20 opacity-0 group-hover:opacity-100 group-hover:scale-100 scale-75 transition-all duration-500 delay-100">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full blur-md animate-pulse" />
+                            <div className="relative bg-gradient-to-br from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-full flex items-center gap-1 shadow-xl">
+                                <TrendingUp className="w-3.5 h-3.5" />
+                                <span className="text-xs font-semibold">Trending</span>
+                            </div>
+                        </div>
                     </div>
                 )}
-
-                <CardHeader className="p-0 relative">
-                    <div className="relative overflow-hidden">
-                        {/* Course image with enhanced hover effects */}
-                        <div className="relative aspect-video overflow-hidden">
+                
+                <div className="relative">
+                    {/* Image Section */}
+                    <div className="relative overflow-hidden rounded-t-2xl">
+                        <div className="aspect-[16/9] relative">
                             <Image
                                 src={course.image || "/placeholder.svg"}
                                 alt={course.title}
                                 fill
-                                className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                className="object-cover transform group-hover:scale-110 transition-transform duration-700"
                             />
-
-                            {/* Gradient overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"/>
-
-                            {/* Favorite button */}
-                            <Button
-                                size="sm"
-                                className="absolute min-w-0 top-4 left-4 bg-white/90 hover:bg-white text-gray-700 rounded-full p-2 shadow-lg backdrop-blur-sm border-0 z-10"
-                                onClick={handleFavoriteClick}
-                            >
-                                <Heart
-                                    className={`w-4 h-4 transition-all duration-300 ${
-                                        isFavorite
-                                            ? "fill-red-500 text-red-500 scale-110"
-                                            : "hover:scale-110"
-                                    }`}
-                                />
-                            </Button>
-
-                            {/* Level and discount badges */}
-                            <div className="absolute bottom-4 left-4 flex gap-2">
-                                <Badge
-                                    className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white font-semibold px-3 py-1.5 rounded-full shadow-lg border-0">
+                            
+                            {/* Multi-layer gradient overlays */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-transparent to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                            
+                            {/* Floating badges container */}
+                            <div className="absolute top-4 left-4 right-4 flex items-start justify-between gap-2">
+                                <Badge className="bg-gradient-to-r from-white/25 to-white/15 backdrop-blur-xl border border-white/40 text-white hover:from-white/35 hover:to-white/25 shadow-lg transform hover:scale-105 transition-all duration-300">
+                                    <Sparkles className="w-3 h-3 mr-1" />
+                                    {course.category}
+                                </Badge>
+                                <Badge className="bg-gradient-to-r from-blue-500/30 to-purple-500/30 backdrop-blur-xl border border-blue-400/40 text-white hover:from-blue-500/40 hover:to-purple-500/40 shadow-lg transform hover:scale-105 transition-all duration-300">
                                     {course.level}
                                 </Badge>
-                                {course.discount && (
-                                    <Badge
-                                        className="bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold px-3 py-1.5 rounded-full shadow-lg border-0">
-                                        {course.discount}
+                            </div>
+
+                            {/* Advanced play button with multiple rings */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500">
+                                <div className="relative">
+                                    {/* Pulsing rings */}
+                                    <div className="absolute inset-0 w-24 h-24 -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
+                                        <div className="absolute inset-0 rounded-full bg-white/20 animate-ping" />
+                                        <div className="absolute inset-0 rounded-full bg-white/10 animate-pulse" />
+                                    </div>
+                                    
+                                    {/* Main button */}
+                                    <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-white/40 to-white/20 backdrop-blur-xl border-2 border-white/50 flex items-center justify-center transform group-hover:scale-110 transition-all duration-500 shadow-2xl cursor-pointer">
+                                        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400/30 to-purple-400/30 animate-pulse" />
+                                        <Play className="w-9 h-9 text-white ml-1 relative z-10" fill="white" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Progress indicator */}
+                            <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/10 backdrop-blur-sm">
+                                <div className="h-full w-2/3 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full shadow-lg shadow-purple-500/50" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Content Section */}
+                    <div className="p-6 space-y-4">
+                        {/* Title with gradient hover */}
+                        <h3 className="text-slate-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+                            {course.title}
+                        </h3>
+
+                        {/* Instructor with icon */}
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
+                                <Award className="w-4 h-4" />
+                            </div>
+                            <p className="text-slate-600 dark:text-gray-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors duration-300">
+                                {course.educator}
+                            </p>
+                        </div>
+
+                        {/* Enhanced stats grid */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-slate-50 dark:bg-white/5 backdrop-blur-sm border border-slate-200 dark:border-white/10 rounded-xl p-3 group-hover:bg-slate-100 dark:group-hover:bg-white/10 group-hover:border-blue-400 dark:group-hover:border-white/20 transition-all duration-300">
+                                <div className="flex items-center gap-2 text-slate-600 dark:text-white/70 mb-1">
+                                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                    <span className="font-semibold text-slate-900 dark:text-white">{course.rating}</span>
+                                </div>
+                                <div className="text-xs text-slate-500 dark:text-white/50">{Math.floor(course.rating * 10)} reviews</div>
+                            </div>
+                            
+                            <div className="bg-slate-50 dark:bg-white/5 backdrop-blur-sm border border-slate-200 dark:border-white/10 rounded-xl p-3 group-hover:bg-slate-100 dark:group-hover:bg-white/10 group-hover:border-blue-400 dark:group-hover:border-white/20 transition-all duration-300">
+                                <div className="flex items-center gap-2 text-slate-600 dark:text-white/70 mb-1">
+                                    <Users className="w-4 h-4" />
+                                    <span className="font-semibold text-slate-900 dark:text-white">{(course.students / 1000).toFixed(1)}k</span>
+                                </div>
+                                <div className="text-xs text-slate-500 dark:text-white/50">students</div>
+                            </div>
+                        </div>
+
+                        {/* Course details with modern design */}
+                        <div className="flex items-center gap-3 py-4 border-y border-slate-200 dark:border-white/10">
+                            <div className="flex items-center gap-1.5 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white transition-colors group/item">
+                                <div className="p-1.5 bg-slate-100 dark:bg-white/10 rounded-lg group-hover/item:bg-blue-50 dark:group-hover/item:bg-white/20 transition-colors">
+                                    <Clock className="w-3.5 h-3.5" />
+                                </div>
+                                <span>{course.duration}</span>
+                            </div>
+                            <div className="w-px h-4 bg-slate-300 dark:bg-white/20" />
+                            <div className="flex items-center gap-1.5 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white transition-colors group/item">
+                                <div className="p-1.5 bg-slate-100 dark:bg-white/10 rounded-lg group-hover/item:bg-blue-50 dark:group-hover/item:bg-white/20 transition-colors">
+                                    <BookOpen className="w-3.5 h-3.5" />
+                                </div>
+                                <span>{lessons} lessons</span>
+                            </div>
+                        </div>
+
+                        {/* Enhanced footer with gradient pricing */}
+                        <div className="flex items-center justify-between pt-2">
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <div className="text-slate-400 dark:text-white/40 line-through">${(parseFloat(course.price.replace('$', '')) * 1.5).toFixed(0)}</div>
+                                    <Badge className="bg-green-500/20 border-green-400/30 text-green-700 dark:text-green-300 px-2 py-0.5">
+                                        Save 40%
                                     </Badge>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </CardHeader>
-
-                <CardContent className="p-6 space-y-4">
-                    {/* Category and educator */}
-                    <div className="flex items-center justify-between">
-                        <Badge
-                            variant="outline"
-                            className="text-xs font-medium border-cyan-200/50 text-cyan-700 dark:border-cyan-800/50 dark:text-cyan-300 bg-cyan-50/50 dark:bg-cyan-900/20"
-                        >
-                            {course.category}
-                        </Badge>
-                        <Link
-                            href={`/users/${course.educatorId}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-xs text-muted-foreground font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-200 flex items-center gap-1"
-                        >
-                            by {course.educator}
-                            <ChevronRight className="w-3 h-3"/>
-                        </Link>
-                    </div>
-
-                    {/* Course title */}
-                    <h3 className="text-xl font-bold leading-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-300 line-clamp-2">
-                        {course.title}
-                    </h3>
-
-                    {/* Course description */}
-                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
-                        {course.description}
-                    </p>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-2">
-                        {course.tags.slice(0, 3).map((tag, tagIndex) => (
-                            <motion.div
-                                key={tag}
-                                initial={{opacity: 0, scale: 0.8}}
-                                animate={{opacity: 1, scale: 1}}
-                                transition={{delay: 0.1 * tagIndex}}
-                            >
-                                <Badge
-                                    variant="secondary"
-                                    className="text-xs bg-gradient-to-r from-cyan-50 to-emerald-50 dark:from-cyan-900/30 dark:to-emerald-900/30 text-cyan-700 dark:text-cyan-300 border-cyan-200/50 dark:border-cyan-800/50 hover:scale-105 transition-transform duration-200"
-                                >
-                                    {tag}
-                                </Badge>
-                            </motion.div>
-                        ))}
-                    </div>
-
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <div className="flex items-center">
-                                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400"/>
-                                <span className="ml-1 font-semibold text-foreground">{course.rating}</span>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Users className="w-4 h-4"/>
-                            <span className="font-medium">{course.students.toLocaleString()}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Clock className="w-4 h-4"/>
-                            <span className="font-medium">{course.duration}</span>
-                        </div>
-                    </div>
-                </CardContent>
-
-                <CardFooter className="p-6 pt-0">
-                    <div className="flex flex-col gap-4 w-full">
-                        {/* Price */}
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <span
-                                    className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+                                </div>
+                                <div className="text-slate-900 dark:text-white font-bold">
                                     {course.price}
-                                </span>
-                                <span className="text-sm text-muted-foreground line-through">
-                                    {course.originalPrice}
-                                </span>
+                                </div>
                             </div>
-                        </div>
-
-                        {/* Enroll button */}
-                        <motion.div
-                            whileHover={{scale: 1.02}}
-                            whileTap={{scale: 0.98}}
-                        >
-                            <Button
-                                size={"md"}
-                                className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600
-                                hover:to-emerald-600 text-white font-normal py-3
-                                rounded-xl shadow-lg hover:shadow-xl hover:shadow-cyan-500/25
-                                transition-all duration-300 border-0 group/btn"
+                            
+                            <Button 
+                                className="relative overflow-hidden bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 border-0 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-500 hover:scale-105 group/btn"
                                 onClick={handleEnrollButtonClick}
                             >
-                                <BookOpen
-                                    className="w-4 h-4 mr-2 group-hover/btn:rotate-12 transition-transform duration-300"/>
-                                Enroll Now
-                                <ChevronRight
-                                    className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform duration-300"/>
+                                <span className="relative z-10">Enroll Now</span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500" />
                             </Button>
-                        </motion.div>
+                        </div>
                     </div>
-                </CardFooter>
-
-                {/* Subtle border glow effect */}
-                <div
-                    className="absolute inset-0 rounded-lg bg-gradient-to-r from-cyan-500/20 via-emerald-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                    style={{
-                        background: 'linear-gradient(45deg, transparent, rgba(6, 182, 212, 0.1), transparent, rgba(16, 185, 129, 0.1), transparent)',
-                        backgroundSize: '200% 200%',
-                        animation: 'gradient 3s ease infinite'
-                    }}/>
+                </div>
             </Card>
-        </motion.div>
+        </div>
     )
 }

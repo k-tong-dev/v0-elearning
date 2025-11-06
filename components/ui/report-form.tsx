@@ -131,7 +131,7 @@ export default function ReportForm({ title, isOpen, onOpenChange, onSubmit }: Re
                                             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                                                 reportType === type.value
                                                     ? "border-primary bg-primary/10"
-                                                    : "border-border hover:bg-gray-200 dark:hover:bg-cyan-100/10"
+                                                    : "border-border hover:bg-gray-200 dark:hover:bg-blue-500/10"
                                             }`}
                                             htmlFor={type.value}
                                         >

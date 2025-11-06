@@ -178,4 +178,5 @@ export interface User {
         publishedAt?: string | null;
         name: string;
     }>;
+    friend_limit?: number; // Friend limit for subscription feature
 }

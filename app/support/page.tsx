@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { Footer } from "@/components/ui/footers/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -143,7 +143,7 @@ export default function SupportPage() {
       name: "Privacy & Security",
       description: "Data protection and security",
       icon: Shield,
-      color: "bg-cyan-500",
+      color: "bg-blue-500",
       articleCount: 9
     }
   ]
@@ -272,7 +272,7 @@ export default function SupportPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-      <HeaderDark />
+      <HeaderUltra />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         {/* Hero Section */}
@@ -281,7 +281,7 @@ export default function SupportPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Help & Support
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -321,7 +321,7 @@ export default function SupportPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Get instant help from our support team
                 </p>
-                <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600">
+                <Button className="w-full bg-gradient-to-r from-green-500 to-purple-500 hover:from-green-600 hover:to-purple-600">
                   Start Chat
                 </Button>
               </CardContent>
@@ -590,7 +590,7 @@ export default function SupportPage() {
                   <CardTitle className="text-lg">Need More Help?</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600">
+                  <Button className="w-full bg-gradient-to-r from-green-500 to-purple-500 hover:from-green-600 hover:to-purple-600">
                     <MessageCircle className="w-4 h-4 mr-2" />
                     Live Chat
                   </Button>
@@ -782,7 +782,7 @@ export default function SupportPage() {
                 <Button 
                   onClick={handleTicketSubmit}
                   disabled={!ticketData.subject || !ticketData.description || !ticketData.email}
-                  className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                 >
                   <Send className="w-4 h-4 mr-2" />
                   Submit Ticket

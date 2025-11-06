@@ -165,7 +165,7 @@ export function ConnectedDevices() {
             <Card className="liquid-glass-card">
                 <CardContent className="p-6">
                     <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                     </div>
                 </CardContent>
             </Card>
@@ -176,7 +176,7 @@ export function ConnectedDevices() {
         <Card className="liquid-glass-card">
             <CardHeader>
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-lg">
+                    <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
                         <Smartphone className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -203,7 +203,7 @@ export function ConnectedDevices() {
                             <div className="flex items-center gap-4 flex-1">
                                 <div className={`p-3 rounded-lg ${
                                     device.isCurrent 
-                                        ? "bg-gradient-to-r from-cyan-500 to-emerald-500 text-white" 
+                                        ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white" 
                                         : "bg-muted text-foreground"
                                 }`}>
                                     {getDeviceIcon(device.type)}
@@ -212,7 +212,7 @@ export function ConnectedDevices() {
                                     <div className="flex items-center gap-2 mb-1">
                                         <p className="font-semibold text-sm">{device.name}</p>
                                         {device.isCurrent && (
-                                            <Badge variant="default" className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white text-xs">
+                                            <Badge variant="default" className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs">
                                                 <CheckCircle className="w-3 h-3 mr-1" /> Current
                                             </Badge>
                                         )}

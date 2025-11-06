@@ -68,7 +68,7 @@ export function AvatarDockIcon({ children, className, mouseX, onClick, label, ac
             onClick={onClick}
             className={cn(
                 "relative flex items-center justify-center rounded-xl bg-white/20 shadow-md transition-colors duration-200",
-                active ? "bg-gradient-to-r from-cyan-500 to-emerald-500 shadow-lg shadow-cyan-500/25" : "hover:bg-gray-200/40",
+                active ? "bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg shadow-blue-500/25" : "hover:bg-gray-200/40",
                 className
             )}
         >

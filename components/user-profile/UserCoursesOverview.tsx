@@ -31,7 +31,7 @@ export function UserCoursesOverview({ coursesEnrolled, coursesCreated, userRole 
                         <div className="text-center py-8">
                             <div className="text-4xl font-bold text-blue-500 mb-2">{coursesEnrolled}</div>
                             <p className="text-muted-foreground text-lg">Active Enrollments</p>
-                            <Button className="mt-4 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600" onClick={() => router.push('/courses')}>View All Courses</Button>
+                            <Button className="mt-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600" onClick={() => router.push('/courses')}>View All Courses</Button>
                         </div>
                     </CardContent>
                 </Card>

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import { useRouter } from "next/navigation"
-import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { Footer } from "@/components/ui/footers/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -122,7 +122,7 @@ export default function ForumPage() {
             name: "Announcements",
             description: "Official announcements and updates",
             postCount: 12,
-            color: "bg-cyan-500"
+            color: "bg-blue-500"
         }
     ]
 
@@ -267,14 +267,14 @@ export default function ForumPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-            <HeaderDark/>
+            <HeaderUltra/>
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
-                {/* HeaderDark Section */}
+                {/* HeaderUltra Section */}
                 <div className="mb-8" data-aos="fade-up">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
-                            <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+                            <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                 Community Forum
                             </h1>
                             <p className="text-muted-foreground">
@@ -285,7 +285,7 @@ export default function ForumPage() {
                         <Dialog open={isNewPostOpen} onOpenChange={setIsNewPostOpen}>
                             <DialogTrigger asChild>
                                 <Button
-                                    className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white">
+                                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white">
                                     <Plus className="w-4 h-4 mr-2"/>
                                     New Discussion
                                 </Button>
@@ -456,7 +456,7 @@ export default function ForumPage() {
                                                     <div className="flex items-start justify-between">
                                                         <div className="space-y-1">
                                                             <div className="flex items-center gap-2">
-                                                                <Pin className="w-4 h-4 text-cyan-500"/>
+                                                                <Pin className="w-4 h-4 text-blue-500"/>
                                                                 <h3 className="font-semibold hover:text-primary cursor-pointer" onClick={() => handlePostClick(post.id)}>
                                                                     {post.title}
                                                                 </h3>

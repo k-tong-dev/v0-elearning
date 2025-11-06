@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect } from "react"
-import { HeaderDark } from "@/components/ui/headers/HeaderDark"
-import { HeroSection } from "@/components/hero-section"
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
+import { HeroSectionModern } from "@/components/hero-section-modern"
+import { FreeLessonsSection } from "@/components/free-lessons-section"
 import { CoursesSection } from "@/components/courses/courses-section"
 import { TestimonialsSection } from "@/components/testimonials-section"
 import { FAQSection } from "@/components/faq-section"
@@ -30,10 +31,13 @@ export default function HomePage() {
     return (
         <main className="min-h-screen">
             <div>
-                <HeaderDark />
+                <HeaderUltra />
             </div>
             <div data-aos="fade-up">
-                <HeroSection />
+                <HeroSectionModern />
+            </div>
+            <div data-aos="fade-up">
+                <FreeLessonsSection />
             </div>
             <div data-aos="fade-up">
                 <HeroCompany />

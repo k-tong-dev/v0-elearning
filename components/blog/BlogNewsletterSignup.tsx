@@ -14,7 +14,7 @@ export function BlogNewsletterSignup() {
             transition={{ delay: 0.6 }}
             className="mt-16"
         >
-            <Card className="bg-gradient-to-r from-cyan-500/10 to-emerald-500/10">
+            <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10">
                 <CardContent className="p-8 text-center">
                     <h3 className="text-2xl font-bold mb-4">Stay Updated</h3>
                     <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
@@ -27,7 +27,7 @@ export function BlogNewsletterSignup() {
                             placeholder="Enter your email..."
                             className="flex-1"
                         />
-                        <Button className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600">
+                        <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
                             Subscribe
                         </Button>
                     </div>
