@@ -235,16 +235,20 @@ export function InstructorInvitationsPanel({
             let invitationGroupId: string | number | null = null;
             try {
                 const invitationResponse = await strapiPublic.get(
-                    `/api/instructor-invitations/${invitationId}?populate=*`
+                    `/api/user-request-requests/${invitationId}?populate=*`
                 );
-                const invitation = invitationResponse.data.data;
-                
-                if (invitation?.instructor_group) {
-                    // Extract group ID (handle both object and ID)
-                    if (typeof invitation.instructor_group === 'object') {
-                        invitationGroupId = invitation.instructor_group.documentId || invitation.instructor_group.id;
+                const invitationData = invitationResponse.data?.data;
+
+                const attributes = invitationData?.attributes || {};
+                const userGroupRelation = attributes.user_group_group || invitationData?.user_group_group;
+
+                if (userGroupRelation) {
+                    if (userGroupRelation.data) {
+                        invitationGroupId = userGroupRelation.data.attributes?.documentId || userGroupRelation.data.id;
+                    } else if (typeof userGroupRelation === "object") {
+                        invitationGroupId = userGroupRelation.documentId || userGroupRelation.id;
                     } else {
-                        invitationGroupId = invitation.instructor_group;
+                        invitationGroupId = userGroupRelation;
                     }
                 }
             } catch (error) {

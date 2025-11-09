@@ -11,8 +11,9 @@ import "./globals.css"
 import "./fonts.css"
 import "@/styles/glass.style.css"
 import "@/styles/liquid-glass.css"
+import "@/styles/ultra-liquid-toast.css"
 
-import { Toaster } from "sonner"
+import { UltraLiquidToaster } from "@/components/ui/ultra-liquid-toast"
 import { ChatWidget } from "@/components/chat-widget"
 import { ActivityTracker } from "@/components/ActivityTracker"
 
@@ -51,11 +52,14 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
+        <head>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossOrigin="anonymous" referrerPolicy="no-referrer" />
+        </head>
         <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange={false}>
             <AuthProvider>
                 <ActivityTracker />
-                <Toaster position="top-center" richColors/>
+                <UltraLiquidToaster />
                 <AuthRedirector>
                     <CookieConsent/>
                     {children}

@@ -21,6 +21,8 @@ import { DashboardFriends } from "@/components/dashboard/DashboardFriends"
 import { User as StrapiUser } from "@/types/user"
 import { getUserSubscription } from "@/integrations/strapi/subscription"
 import {BookOpen, DollarSign, MessageCircle, Star, ThumbsUp, Users} from "lucide-react"
+import { FreePlanAgreementPopup } from "@/components/dashboard/FreePlanAgreementPopup"
+import { useFreePlanCheck } from "@/hooks/use-free-plan-check"
 
 // Interfaces for mock data (keeping them here for context, but ideally they'd be in a types file)
 interface DashboardStats {
@@ -86,6 +88,14 @@ function DashboardContent() {
     const [selectedTab, setSelectedTab] = useState(initialTab)
     const [showCreateCourseForm, setShowCreateCourseForm] = useState(initialCreateCourse && initialTab === 'my-courses')
     const [isNotificationSidebarOpen, setIsNotificationSidebarOpen] = useState(false)
+    
+    // Free plan check - runs 5 seconds after dashboard load
+    const { missingPlans, hasMissingPlans } = useFreePlanCheck({
+        userId: user?.id,
+        delay: 5000,
+        enabled: !!user?.id && !authLoading,
+    })
+    const [showFreePlanPopup, setShowFreePlanPopup] = useState(false)
 
     // Listen for notification button clicks from header
     useEffect(() => {
@@ -135,6 +145,13 @@ function DashboardContent() {
             setShowCreateCourseForm(create && tab === 'my-courses')
         }
     }, [searchParams, selectedTab])
+
+    // Show free plan popup when missing plans are found
+    useEffect(() => {
+        if (hasMissingPlans && missingPlans.length > 0) {
+            setShowFreePlanPopup(true)
+        }
+    }, [hasMissingPlans, missingPlans])
 
     // Mock data for dashboard
     const stats: DashboardStats = {
@@ -451,6 +468,18 @@ function DashboardContent() {
                     </motion.div>
                 </div>
             </main>
+
+            {/* Free Plan Agreement Popup */}
+            <FreePlanAgreementPopup
+                isOpen={showFreePlanPopup}
+                plans={missingPlans}
+                onClose={() => setShowFreePlanPopup(false)}
+                onSuccess={() => {
+                    setShowFreePlanPopup(false)
+                    // Refresh user data
+                    window.location.reload()
+                }}
+            />
         </div>
     )
 }

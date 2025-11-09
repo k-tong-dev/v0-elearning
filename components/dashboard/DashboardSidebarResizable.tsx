@@ -159,14 +159,7 @@ export function DashboardSidebarResizable({
     }, [width])
 
     const handleTabChange = (tab: string) => {
-        const isMonetizationLocked = currentUser?.monetization === "locked"
-        const isInstructorTab = tab === "instructors"
-
-        if (isMonetizationLocked && isInstructorTab) {
-            toast.error("Instructor features are locked. Please contact support to unlock monetization.")
-            return
-        }
-
+        // Removed Pro plan restriction - all users can access Instructors
         // Animate indicator to new position
         setActiveIndicator(tab)
         onTabChange(tab)
@@ -189,14 +182,19 @@ export function DashboardSidebarResizable({
         <>
             {/* Mobile Menu Button */}
             <div className="lg:hidden fixed top-4 left-4 z-50">
+                <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                >
                 <Button
                     variant="outline"
                     size="icon"
-                    className="rounded-lg"
+                        className="liquid-glass-button rounded-xl border-white/20 shadow-lg backdrop-blur-xl"
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 >
-                    {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                        <Menu className="w-5 h-5" />
                 </Button>
+                </motion.div>
             </div>
 
             {/* Mobile Sidebar Overlay */}
@@ -207,6 +205,7 @@ export function DashboardSidebarResizable({
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
                             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
                             onClick={() => setIsMobileMenuOpen(false)}
                         />
@@ -322,9 +321,7 @@ export function DashboardSidebarResizable({
                                 {navItems.map((item, idx) => {
                                     const IconComponent = item.icon
                                     const isActive = selectedTab === item.value
-                                    const isMonetizationLocked = currentUser?.monetization === "locked"
-                                    const isInstructorItem = item.value === "instructors"
-                                    const isDisabled = isMonetizationLocked && isInstructorItem
+                                    // Removed Pro plan restriction - all users can access Instructors
 
                                     return (
                                         <motion.div
@@ -335,7 +332,7 @@ export function DashboardSidebarResizable({
                                             className="relative"
                                         >
                                             {/* Active Indicator */}
-                                            {isActive && !isDisabled && (
+                                            {isActive && (
                                                 <motion.div
                                                     layoutId="activeIndicator"
                                                     className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-purple-500 rounded-r-full z-10"
@@ -351,13 +348,10 @@ export function DashboardSidebarResizable({
                                             <Button
                                                 variant="ghost"
                                                 onClick={() => handleTabChange(item.value)}
-                                                disabled={isDisabled}
                                                 className={cn(
                                                     "w-full rounded-lg py-2.5 h-auto transition-all duration-200 relative",
-                                                    isActive && !isDisabled
+                                                    isActive
                                                         ? "bg-primary/10 text-primary border border-primary/20"
-                                                        : isDisabled
-                                                        ? "text-muted-foreground/50 opacity-50 cursor-not-allowed"
                                                         : "text-muted-foreground hover:bg-accent hover:text-foreground",
                                                     showLabels ? "px-3 justify-start" : "px-2 justify-center"
                                                 )}
@@ -365,12 +359,6 @@ export function DashboardSidebarResizable({
                                                 <IconComponent className={cn("w-5 h-5", showLabels && "mr-3")} />
                                                 {showLabels && (
                                                     <span className="flex-1 text-left">{item.label}</span>
-                                                )}
-                                                {isDisabled && showLabels && (
-                                                    <Badge variant="outline" className="ml-auto text-xs">
-                                                        <Crown className="w-3 h-3 mr-1" />
-                                                        Pro
-                                                    </Badge>
                                                 )}
                                             </Button>
                                         </motion.div>
@@ -507,9 +495,7 @@ export function DashboardSidebarResizable({
                     {navItems.map((item, idx) => {
                         const IconComponent = item.icon
                         const isActive = selectedTab === item.value
-                        const isMonetizationLocked = currentUser?.monetization === "locked"
-                        const isInstructorItem = item.value === "instructors"
-                        const isDisabled = isMonetizationLocked && isInstructorItem
+                        // Removed Pro plan restriction - all users can access Instructors
 
                         return (
                             <Button
@@ -519,25 +505,16 @@ export function DashboardSidebarResizable({
                                     handleTabChange(item.value)
                                     setIsMobileMenuOpen(false)
                                 }}
-                                disabled={isDisabled}
                                 className={cn(
                                     "w-full rounded-lg py-2.5 h-auto transition-all duration-200",
-                                    isActive && !isDisabled
+                                    isActive
                                         ? "bg-primary/10 text-primary border border-primary/20"
-                                        : isDisabled
-                                        ? "text-muted-foreground/50 opacity-50 cursor-not-allowed"
                                         : "text-muted-foreground hover:bg-accent hover:text-foreground",
                                     "px-3 justify-start"
                                 )}
                             >
                                 <IconComponent className="w-5 h-5 mr-3" />
                                 <span className="flex-1 text-left">{item.label}</span>
-                                {isDisabled && (
-                                    <Badge variant="outline" className="ml-auto text-xs">
-                                        <Crown className="w-3 h-3 mr-1" />
-                                        Pro
-                                    </Badge>
-                                )}
                             </Button>
                         )
                     })}

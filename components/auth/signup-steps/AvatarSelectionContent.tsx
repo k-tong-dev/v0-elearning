@@ -91,7 +91,7 @@ export function AvatarSelectionContent({ currentAvatarUrl, onSave, onClose, isLo
                 <div className="relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
                     <Avatar className="relative w-36 h-36 border-4 border-white/10 shadow-2xl rounded-3xl">
-                        <AvatarImage src={previewUrl || defaultAvatar} alt="Avatar Preview" className="object-cover" />
+                        <AvatarImage src={previewUrl ?? defaultAvatar.src} alt="Avatar Preview" className="object-cover" />
                         <AvatarFallback className="text-5xl font-bold bg-gradient-to-br from-blue-500/20 to-purple-500/20">
                             <ImageIcon className="w-16 h-16 text-muted-foreground" />
                         </AvatarFallback>

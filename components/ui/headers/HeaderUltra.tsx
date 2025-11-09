@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { AdvancedSearchModal } from "@/components/ui/search/AdvancedSearchModal"
 
 export function HeaderUltra() {
     const router = useRouter()
@@ -54,7 +55,6 @@ export function HeaderUltra() {
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
     const [activeHover, setActiveHover] = useState<string | null>(null)
     const headerRef = useRef<HTMLDivElement>(null)
-    const searchInputRef = useRef<HTMLInputElement>(null)
 
     // Mouse tracking for interactive effects
     useEffect(() => {
@@ -93,12 +93,6 @@ export function HeaderUltra() {
         return () => window.removeEventListener("keydown", handleKeyDown)
     }, [])
 
-    // Focus search input when opened
-    useEffect(() => {
-        if (isSearchOpen && searchInputRef.current) {
-            setTimeout(() => searchInputRef.current?.focus(), 100)
-        }
-    }, [isSearchOpen])
 
     const handleGetStartedClick = () => {
         router.push("/auth/start")
@@ -328,29 +322,50 @@ export function HeaderUltra() {
                                         >
                                             {/* Hover background - only covers text area, no blur to prevent overflow */}
                                             <motion.div
-                                                className={`absolute w-full left-0 right-2 top-2 bottom-2 bg-gradient-to-r ${item.gradient} rounded-md opacity-0 group-hover:opacity-8 dark:group-hover:opacity-12`}
+                                                className={`absolute left-2 right-2 top-2 bottom-2 bg-gradient-to-r ${item.gradient} rounded-md`}
+                                                initial={{ opacity: 0 }}
                                                 animate={{
                                                     opacity: isActive ? 0.12 : 0,
                                                 }}
-                                                transition={{ duration: 0.3 }}
+                                                transition={{ 
+                                                    duration: 0.4,
+                                                    ease: [0.4, 0, 0.2, 1] // cubic-bezier for smooth easing
+                                                }}
                                             />
 
                                             {/* Content */}
-                                            <span className="relative z-10 flex items-center gap-2 text-sm font-semibold text-foreground group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 dark:group-hover:from-blue-400 dark:group-hover:to-purple-400 transition-all duration-300">
-                                                {Icon && <Icon className="w-4 h-4" />}
-                                                {item.label}
-                                            </span>
+                                            <motion.span 
+                                                className="relative z-10 flex items-center gap-2 text-sm font-semibold"
+                                                animate={{
+                                                    color: isActive ? undefined : undefined,
+                                                }}
+                                                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                                            >
+                                                {Icon && (
+                                                    <motion.div
+                                                        animate={{
+                                                            scale: isActive ? 1.1 : 1,
+                                                        }}
+                                                        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                                                    >
+                                                        <Icon className="w-4 h-4" />
+                                                    </motion.div>
+                                                )}
+                                                <span className={isActive ? "bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400" : "text-foreground"}>
+                                                    {item.label}
+                                                </span>
+                                            </motion.span>
 
                                             {/* Bottom indicator - horizontal bar at bottom */}
                                             <motion.div
                                                 className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-gradient-to-r ${item.gradient} rounded-full`}
-                                                style={{
+                                                animate={{
                                                     width: isActive ? "80%" : "0%",
                                                 }}
-                                                animate={{
-                                                    width: isActive ? "100%" : "0%",
+                                                transition={{ 
+                                                    duration: 0.4,
+                                                    ease: [0.4, 0, 0.2, 1] // smooth cubic-bezier easing
                                                 }}
-                                                transition={{ duration: 0.3 }}
                                             />
 
                                             {/* Special sparkle effect for special items */}
@@ -440,9 +455,16 @@ export function HeaderUltra() {
                             {/* Search Button */}
                             <motion.button
                                 onClick={() => setIsSearchOpen(true)}
-                                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl border border-border/50 bg-background/50 backdrop-blur-xl hover:bg-background/80 transition-all duration-300 relative overflow-hidden group"
-                                whileHover={{ scale: 1.05 }}
+                                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl border border-border/50 bg-background/50 backdrop-blur-xl relative overflow-hidden group"
+                                whileHover={{ 
+                                    scale: 1.05,
+                                    // backgroundColor: "rgba(var(--background), 0.8)"
+                                }}
                                 whileTap={{ scale: 0.95 }}
+                                transition={{ 
+                                    duration: 0.3,
+                                    ease: [0.4, 0, 0.2, 1]
+                                }}
                             >
                                 <Search className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                                 <span className="text-sm text-muted-foreground group-hover:text-foreground">Search...</span>
@@ -463,9 +485,17 @@ export function HeaderUltra() {
                                         window.dispatchEvent(new CustomEvent("openNotificationSidebar"))
                                     }
                                 }}
-                                className="relative p-2.5 rounded-xl border border-border/50 bg-background/50 backdrop-blur-xl hover:bg-background/80 transition-all duration-300 group"
-                                whileHover={{ scale: 1.1, rotate: 5 }}
+                                className="relative p-2.5 rounded-xl border border-border/50 bg-background/50 backdrop-blur-xl group"
+                                whileHover={{ 
+                                    scale: 1.1, 
+                                    rotate: 5,
+                                    // backgroundColor: "rgba(var(--background), 0.8)"
+                                }}
                                 whileTap={{ scale: 0.9 }}
+                                transition={{ 
+                                    duration: 0.3,
+                                    ease: [0.4, 0, 0.2, 1]
+                                }}
                             >
                                 <Bell className="w-5 h-5 text-foreground group-hover:text-blue-500 transition-colors" />
                                 <motion.span
@@ -692,42 +722,11 @@ export function HeaderUltra() {
                 </div>
             </header>
 
-            {/* Search Modal */}
-            <AnimatePresence>
-                {isSearchOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-start justify-center pt-32 px-4"
-                        onClick={() => setIsSearchOpen(false)}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0, y: -20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.9, opacity: 0, y: -20 }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-full max-w-2xl bg-background/95 backdrop-blur-2xl rounded-2xl border border-border shadow-2xl p-6"
-                        >
-                            <div className="flex items-center gap-3 mb-4">
-                                <Search className="w-5 h-5 text-muted-foreground" />
-                                <input
-                                    ref={searchInputRef}
-                                    type="text"
-                                    placeholder="Search courses, instructors, topics..."
-                                    className="flex-1 bg-transparent text-lg outline-none text-foreground placeholder:text-muted-foreground"
-                                />
-                                <kbd className="hidden sm:inline-flex h-6 items-center gap-1 rounded border border-border bg-muted px-2 text-xs font-medium text-muted-foreground">
-                                    ESC
-                                </kbd>
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                                Start typing to search...
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {/* Advanced Search Modal */}
+            <AdvancedSearchModal
+                isOpen={isSearchOpen}
+                onClose={() => setIsSearchOpen(false)}
+            />
         </>
     )
 }

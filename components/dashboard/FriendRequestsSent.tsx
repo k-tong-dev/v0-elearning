@@ -33,7 +33,7 @@ export function FriendRequestsSent() {
         try {
             const requests = await getSentFriendRequests(user.id)
             // Filter to show only pending requests
-            setSentRequests(requests.filter(req => req.request_status === 'pending'))
+            setSentRequests(requests.filter(req => req.friend_status === 'pending'))
         } catch (error) {
             console.error("Error loading sent friend requests:", error)
             toast.error("Failed to load friend requests")

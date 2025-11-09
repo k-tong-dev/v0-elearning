@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Edit, Trash2, Crown, Users, DollarSign, CheckCircle, XCircle, UserPlus, Bell, ExternalLink, FolderOpen, ArrowLeft, Search, MoreVertical, Lock, Users2 } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Crown, Users, DollarSign, CheckCircle, XCircle, UserPlus, Bell, ExternalLink, FolderOpen, ArrowLeft, Search, MoreVertical, Lock, Users2, Edit3 } from "lucide-react";
 import { QuantumAvatar } from "@/components/ui/quantum-avatar";
 import { getInstructors, deleteInstructor, Instructor, getInstructor } from "@/integrations/strapi/instructor";
 import { getCollaboratingInstructors, getPendingInvitationsCount } from "@/integrations/strapi/instructor-invitation";
 import { getUserSubscription, calculateSubscriptionBilling, Subscription } from "@/integrations/strapi/subscription";
-import { getUserInstructorGroups, getInstructorGroupsForInstructor, InstructorGroup, removeInstructorFromGroup, deleteInstructorGroup, addInstructorToGroup, addInstructorsToGroup, getInstructorGroup } from "@/integrations/strapi/instructor-group";
+import { getUserInstructorGroups, getInstructorGroupsForInstructor, InstructorGroup, removeInstructorFromGroup, deleteInstructorGroup, addInstructorToGroup, addInstructorsToGroup, getInstructorGroup, updateGroupName } from "@/integrations/strapi/instructor-group";
 import { toast } from "sonner";
 import CreateInstructorForm from "./CreateInstructorForm";
 import { InstructorInvitationsPanel } from "./InstructorInvitationsPanel";
@@ -19,7 +19,11 @@ import { InviteInstructorToGroupModal } from "./InviteInstructorToGroupModal";
 import { CreateGroupModal } from "./CreateGroupModal";
 import { SelectInstructorsModal } from "./SelectInstructorsModal";
 import { getAvatarUrl } from "@/lib/getAvatarUrl";
+import { FreePlanAgreementPopup } from "./FreePlanAgreementPopup";
+import { getMissingFreePlans } from "@/integrations/strapi/subscription";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -27,6 +31,8 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
 
 interface DashboardInstructorsProps {
     onCreateInstructor?: () => void;
@@ -59,6 +65,40 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
     const [showSelectInstructorsModal, setShowSelectInstructorsModal] = useState(false);
     const [availableInstructorsForSelection, setAvailableInstructorsForSelection] = useState<Instructor[]>([]);
     const [groupInstructorsMap, setGroupInstructorsMap] = useState<Map<string | number, Instructor[]>>(new Map());
+    
+    // Free plan popup state
+    const [showFreePlanPopup, setShowFreePlanPopup] = useState(false);
+    const [missingFreePlans, setMissingFreePlans] = useState<any[]>([]);
+
+    const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+    const [renamingGroup, setRenamingGroup] = useState<InstructorGroup | null>(null);
+    const [renameValue, setRenameValue] = useState("");
+    const [renaming, setRenaming] = useState(false);
+
+    const numericUserId = useMemo(() => (user?.id ? Number(user.id) : undefined), [user?.id]);
+    const documentUserId: string | undefined = user?.documentId ?? undefined;
+
+    const isCurrentUserOwner = useCallback(
+        (owner: any): boolean => {
+            if (!owner) return false;
+            const ownerNumeric = typeof owner === "object" ? owner.id : owner;
+            const ownerDocumentId = typeof owner === "object" ? owner.documentId : (typeof owner === "string" ? owner : undefined);
+
+            if (numericUserId !== undefined && ownerNumeric !== undefined) {
+                const parsed = Number(ownerNumeric);
+                if (!Number.isNaN(parsed) && parsed === numericUserId) {
+                    return true;
+                }
+            }
+
+            if (documentUserId && ownerDocumentId && ownerDocumentId === documentUserId) {
+                return true;
+            }
+
+            return false;
+        },
+        [numericUserId, documentUserId]
+    );
 
     // Helper function to get instructor profile URL
     const getInstructorProfileUrl = (instructor: Instructor): string => {
@@ -75,27 +115,114 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
         router.push(profileUrl);
     };
 
-    useEffect(() => {
-        loadData();
-    }, [user]);
+    const openRenameDialog = useCallback((group: InstructorGroup) => {
+        setRenamingGroup(group);
+        setRenameValue(group.name);
+        setRenameDialogOpen(true);
+    }, []);
 
-    const loadData = async () => {
+    const closeRenameDialog = useCallback(() => {
+        setRenameDialogOpen(false);
+        setRenamingGroup(null);
+        setRenameValue("");
+    }, []);
+
+    const loadGroups = useCallback(async () => {
         if (!user?.id) return;
-        
+        setLoadingGroups(true);
+        try {
+            const ownedGroups = await getUserInstructorGroups(user.id);
+            const userInstructors = await getInstructors(user.id);
+            const memberGroupsMap = new Map<number, InstructorGroup>();
+
+            for (const instructor of userInstructors) {
+                try {
+                    const groupsForInstructor = await getInstructorGroupsForInstructor(instructor.id);
+                    for (const group of groupsForInstructor) {
+                        if (!ownedGroups.some(g => g.id === group.id)) {
+                            memberGroupsMap.set(group.id, group);
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error loading groups for instructor ${instructor.id}:`, error);
+                }
+            }
+
+            const allGroups = [...ownedGroups, ...Array.from(memberGroupsMap.values())];
+            setGroups(allGroups);
+
+            const instructorsMap = new Map<string | number, Instructor[]>();
+            for (const group of allGroups) {
+                if (group.instructors && Array.isArray(group.instructors)) {
+                    const instructorsList: Instructor[] = [];
+                    for (const inst of group.instructors) {
+                        if (typeof inst === "number") {
+                            const instructorData = await getInstructorAvatarById(inst);
+                            if (instructorData) {
+                                instructorsList.push(instructorData);
+                            }
+                        } else if (inst && typeof inst === "object" && "id" in inst) {
+                            const mappedInst = await getInstructorAvatarById((inst as Instructor).id);
+                            if (mappedInst) {
+                                instructorsList.push(mappedInst);
+                            }
+                        }
+                    }
+                    instructorsMap.set(group.id, instructorsList);
+                }
+            }
+            setGroupInstructorsMap(instructorsMap);
+        } catch (error) {
+            console.error("Error loading groups:", error);
+            toast.error("Failed to load groups");
+        } finally {
+            setLoadingGroups(false);
+        }
+    }, [user?.id]);
+
+    const submitRename = useCallback(async () => {
+        if (!renamingGroup || !renameValue.trim()) {
+            toast.error("Please enter a group name");
+            return;
+        }
+
+        setRenaming(true);
+        try {
+            await updateGroupName(renamingGroup.documentId || renamingGroup.id, renameValue.trim(), "instructor");
+            toast.success("Group name updated");
+            closeRenameDialog();
+            await loadGroups();
+            if (viewMode === "group" && selectedGroup && selectedGroup.id === renamingGroup.id) {
+                const refreshedGroup = await getInstructorGroup(renamingGroup.id);
+                if (refreshedGroup) {
+                    setSelectedGroup(refreshedGroup);
+                }
+            }
+        } catch (error: any) {
+            console.error("Rename error:", error);
+            toast.error(error.message || "Failed to rename group");
+        } finally {
+            setRenaming(false);
+        }
+    }, [renamingGroup, renameValue, closeRenameDialog, loadGroups, viewMode, selectedGroup]);
+
+    const loadData = useCallback(async () => {
+        if (!user?.id) return;
+
         setLoading(true);
         try {
             const [instructorsData, userSubscription] = await Promise.all([
                 getInstructors(user.id),
                 getUserSubscription(user.id)
             ]);
-            
+
             setInstructors(instructorsData);
             setUserSub(userSubscription);
-            
+
             if (userSubscription?.subscription && typeof userSubscription.subscription === 'object') {
                 setSubscription(userSubscription.subscription as Subscription);
             }
-            
+
             if (instructorsData.length > 0) {
                 const primaryInstructor = instructorsData[0];
                 try {
@@ -114,8 +241,7 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                 setCollaboratingInstructors([]);
                 setPendingInvitationsCount(0);
             }
-            
-            // Load groups
+
             await loadGroups();
         } catch (error) {
             console.error("Error loading data:", error);
@@ -123,7 +249,16 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
         } finally {
             setLoading(false);
         }
-    };
+    }, [user?.id, loadGroups]);
+
+    useEffect(() => {
+        if (!user?.id) {
+            setLoading(false);
+            return;
+        }
+
+        loadData();
+    }, [user?.id, loadData]);
 
     /**
      * Get instructor with avatar by ID - ensures avatar is properly fetched
@@ -135,77 +270,6 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
         } catch (error) {
             console.error(`Error fetching instructor avatar for ${instructorId}:`, error);
             return null;
-        }
-    };
-
-    const loadGroups = async () => {
-        if (!user?.id) return;
-        
-        setLoadingGroups(true);
-        try {
-            // Get groups owned by user
-            const ownedGroups = await getUserInstructorGroups(user.id);
-            
-            // Get groups where user's instructors are members
-            const userInstructors = await getInstructors(user.id);
-            const memberGroupsMap = new Map<number, InstructorGroup>();
-            
-            for (const instructor of userInstructors) {
-                try {
-                    const groupsForInstructor = await getInstructorGroupsForInstructor(instructor.id);
-                    for (const group of groupsForInstructor) {
-                        // Only add if not already in owned groups (avoid duplicates)
-                        if (!ownedGroups.some(g => g.id === group.id)) {
-                            memberGroupsMap.set(group.id, group);
-                        }
-                    }
-                } catch (error) {
-                    console.error(`Error loading groups for instructor ${instructor.id}:`, error);
-                }
-            }
-            
-            // Combine owned and member groups
-            const allGroups = [...ownedGroups, ...Array.from(memberGroupsMap.values())];
-            setGroups(allGroups);
-            
-            // Load instructors for each group to display avatars
-            // Use the helper function to ensure avatars are properly fetched
-            const instructorsMap = new Map<string | number, Instructor[]>();
-            for (const group of allGroups) {
-                if (group.instructors && Array.isArray(group.instructors)) {
-                    const instructorsList: Instructor[] = [];
-                    for (const inst of group.instructors) {
-                        if (typeof inst === 'number') {
-                            // Use helper function to get full instructor data with avatar
-                            const instructorData = await getInstructorAvatarById(inst);
-                            if (instructorData) {
-                                instructorsList.push(instructorData);
-                            }
-                        } else if (inst && typeof inst === 'object' && 'id' in inst) {
-                            // If we have an object, still fetch to ensure avatar is populated
-                            const instructorId = inst.id;
-                            const instructorData = await getInstructorAvatarById(instructorId);
-                            if (instructorData) {
-                                instructorsList.push(instructorData);
-                            } else {
-                                // Fallback to the object if fetch fails
-                                const instructor = inst as any;
-                                if (instructor.avatar && typeof instructor.avatar === 'object' && instructor.avatar.data) {
-                                    instructor.avatar = instructor.avatar.data;
-                                }
-                                instructorsList.push(instructor as Instructor);
-                            }
-                        }
-                    }
-                    instructorsMap.set(group.id, instructorsList);
-                }
-            }
-            setGroupInstructorsMap(instructorsMap);
-        } catch (error) {
-            console.error("Error loading groups:", error);
-            toast.error("Failed to load instructor groups");
-        } finally {
-            setLoadingGroups(false);
         }
     };
 
@@ -451,6 +515,27 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
         onCreateInstructor?.();
     };
 
+    // Check for free plans when user tries to create first instructor
+    const handleCreateInstructorClick = async () => {
+        // Check if this is the first instructor
+        if (instructors.length === 0 && user?.id) {
+            try {
+                const missingPlans = await getMissingFreePlans(user.id);
+                if (missingPlans.length > 0) {
+                    setMissingFreePlans(missingPlans);
+                    setShowFreePlanPopup(true);
+                    return; // Don't show create form yet
+                }
+            } catch (error) {
+                console.error("Error checking free plans:", error);
+            }
+        }
+        // If no missing plans or not first instructor, proceed normally
+        setShowCreateForm(true);
+        setSelectedInstructor(null);
+        setViewMode("instructors");
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -501,12 +586,10 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
 
     // Group View - Show instructors in selected group
     if (viewMode === "group" && selectedGroup) {
-        // Check if user is owner - handle both numeric ID and object formats
-        const ownerId = typeof selectedGroup.owner === 'object' ? selectedGroup.owner?.id : selectedGroup.owner;
-        const isOwner = ownerId === user?.id || Number(ownerId) === Number(user?.id);
+        const isOwner = isCurrentUserOwner(selectedGroup.owner);
 
-    return (
-        <div className="space-y-6">
+        return (
+            <div className="space-y-6">
                 {/* Breadcrumb Navigation */}
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <button
@@ -567,6 +650,12 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                             <DropdownMenuContent align="end">
                                 {isOwner ? (
                                     <>
+                                        <DropdownMenuItem
+                                            onClick={() => openRenameDialog(selectedGroup)}
+                                        >
+                                            <Edit3 className="w-4 h-4 mr-2" />
+                                            Rename Group
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem
                                             onClick={() => handleDeleteGroup(selectedGroup.id)}
                                             className="text-destructive"
@@ -710,6 +799,7 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                             groupId={selectedGroup.id}
                             groupName={selectedGroup.name}
                             currentUserId={user.id}
+                            currentUserDocumentId={documentUserId}
                     onInviteSent={() => {
                                 loadGroupInstructors(selectedGroup);
                                 loadGroups();
@@ -724,6 +814,46 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                         />
                     </>
                 )}
+
+                <Dialog open={renameDialogOpen} onOpenChange={(open) => {
+                    setRenameDialogOpen(open);
+                    if (!open) {
+                        closeRenameDialog();
+                    }
+                }}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Rename Group</DialogTitle>
+                            <DialogDescription>
+                                Enter a new name to update this instructor group.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-3 py-2">
+                            <Label htmlFor="group-view-rename-group" className="text-sm font-medium text-muted-foreground">
+                                New group name
+                            </Label>
+                            <Input
+                                id="group-view-rename-group"
+                                value={renameValue}
+                                onChange={(e) => setRenameValue(e.target.value)}
+                                placeholder="Enter new group name"
+                                autoFocus
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button variant="ghost" onClick={closeRenameDialog}>
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={submitRename}
+                                disabled={renaming || !renameValue.trim()}
+                                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                            >
+                                {renaming ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         );
     }
@@ -820,7 +950,7 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                             <Button
                                 onClick={() => {
                                     setViewMode("edit");
-                                    setShowCreateForm(true);
+                                    handleCreateInstructorClick();
                                 }}
                                 className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-sm sm:text-base shadow-lg hover:shadow-xl transition-all duration-300"
                                 size="sm"
@@ -1045,7 +1175,7 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                                     <Button
                                         onClick={() => {
                                             setViewMode("edit");
-                                            setShowCreateForm(true);
+                                            handleCreateInstructorClick();
                                         }}
                                         className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
                                     >
@@ -1319,7 +1449,7 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                                 {filteredGroups.map((group, index) => {
                                     // Check if user is owner - handle both numeric ID and object formats
                                     const ownerId = typeof group.owner === 'object' ? group.owner?.id : group.owner;
-                                    const isOwner = ownerId === user?.id || Number(ownerId) === Number(user?.id);
+                                    const isOwner = isCurrentUserOwner(group.owner);
                                     const groupInstructors = groupInstructorsMap.get(group.id) || [];
                                     const instructorCount = groupInstructors.length;
                                                         
@@ -1413,6 +1543,15 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                                                                     <UserPlus className="w-4 h-4 mr-2" />
                                                                     Add Instructors
                                                                 </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        openRenameDialog(group);
+                                                                    }}
+                                                                >
+                                                                    <Edit3 className="w-4 h-4 mr-2" />
+                                                                    Rename Group
+                                                                </DropdownMenuItem>
                                                                 <DropdownMenuSeparator />
                                                             </>
                                                         )}
@@ -1428,7 +1567,6 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                                                                     <Trash2 className="w-4 h-4 mr-2" />
                                                                     Delete Group
                                                                 </DropdownMenuItem>
-                                                                {/* Owner can also leave if their instructor is in the group */}
                                                                 {(groupInstructorsMap.get(group.id) || []).some(
                                                                     inst => inst.user === user?.id || (typeof inst.user === 'object' && inst.user?.id === user?.id)
                                                                 ) && (
@@ -1511,8 +1649,24 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                 />
             )}
 
+            {/* Free Plan Agreement Popup */}
+            <FreePlanAgreementPopup
+                isOpen={showFreePlanPopup}
+                plans={missingFreePlans}
+                onClose={() => setShowFreePlanPopup(false)}
+                onSuccess={() => {
+                    setShowFreePlanPopup(false);
+                    // After confirming, show create form
+                    setShowCreateForm(true);
+                    setSelectedInstructor(null);
+                    setViewMode("instructors");
+                    // Reload data to get updated user limits
+                    loadData();
+                }}
+            />
+
             {/* Invite Modal - Only show if user is owner */}
-            {selectedGroup && user && user.id && (selectedGroup.owner === user.id || (typeof selectedGroup.owner === 'object' && selectedGroup.owner?.id === user.id)) && (
+            {selectedGroup && user && user.id && isCurrentUserOwner(selectedGroup.owner) && (
                 <InviteInstructorToGroupModal
                     open={showInviteModal}
                     onClose={() => {
@@ -1522,6 +1676,7 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                     groupId={selectedGroup.id}
                     groupName={selectedGroup.name}
                     currentUserId={user.id}
+                    currentUserDocumentId={documentUserId}
                     onInviteSent={() => {
                         loadGroups();
                         if (viewMode === "group" && selectedGroup) {
@@ -1530,6 +1685,46 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                     }}
                 />
             )}
+
+            <Dialog open={renameDialogOpen} onOpenChange={(open) => {
+                setRenameDialogOpen(open);
+                if (!open) {
+                    closeRenameDialog();
+                }
+            }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Rename Group</DialogTitle>
+                        <DialogDescription>
+                            Enter a new name to update this instructor group.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3 py-2">
+                        <Label htmlFor="dashboard-rename-group" className="text-sm font-medium text-muted-foreground">
+                            New group name
+                        </Label>
+                        <Input
+                            id="dashboard-rename-group"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            placeholder="Enter new group name"
+                            autoFocus
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={closeRenameDialog}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={submitRename}
+                            disabled={renaming || !renameValue.trim()}
+                            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                        >
+                            {renaming ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

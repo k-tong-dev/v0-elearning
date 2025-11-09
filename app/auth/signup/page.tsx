@@ -61,6 +61,7 @@ export default function MultiStepSignupPage() {
     const router = useRouter()
     const { user: authUser, refreshUser, userContext, isLoading: authLoading } = useAuth()
     const [currentStep, setCurrentStep] = useState(1)
+    const [stepDirection, setStepDirection] = useState<1 | -1>(1)
     const [formData, setFormData] = useState<SignupFormData>({
         email: "",
         supabaseUserId: "",
@@ -83,6 +84,12 @@ export default function MultiStepSignupPage() {
     const [modalErrorDetails, setModalErrorDetails] = useState({ title: "", message: "" })
 
     const strapiOptionsNoToast = useMemo(() => ({ showToast: false }), [])
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            window.localStorage.removeItem("onboardingComplete")
+        }
+    }, [])
 
     const {
         data: charactorsData,
@@ -181,23 +188,48 @@ export default function MultiStepSignupPage() {
                     position: "top-center",
                     duration: 2000,
                 })
-                setCurrentStep(currentStep + 1)
+                setStepDirection(1)
+                setCurrentStep((prev) => prev + 1)
             } else if (currentStep === 2) {
                 if (!strapiUserId) throw new Error("Strapi User ID is missing.")
                 try {
                     const updatePayload: any = {
                         supabaseId: formData.supabaseUserId,
                     }
-                    if (formData.avatarFile) {
-                        const uploadedFile = await uploadStrapiFile(
-                            formData.avatarFile,
-                            'plugin::users-permissions.user',
-                            strapiUserId,
-                            'avatar'
-                        );
-                        updatePayload.avatar = uploadedFile.id
+                    console.log("[Signup] Step 2 avatar state", {
+                        hasFile: Boolean(formData.avatarFile),
+                        preview: formData.avatarPreview,
+                        url: formData.avatarUrl,
+                    })
+
+                    let avatarFileToUpload = formData.avatarFile
+                    if (!avatarFileToUpload && formData.avatarUrl) {
+                        try {
+                            console.log("[Signup] Fetching avatar from URL for upload", formData.avatarUrl)
+                            const response = await fetch(formData.avatarUrl)
+                            const blob = await response.blob()
+                            const extension = blob.type.split("/")[1] || "png"
+                            avatarFileToUpload = new File([blob], `avatar-${Date.now()}.${extension}`, { type: blob.type || "image/png" })
+                        } catch (fetchError) {
+                            console.error("[Signup] Failed to fetch avatar URL", fetchError)
+                        }
                     }
+
+                    if (avatarFileToUpload) {
+                        console.log("[Signup] Uploading avatar during step 2", {
+                            name: avatarFileToUpload.name,
+                            size: avatarFileToUpload.size,
+                            type: avatarFileToUpload.type,
+                        })
+                        const uploadedFile = await uploadStrapiFile(avatarFileToUpload, "users/avatars");
+                        console.log("[Signup] Upload response", uploadedFile)
+                        updatePayload.avatar = uploadedFile.id ?? uploadedFile.documentId
+                    } else {
+                        console.log("[Signup] No avatar file available; skipping upload")
+                    }
+                    console.log("[Signup] Updating user", strapiUserId, "with payload", updatePayload)
                     await updateUser(strapiUserId, updatePayload)
+                    console.log("[Signup] User updated successfully")
 
                 } catch (err: any) {
                     if (err.message.includes("Invalid credentials")) {
@@ -207,16 +239,34 @@ export default function MultiStepSignupPage() {
                         const updatePayload: any = {
                             supabaseId: formData.supabaseUserId,
                         }
-                        if (formData.avatarFile) {
-                            const uploadedFile = await uploadStrapiFile(
-                                formData.avatarFile,
-                                'plugin::users-permissions.user',
-                                strapiUserId,
-                                'avatar'
-                            );
-                            updatePayload.avatar = uploadedFile.id
+                        let avatarFileToUpload = formData.avatarFile
+                        if (!avatarFileToUpload && formData.avatarUrl) {
+                            try {
+                                console.log("[Signup] Retry fetching avatar from URL", formData.avatarUrl)
+                                const response = await fetch(formData.avatarUrl)
+                                const blob = await response.blob()
+                                const extension = blob.type.split("/")[1] || "png"
+                                avatarFileToUpload = new File([blob], `avatar-${Date.now()}.${extension}`, { type: blob.type || "image/png" })
+                            } catch (fetchError) {
+                                console.error("[Signup] Retry fetch avatar URL failed", fetchError)
+                            }
                         }
+
+                        if (avatarFileToUpload) {
+                            console.log("[Signup] Retrying avatar upload", {
+                                name: avatarFileToUpload.name,
+                                size: avatarFileToUpload.size,
+                                type: avatarFileToUpload.type,
+                            })
+                            const uploadedFile = await uploadStrapiFile(avatarFileToUpload, "users/avatars");
+                            console.log("[Signup] Retry upload response", uploadedFile)
+                            updatePayload.avatar = uploadedFile.id ?? uploadedFile.documentId
+                        } else {
+                            console.log("[Signup] Retry: no avatar file available")
+                        }
+                        console.log("[Signup] Retrying user update", strapiUserId, updatePayload)
                         await updateUser(strapiUserId, updatePayload)
+                        console.log("[Signup] Retry user update succeeded")
 
                     } else {
                         throw err
@@ -230,7 +280,8 @@ export default function MultiStepSignupPage() {
                     throw new Error("Failed to fetch updated Strapi user profile.")
                 }
                 toast.success("Avatar saved!", { position: "top-center", duration: 1500 })
-                setCurrentStep(currentStep + 1)
+                setStepDirection(1)
+                setCurrentStep((prev) => prev + 1)
             } else if (currentStep === 3) {
                 // Character step
                 if (!strapiUserId) throw new Error("Strapi User ID is missing.")
@@ -244,7 +295,8 @@ export default function MultiStepSignupPage() {
                     userContext(updatedStrapiProfile)
                 }
                 toast.success("Character saved!", { position: "top-center", duration: 1500 })
-                setCurrentStep(currentStep + 1)
+                setStepDirection(1)
+                setCurrentStep((prev) => prev + 1)
             } else if (currentStep === 4) {
                 // Learning Goals step
                 if (!strapiUserId) throw new Error("Strapi User ID is missing.")
@@ -256,7 +308,8 @@ export default function MultiStepSignupPage() {
                     userContext(updatedStrapiProfile)
                 }
                 toast.success("Learning goals saved!", { position: "top-center", duration: 1500 })
-                setCurrentStep(currentStep + 1)
+                setStepDirection(1)
+                setCurrentStep((prev) => prev + 1)
             } else if (currentStep === 5) {
                 // Prefer to Learns step
                 if (!strapiUserId) throw new Error("Strapi User ID is missing.")
@@ -268,7 +321,8 @@ export default function MultiStepSignupPage() {
                     userContext(updatedStrapiProfile)
                 }
                 toast.success("Learning styles saved!", { position: "top-center", duration: 1500 })
-                setCurrentStep(currentStep + 1)
+                setStepDirection(1)
+                setCurrentStep((prev) => prev + 1)
             } else if (currentStep === 6) {
                 // Interests step
                 if (!strapiUserId) throw new Error("Strapi User ID is missing.")
@@ -280,7 +334,8 @@ export default function MultiStepSignupPage() {
                     userContext(updatedStrapiProfile)
                 }
                 toast.success("Interests saved!", { position: "top-center", duration: 1500 })
-                setCurrentStep(currentStep + 1)
+                setStepDirection(1)
+                setCurrentStep((prev) => prev + 1)
             } else if (currentStep === 7) {
                 // Badges step
                 if (!strapiUserId) throw new Error("Strapi User ID is missing.")
@@ -295,6 +350,9 @@ export default function MultiStepSignupPage() {
                     position: "top-center",
                     duration: 2000,
                 })
+                if (typeof window !== "undefined") {
+                    window.localStorage.setItem("onboardingComplete", "true")
+                }
                 router.push("/")
             }
         } catch (err: any) {
@@ -315,7 +373,8 @@ export default function MultiStepSignupPage() {
         setError("")
         setIsErrorModalOpen(false)
         if (currentStep > 1) {
-            setCurrentStep(currentStep - 1)
+            setStepDirection(-1)
+            setCurrentStep((prev) => prev - 1)
         }
     }
 
@@ -415,6 +474,26 @@ export default function MultiStepSignupPage() {
             default:
                 return null
         }
+    }
+
+    const stepVariants = {
+        enter: (direction: 1 | -1) => ({
+            x: direction > 0 ? 60 : -60,
+            opacity: 0,
+            scale: 0.98,
+        }),
+        center: {
+            x: 0,
+            opacity: 1,
+            scale: 1,
+            transition: { type: "spring", stiffness: 140, damping: 20 },
+        },
+        exit: (direction: 1 | -1) => ({
+            x: direction > 0 ? -60 : 60,
+            opacity: 0,
+            scale: 0.98,
+            transition: { duration: 0.25, ease: "easeInOut" },
+        }),
     }
 
     if (authLoading || (!authUser?.email && !isErrorModalOpen)) {
@@ -652,20 +731,19 @@ export default function MultiStepSignupPage() {
                             </div>
                         </div>
 
+                        <AnimatePresence custom={stepDirection} mode="wait">
                         <motion.div
                             key={currentStep}
-                            initial={{ opacity: 0, x: 30, scale: 0.95 }}
-                            animate={{ opacity: 1, x: 0, scale: 1 }}
-                            exit={{ opacity: 0, x: -30, scale: 0.95 }}
-                            transition={{
-                                type: "spring",
-                                stiffness: 200,
-                                damping: 25,
-                            }}
+                                custom={stepDirection}
+                                variants={stepVariants}
+                                initial="enter"
+                                animate="center"
+                                exit="exit"
                             className="liquid-glass-card p-6 md:p-8"
                         >
-                            <AnimatePresence mode="wait">{renderStep()}</AnimatePresence>
+                                {renderStep()}
                         </motion.div>
+                        </AnimatePresence>
 
                         {currentStep > 1 && currentStep <= totalSteps && (
                             <motion.p

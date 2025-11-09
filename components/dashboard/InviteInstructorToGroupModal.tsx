@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,14 +12,22 @@ import {
     AnimatedModalTitle,
     AnimatedModalDescription,
 } from "@/components/ui/aceternity/AnimatedModal";
-import { Search, UserPlus, X, Loader2, CheckCircle2, AlertCircle, Users, Check } from "lucide-react";
+import { Search, UserPlus, X, Loader2, CheckCircle2, AlertCircle, Users, Check, MoreVertical, Edit3 } from "lucide-react";
 import { searchInstructors, sendInvitation } from "@/integrations/strapi/instructor-invitation";
-import { getUserInstructorGroups } from "@/integrations/strapi/instructor-group";
+import { getUserInstructorGroups, updateGroupName } from "@/integrations/strapi/instructor-group";
 import { Instructor } from "@/integrations/strapi/instructor";
 import { InstructorGroup } from "@/integrations/strapi/instructor-group";
 import { toast } from "sonner";
 import { getAvatarUrl } from "@/lib/getAvatarUrl";
 import { QuantumAvatar } from "@/components/ui/quantum-avatar";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface InviteInstructorToGroupModalProps {
     open: boolean;
@@ -27,6 +35,7 @@ interface InviteInstructorToGroupModalProps {
     groupId: string | number;
     groupName: string;
     currentUserId: string | number;
+    currentUserDocumentId?: string;
     onInviteSent?: () => void;
 }
 
@@ -36,6 +45,7 @@ export function InviteInstructorToGroupModal({
     groupId,
     groupName,
     currentUserId,
+    currentUserDocumentId,
     onInviteSent,
 }: InviteInstructorToGroupModalProps) {
     const [searchQuery, setSearchQuery] = useState("");
@@ -48,6 +58,37 @@ export function InviteInstructorToGroupModal({
     const [userGroups, setUserGroups] = useState<InstructorGroup[]>([]);
     const [loadingGroups, setLoadingGroups] = useState(false);
     const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+    const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+    const [renamingGroup, setRenamingGroup] = useState<InstructorGroup | null>(null);
+    const [renameValue, setRenameValue] = useState("");
+    const [renaming, setRenaming] = useState(false);
+
+    const numericCurrentUserId = useMemo(() => {
+        const numeric = Number(currentUserId);
+        return Number.isNaN(numeric) ? undefined : numeric;
+    }, [currentUserId]);
+
+    const isGroupOwner = useCallback(
+        (owner: any): boolean => {
+            if (!owner) return false;
+            const ownerNumeric = typeof owner === "object" ? owner.id : owner;
+            const ownerDocumentId = typeof owner === "object" ? (owner.documentId ?? undefined) : (typeof owner === "string" ? owner : undefined);
+
+            if (numericCurrentUserId !== undefined && ownerNumeric !== undefined) {
+                const parsed = Number(ownerNumeric);
+                if (!Number.isNaN(parsed) && parsed === numericCurrentUserId) {
+                    return true;
+                }
+            }
+
+            if (currentUserDocumentId && ownerDocumentId && ownerDocumentId === currentUserDocumentId) {
+                return true;
+            }
+
+            return false;
+        },
+        [numericCurrentUserId, currentUserDocumentId]
+    );
 
     // Load user's groups
     useEffect(() => {
@@ -75,6 +116,38 @@ export function InviteInstructorToGroupModal({
             toast.error("Failed to load groups");
         } finally {
             setLoadingGroups(false);
+        }
+    };
+
+    const openRenameDialog = (group: InstructorGroup) => {
+        setRenamingGroup(group);
+        setRenameValue(group.name);
+        setRenameDialogOpen(true);
+    };
+
+    const closeRenameDialog = () => {
+        setRenameDialogOpen(false);
+        setRenamingGroup(null);
+        setRenameValue("");
+    };
+
+    const submitRename = async () => {
+        if (!renamingGroup || !renameValue.trim()) {
+            toast.error("Please enter a group name");
+            return;
+        }
+
+        setRenaming(true);
+        try {
+            await updateGroupName(renamingGroup.documentId || renamingGroup.id, renameValue.trim(), "instructor");
+            toast.success("Group name updated");
+            closeRenameDialog();
+            await loadUserGroups();
+        } catch (error: any) {
+            console.error("Rename error:", error);
+            toast.error(error.message || "Failed to rename group");
+        } finally {
+            setRenaming(false);
         }
     };
 
@@ -232,10 +305,10 @@ export function InviteInstructorToGroupModal({
                                                     : 'border-border/50 hover:border-primary/30 bg-card/50 hover:bg-card/80'
                                             }`}
                                         >
-                                            <div className="flex items-center justify-between">
+                                            <div className="flex items-start justify-between">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2">
-                                                        <h4 className="font-semibold text-foreground">{group.name}</h4>
+                                                        <h4 className="font-semibold text-foreground truncate">{group.name}</h4>
                                                         {isSelected && (
                                                             <motion.div
                                                                 initial={{ scale: 0 }}
@@ -254,6 +327,31 @@ export function InviteInstructorToGroupModal({
                                                         </p>
                                                     )}
                                                 </div>
+                                                {isGroupOwner(group.owner) && (
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                <MoreVertical className="w-4 h-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    openRenameDialog(group);
+                                                                }}
+                                                            >
+                                                                <Edit3 className="w-4 h-4 mr-2" />
+                                                                Rename Group
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                )}
                                             </div>
                                         </motion.div>
                                     );
@@ -341,7 +439,7 @@ export function InviteInstructorToGroupModal({
                                         >
                                             <div className="flex items-center gap-4">
                                                 <QuantumAvatar
-                                                    src={getAvatarUrl(instructor.avatar)}
+                                                    src={getAvatarUrl(instructor.avatar) ?? undefined}
                                                     alt={instructor.name}
                                                     size="md"
                                                     variant="quantum"
@@ -410,7 +508,7 @@ export function InviteInstructorToGroupModal({
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <QuantumAvatar
-                                                src={getAvatarUrl(selectedInstructor.avatar)}
+                                                src={getAvatarUrl(selectedInstructor.avatar) ?? undefined}
                                                 alt={selectedInstructor.name}
                                                 size="md"
                                                 variant="quantum"
@@ -426,15 +524,41 @@ export function InviteInstructorToGroupModal({
                                                 </p>
                                             </div>
                                         </div>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => setSelectedInstructor(null)}
-                                            className="hover:bg-destructive/10 hover:text-destructive"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </Button>
+                                        <div className="flex items-center gap-2">
+                                            {selectedGroup && isGroupOwner(selectedGroup.owner) && (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <MoreVertical className="w-4 h-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                openRenameDialog(selectedGroup);
+                                                            }}
+                                                        >
+                                                            <Edit3 className="w-4 h-4 mr-2" />
+                                                            Rename Group
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            )}
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setSelectedInstructor(null)}
+                                                className="hover:bg-destructive/10 hover:text-destructive"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </div>
                                     </div>
 
                                     <Textarea
@@ -468,6 +592,48 @@ export function InviteInstructorToGroupModal({
                     </div>
                 </div>
             </AnimatedModalContent>
+            <Dialog open={renameDialogOpen} onOpenChange={(open) => {
+                setRenameDialogOpen(open);
+                if (!open) {
+                    closeRenameDialog();
+                }
+            }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Rename Group</DialogTitle>
+                        <DialogDescription>
+                            Enter a new name for this instructor group.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3 py-2">
+                        <Label htmlFor="invite-rename-group" className="text-sm font-medium text-muted-foreground">
+                            New group name
+                        </Label>
+                        <Input
+                            id="invite-rename-group"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            placeholder="Enter new group name"
+                            autoFocus
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="ghost"
+                            onClick={closeRenameDialog}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={submitRename}
+                            disabled={renaming || !renameValue.trim()}
+                            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                        >
+                            {renaming ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AnimatedModal>
     );
 }

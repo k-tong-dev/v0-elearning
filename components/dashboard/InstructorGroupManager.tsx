@@ -1,30 +1,32 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-    PlusCircle, 
-    Users, 
-    Search, 
-    Filter, 
-    LayoutGrid, 
-    Columns, 
-    Trash2, 
+import {
+    PlusCircle,
+    Users,
+    Search,
+    Filter,
+    LayoutGrid,
+    Columns,
+    Trash2,
     LogOut,
     Crown,
     UserPlus,
     MoreVertical,
     X,
-    Loader2
+    Loader2,
+    Edit3
 } from "lucide-react";
-import { 
-    getUserInstructorGroups, 
-    createInstructorGroup, 
+import {
+    getUserInstructorGroups,
+    createInstructorGroup,
     deleteInstructorGroup,
     removeInstructorFromGroup,
+    updateGroupName,
     InstructorGroup as InstructorGroupType
 } from "@/integrations/strapi/instructor-group";
 import { getInstructor, Instructor } from "@/integrations/strapi/instructor";
@@ -39,6 +41,8 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface InstructorGroupManagerProps {
     onGroupUpdate?: () => void;
@@ -58,6 +62,35 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
     const [selectedGroup, setSelectedGroup] = useState<InstructorGroupType | null>(null);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [groupInstructors, setGroupInstructors] = useState<Map<string | number, Instructor[]>>(new Map());
+    const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+    const [renamingGroup, setRenamingGroup] = useState<InstructorGroupType | null>(null);
+    const [renameValue, setRenameValue] = useState("");
+    const [renaming, setRenaming] = useState(false);
+
+    const numericUserId = useMemo(() => (user?.id ? Number(user.id) : undefined), [user?.id]);
+    const documentUserId: string | undefined = user?.documentId ?? undefined;
+
+    const isCurrentUserOwner = useCallback(
+        (owner: any): boolean => {
+            if (!owner) return false;
+            const ownerNumeric = typeof owner === "object" ? owner.id : owner;
+            const ownerDocumentId = typeof owner === "object" ? (owner.documentId ?? undefined) : (typeof owner === "string" ? owner : undefined);
+
+            if (numericUserId !== undefined && ownerNumeric !== undefined) {
+                const ownerNumericNumber = Number(ownerNumeric);
+                if (!Number.isNaN(ownerNumericNumber) && ownerNumericNumber === numericUserId) {
+                    return true;
+                }
+            }
+
+            if (documentUserId && ownerDocumentId && ownerDocumentId === documentUserId) {
+                return true;
+            }
+
+            return false;
+        },
+        [numericUserId, documentUserId]
+    );
 
     useEffect(() => {
         if (user?.id) {
@@ -142,6 +175,35 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
         } catch (error: any) {
             console.error("Error deleting group:", error);
             toast.error(error.message || "Failed to delete group");
+        }
+    };
+
+    const handleRenameGroup = (group: InstructorGroupType) => {
+        setRenamingGroup(group);
+        setRenameValue(group.name);
+        setRenameDialogOpen(true);
+    };
+
+    const submitRenameGroup = async () => {
+        if (!renamingGroup || !renameValue.trim()) {
+            toast.error("Please enter a group name");
+            return;
+        }
+
+        setRenaming(true);
+        try {
+            await updateGroupName(renamingGroup.documentId || renamingGroup.id, renameValue.trim(), "instructor");
+            toast.success("Group name updated");
+            setRenameDialogOpen(false);
+            setRenamingGroup(null);
+            setRenameValue("");
+            await loadGroups();
+            onGroupUpdate?.();
+        } catch (error: any) {
+            console.error("Error renaming group:", error);
+            toast.error(error.message || "Failed to rename group");
+        } finally {
+            setRenaming(false);
         }
     };
 
@@ -308,8 +370,7 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredGroups.map((group, index) => {
                         const instructors = groupInstructors.get(group.id) || [];
-                        const isOwner = group.owner === user?.id || 
-                                        (typeof group.owner === 'object' && group.owner?.id === user?.id);
+                        const isOwner = isCurrentUserOwner(group.owner);
 
                         return (
                             <motion.div
@@ -355,21 +416,31 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
                                             {isOwner ? (
-                                                <DropdownMenuItem
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDeleteGroup(group.id);
-                                                    }}
-                                                    className="text-destructive"
-                                                >
-                                                    <Trash2 className="w-4 h-4 mr-2" />
-                                                    Delete Group
-                                                </DropdownMenuItem>
+                                                <>
+                                                    <DropdownMenuItem
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleRenameGroup(group);
+                                                        }}
+                                                    >
+                                                        <Edit3 className="w-4 h-4 mr-2" />
+                                                        Rename Group
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteGroup(group.id);
+                                                        }}
+                                                        className="text-destructive"
+                                                    >
+                                                        <Trash2 className="w-4 h-4 mr-2" />
+                                                        Delete Group
+                                                    </DropdownMenuItem>
+                                                </>
                                             ) : (
                                                 <DropdownMenuItem
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        // Handle leave group
                                                         if (user?.id) {
                                                             handleRemoveInstructor(group.id, user.id);
                                                         }
@@ -396,7 +467,7 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
                                                 }}
                                             >
                                                 <QuantumAvatar
-                                                    src={getAvatarUrl(instructor.avatar)}
+                                                    src={getAvatarUrl(instructor.avatar) ?? undefined}
                                                     alt={instructor.name}
                                                     size="sm"
                                                     verified={instructor.is_verified}
@@ -454,8 +525,7 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
                 <div className="flex gap-4 overflow-x-auto pb-4">
                     {filteredGroups.map((group, index) => {
                         const instructors = groupInstructors.get(group.id) || [];
-                        const isOwner = group.owner === user?.id || 
-                                        (typeof group.owner === 'object' && group.owner?.id === user?.id);
+                        const isOwner = isCurrentUserOwner(group.owner);
 
                         return (
                             <motion.div
@@ -486,16 +556,31 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
                                             {isOwner ? (
-                                                <DropdownMenuItem
-                                                    onClick={() => handleDeleteGroup(group.id)}
-                                                    className="text-destructive"
-                                                >
-                                                    <Trash2 className="w-4 h-4 mr-2" />
-                                                    Delete Group
-                                                </DropdownMenuItem>
+                                                <>
+                                                    <DropdownMenuItem
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleRenameGroup(group);
+                                                        }}
+                                                    >
+                                                        <Edit3 className="w-4 h-4 mr-2" />
+                                                        Rename Group
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteGroup(group.id);
+                                                        }}
+                                                        className="text-destructive"
+                                                    >
+                                                        <Trash2 className="w-4 h-4 mr-2" />
+                                                        Delete Group
+                                                    </DropdownMenuItem>
+                                                </>
                                             ) : (
                                                 <DropdownMenuItem
-                                                    onClick={() => {
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
                                                         if (user?.id) {
                                                             handleRemoveInstructor(group.id, user.id);
                                                         }
@@ -517,7 +602,7 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
                                             className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
                                         >
                                             <QuantumAvatar
-                                                src={getAvatarUrl(instructor.avatar)}
+                                                src={getAvatarUrl(instructor.avatar) ?? undefined}
                                                 alt={instructor.name}
                                                 size="sm"
                                                 verified={instructor.is_verified}
@@ -575,12 +660,61 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
                     groupId={selectedGroup.id}
                     groupName={selectedGroup.name}
                     currentUserId={user.id}
+                    currentUserDocumentId={documentUserId}
                     onInviteSent={() => {
                         loadGroups();
                         onGroupUpdate?.();
                     }}
                 />
             )}
+
+            <Dialog open={renameDialogOpen} onOpenChange={(open) => {
+                setRenameDialogOpen(open);
+                if (!open) {
+                    setRenamingGroup(null);
+                    setRenameValue("");
+                }
+            }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Rename Group</DialogTitle>
+                        <DialogDescription>
+                            Give this instructor group a fresh name.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3 py-2">
+                        <Label htmlFor="rename-group" className="text-sm font-medium text-muted-foreground">
+                            New group name
+                        </Label>
+                        <Input
+                            id="rename-group"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            placeholder="Enter new group name"
+                            autoFocus
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="ghost"
+                            onClick={() => {
+                                setRenameDialogOpen(false);
+                                setRenamingGroup(null);
+                                setRenameValue("");
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={submitRenameGroup}
+                            disabled={renaming || !renameValue.trim()}
+                            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                        >
+                            {renaming ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -123,7 +123,7 @@ export function NotificationSidebar({ isOpen, onClose }: NotificationSidebarProp
     }
 
     const pendingInstructorCount = instructorInvitations.filter(inv => inv.invitation_status === 'pending').length
-    const pendingFriendCount = friendRequests.filter(req => req.request_status === 'pending').length
+    const pendingFriendCount = friendRequests.filter(req => req.friend_status === 'pending').length
     const totalPending = pendingInstructorCount + pendingFriendCount
 
     return (

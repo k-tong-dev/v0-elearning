@@ -3,8 +3,17 @@ import { storeAccessToken as storeCookieToken, getAccessToken as getCookieToken,
 
 export async function checkStrapiUserExists(email: string): Promise<boolean> {
     try {
-        const response = await strapiPublic.get(`/api/users?filters[email][$eq]=${email}`);
-        return response.data && response.data.length > 0;
+        if (!email) return false;
+
+        const encodedEmail = encodeURIComponent(email.trim().toLowerCase());
+        const response = await strapiPublic.get(`/api/users?filters[email][$eq]=${encodedEmail}`);
+        const data = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response.data?.data)
+                ? response.data.data
+                : [];
+
+        return data.length > 0;
     } catch (error) {
         console.error("Error checking Strapi user existence:", error);
         return false;
@@ -47,9 +56,18 @@ export async function updateUser(userId: string, payload: any): Promise<any> {
 
 export async function getStrapiUserByEmail(email: string): Promise<any | null> {
     try {
-        const response = await strapiPublic.get(`/api/users?filters[email][$eq]=${email}&populate=*`);
-        if (response.data && response.data.length > 0) {
-            return response.data[0];
+        if (!email) return null;
+
+        const encodedEmail = encodeURIComponent(email.trim().toLowerCase());
+        const response = await strapiPublic.get(`/api/users?filters[email][$eq]=${encodedEmail}&populate=*`);
+        const data = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response.data?.data)
+                ? response.data.data
+                : [];
+
+        if (data.length > 0) {
+            return data[0];
         }
         return null;
     } catch (error) {
@@ -178,6 +196,12 @@ export async function uploadStrapiFile(file: File, folderPath?: string | number)
             // Don't set Content-Type - axios will set it automatically with boundary
         });
         
+        console.log("[uploadStrapiFile] Sending upload request", {
+            baseURL: STRAPI_BASE_URL,
+            hasFolderPath: Boolean(folderPath),
+            folderPath,
+        });
+
         const response = await uploadClient.post('/api/upload', formData, {
             headers: {
                 'Authorization': `Bearer ${accessToken}`,

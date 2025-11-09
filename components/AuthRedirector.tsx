@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { PageLoading } from '@/components/page-loading';
-import { getStrapiUserByEmail } from "@/integrations/strapi/utils"
 
 export function AuthRedirector({ children }: { children: React.ReactNode }) {
     const { user, isAuthenticated, isLoading=false } = useAuth();
@@ -21,6 +20,23 @@ export function AuthRedirector({ children }: { children: React.ReactNode }) {
         '/auth/forgot-password',
     ];
 
+    const hasCompletedOnboarding = useMemo(() => {
+        if (!user) return false;
+
+        const localFlag = typeof window !== 'undefined' && window.localStorage?.getItem('onboardingComplete') === 'true';
+
+        const hasCharacter = Boolean(user?.character);
+        const hasLearningGoals = Array.isArray(user?.learning_goals) && user.learning_goals.length > 0;
+        const hasLearningStyles = Array.isArray(user?.prefer_to_learns) && user.prefer_to_learns.length > 0;
+        const hasInterests = Array.isArray(user?.interested) && user.interested.length > 0;
+        const hasBadges = Array.isArray(user?.badges) && user.badges.length > 0;
+        const hasAvatar = Boolean(user?.avatar);
+
+        const profileComplete = hasCharacter && hasLearningGoals && hasLearningStyles && hasInterests && hasBadges && hasAvatar;
+
+        return localFlag || profileComplete;
+    }, [user]);
+
     useEffect(() => {
         if (isLoading) {
             return;
@@ -31,23 +47,16 @@ export function AuthRedirector({ children }: { children: React.ReactNode }) {
             return;
         }
         if(user?.id  && pathname === '/auth/signup') {
-            (async () => {
-                try {
-                    const isUser = await getStrapiUserByEmail(user?.email);
-                    if (isUser) {
-                        router.replace('/');
-                    }
-                } catch (error) {
-                    console.error("Error checking Strapi user:", error);
-                }
-            })();
+            if (hasCompletedOnboarding) {
+                router.replace('/');
+            }
             return;
         }
         if(!user?.id  && pathname === '/dashboard') {
             router.replace('/');
         }
 
-    }, [isLoading, isAuthenticated, user, pathname, router]);
+    }, [isLoading, isAuthenticated, user, pathname, router, hasCompletedOnboarding]);
     // if (isLoading) {
     //     return <PageLoading message="Session Loading..." />;
     // }
