@@ -314,7 +314,7 @@ export function DashboardSidebar({
                         layout
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                    >
+                        >
                         <Button
                             variant="ghost"
                             onClick={onNotificationClick}
@@ -323,10 +323,14 @@ export function DashboardSidebar({
                                 isExpanded ? "px-4 justify-start" : "px-2 py-2 justify-center",
                             )}
                         >
-                            <div className="relative">
-                                <Bell className={cn(`w-5 h-5`, isExpanded ? "mr-3" : "")} />
-                                {/* Badge for notification count - can be added later */}
-                            </div>
+                                <div className="relative">
+                                    <Bell className={cn(`w-5 h-5`, isExpanded ? "mr-3" : "")} />
+                                    {notificationCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-xs font-bold text-white shadow-lg">
+                                            {notificationCount > 9 ? "9+" : notificationCount}
+                                        </span>
+                                    )}
+                                </div>
                             {(isExpanded || isMobile) && (
                                 <motion.span
                                     initial={{ opacity: 0, x: -10 }}
@@ -337,6 +341,11 @@ export function DashboardSidebar({
                                     Notifications
                                 </motion.span>
                             )}
+                                {notificationCount > 0 && isExpanded && (
+                                    <Badge className="ml-auto bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                                        {notificationCount > 9 ? "9+" : notificationCount}
+                                    </Badge>
+                                )}
                         </Button>
                     </motion.div>
                 )}

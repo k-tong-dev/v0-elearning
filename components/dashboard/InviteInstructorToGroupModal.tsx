@@ -12,6 +12,7 @@ import {
     AnimatedModalTitle,
     AnimatedModalDescription,
 } from "@/components/ui/aceternity/AnimatedModal";
+import { Badge } from "@/components/ui/badge";
 import { Search, UserPlus, X, Loader2, CheckCircle2, AlertCircle, Users, Check, MoreVertical, Edit3 } from "lucide-react";
 import { searchInstructors, sendInvitation } from "@/integrations/strapi/instructor-invitation";
 import { getUserInstructorGroups, updateGroupName } from "@/integrations/strapi/instructor-group";
@@ -37,6 +38,9 @@ interface InviteInstructorToGroupModalProps {
     currentUserId: string | number;
     currentUserDocumentId?: string;
     onInviteSent?: () => void;
+    isLimitReached?: boolean;
+    memberLimit?: number;
+    currentMemberCount?: number;
 }
 
 export function InviteInstructorToGroupModal({
@@ -47,6 +51,9 @@ export function InviteInstructorToGroupModal({
     currentUserId,
     currentUserDocumentId,
     onInviteSent,
+    isLimitReached,
+    memberLimit,
+    currentMemberCount,
 }: InviteInstructorToGroupModalProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<Instructor[]>([]);
@@ -62,6 +69,21 @@ export function InviteInstructorToGroupModal({
     const [renamingGroup, setRenamingGroup] = useState<InstructorGroup | null>(null);
     const [renameValue, setRenameValue] = useState("");
     const [renaming, setRenaming] = useState(false);
+
+    const limitReached = useMemo(() => {
+        if (isLimitReached) return true;
+        if (memberLimit !== undefined && currentMemberCount !== undefined) {
+            return currentMemberCount >= memberLimit;
+        }
+        return false;
+    }, [isLimitReached, memberLimit, currentMemberCount]);
+
+    const slotsRemaining = useMemo(() => {
+        if (memberLimit !== undefined && currentMemberCount !== undefined) {
+            return Math.max(memberLimit - currentMemberCount, 0);
+        }
+        return undefined;
+    }, [memberLimit, currentMemberCount]);
 
     const numericCurrentUserId = useMemo(() => {
         const numeric = Number(currentUserId);
@@ -184,6 +206,10 @@ export function InviteInstructorToGroupModal({
 
     const handleInvite = async () => {
         if (!selectedInstructor || !selectedGroupId || !currentUserId) return;
+        if (limitReached) {
+            toast.error("You've reached the member limit for this group.");
+            return;
+        }
 
         setSending(true);
         try {
@@ -248,7 +274,7 @@ export function InviteInstructorToGroupModal({
         >
             <AnimatedModalContent className="bg-transparent p-0">
                 <AnimatedModalHeader className="space-y-4 pb-6 border-b border-border/50 bg-gradient-to-r from-transparent via-accent/10 to-transparent px-8 pt-8">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div className="flex items-center gap-4 flex-1">
                             <motion.div 
                                 className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 dark:from-blue-500/30 dark:via-purple-500/30 dark:to-pink-500/30 border border-primary/20"
@@ -266,6 +292,11 @@ export function InviteInstructorToGroupModal({
                                 </AnimatedModalDescription>
                             </div>
                         </div>
+                        {memberLimit !== undefined && currentMemberCount !== undefined && (
+                            <Badge variant="outline" className="border-border/60 bg-background/60 text-muted-foreground">
+                                {currentMemberCount}/{memberLimit} members
+                            </Badge>
+                        )}
                     </div>
                 </AnimatedModalHeader>
 
@@ -381,6 +412,7 @@ export function InviteInstructorToGroupModal({
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Search by username or instructor name..."
                                     className="pl-12 pr-12 h-12 bg-background/90 backdrop-blur-xl border-2 border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary/70 focus:ring-4 focus:ring-primary/20 transition-all duration-300 rounded-xl"
+                                    disabled={limitReached}
                                 />
                                 {searching && (
                                     <motion.div
@@ -393,6 +425,13 @@ export function InviteInstructorToGroupModal({
                                 )}
                             </div>
                         </motion.div>
+
+                        {limitReached && (
+                            <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4" />
+                                Member limit reached. Remove an instructor before inviting new ones.
+                            </div>
+                        )}
 
                         {/* Search Results */}
                         <AnimatePresence mode="wait">
@@ -525,30 +564,6 @@ export function InviteInstructorToGroupModal({
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            {selectedGroup && isGroupOwner(selectedGroup.owner) && (
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        >
-                                                            <MoreVertical className="w-4 h-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                openRenameDialog(selectedGroup);
-                                                            }}
-                                                        >
-                                                            <Edit3 className="w-4 h-4 mr-2" />
-                                                            Rename Group
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            )}
                                             <Button
                                                 type="button"
                                                 variant="ghost"

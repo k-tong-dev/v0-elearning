@@ -50,6 +50,17 @@ interface InstructorGroupManagerProps {
 
 type ViewMode = "grid" | "kanban";
 
+const DEFAULT_INSTRUCTOR_GROUP_MEMBER_LIMIT = 30;
+
+const parsePositiveInteger = (value: unknown, fallback: number): number => {
+    if (typeof value === "number" && Number.isFinite(value) && value > 0) return Math.floor(value);
+    if (typeof value === "string" && /^\d+$/.test(value)) {
+        const parsed = Number(value);
+        if (Number.isFinite(parsed) && parsed > 0) return Math.floor(parsed);
+    }
+    return fallback;
+};
+
 export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManagerProps) {
     const { user } = useAuth();
     const [groups, setGroups] = useState<InstructorGroupType[]>([]);
@@ -69,6 +80,10 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
 
     const numericUserId = useMemo(() => (user?.id ? Number(user.id) : undefined), [user?.id]);
     const documentUserId: string | undefined = user?.documentId ?? undefined;
+    const instructorGroupMemberLimit = useMemo(
+        () => parsePositiveInteger((user as any)?.instructor_group_member_limit, DEFAULT_INSTRUCTOR_GROUP_MEMBER_LIMIT),
+        [user]
+    );
 
     const isCurrentUserOwner = useCallback(
         (owner: any): boolean => {
@@ -371,6 +386,8 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
                     {filteredGroups.map((group, index) => {
                         const instructors = groupInstructors.get(group.id) || [];
                         const isOwner = isCurrentUserOwner(group.owner);
+                        const memberLimitReached = isOwner && instructors.length >= instructorGroupMemberLimit;
+                        const memberSlotsRemaining = Math.max(instructorGroupMemberLimit - instructors.length, 0);
 
                         return (
                             <motion.div
@@ -408,6 +425,10 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem onClick={(e) => {
                                                 e.stopPropagation();
+                                                if (memberLimitReached) {
+                                                    toast.error("You've reached the member limit for this group.");
+                                                    return;
+                                                }
                                                 setSelectedGroup(group);
                                                 setShowInviteModal(true);
                                             }}>
@@ -510,12 +531,17 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
                                     className="w-full mt-4"
                                     onClick={(e) => {
                                         e.stopPropagation();
+                                        if (memberLimitReached) {
+                                            toast.error("You've reached the member limit for this group.");
+                                            return;
+                                        }
                                         setSelectedGroup(group);
                                         setShowInviteModal(true);
                                     }}
+                                    disabled={memberLimitReached}
                                 >
                                     <UserPlus className="w-4 h-4 mr-2" />
-                                    Add Instructors
+                                    {memberLimitReached ? 'Member limit reached' : 'Add Instructors'}
                                 </Button>
                             </motion.div>
                         );
@@ -526,6 +552,8 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
                     {filteredGroups.map((group, index) => {
                         const instructors = groupInstructors.get(group.id) || [];
                         const isOwner = isCurrentUserOwner(group.owner);
+                        const memberLimitReached = isOwner && instructors.length >= instructorGroupMemberLimit;
+                        const memberSlotsRemaining = Math.max(instructorGroupMemberLimit - instructors.length, 0);
 
                         return (
                             <motion.div
@@ -636,12 +664,17 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
                                     size="sm"
                                     className="w-full mt-4"
                                     onClick={() => {
+                                        if (memberLimitReached) {
+                                            toast.error("You've reached the member limit for this group.");
+                                            return;
+                                        }
                                         setSelectedGroup(group);
                                         setShowInviteModal(true);
                                     }}
+                                    disabled={memberLimitReached}
                                 >
                                     <UserPlus className="w-4 h-4 mr-2" />
-                                    Add Instructors
+                                    {memberLimitReached ? 'Member limit reached' : 'Add Instructors'}
                                 </Button>
                             </motion.div>
                         );
@@ -650,23 +683,31 @@ export function InstructorGroupManager({ onGroupUpdate }: InstructorGroupManager
             )}
 
             {/* Invite Modal */}
-            {selectedGroup && user?.id && (
-                <InviteInstructorToGroupModal
-                    open={showInviteModal}
-                    onClose={() => {
-                        setShowInviteModal(false);
-                        setSelectedGroup(null);
-                    }}
-                    groupId={selectedGroup.id}
-                    groupName={selectedGroup.name}
-                    currentUserId={user.id}
-                    currentUserDocumentId={documentUserId}
-                    onInviteSent={() => {
-                        loadGroups();
-                        onGroupUpdate?.();
-                    }}
-                />
-            )}
+            {selectedGroup && user?.id && (() => {
+                const selectedInstructors = groupInstructors.get(selectedGroup.id) || [];
+                const ownsSelectedGroup = isCurrentUserOwner(selectedGroup.owner);
+                const selectedLimitReached = ownsSelectedGroup && selectedInstructors.length >= instructorGroupMemberLimit;
+                return (
+                    <InviteInstructorToGroupModal
+                        open={showInviteModal}
+                        onClose={() => {
+                            setShowInviteModal(false);
+                            setSelectedGroup(null);
+                        }}
+                        groupId={selectedGroup.id}
+                        groupName={selectedGroup.name}
+                        currentUserId={user.id}
+                        currentUserDocumentId={documentUserId}
+                        isLimitReached={selectedLimitReached}
+                        memberLimit={instructorGroupMemberLimit}
+                        currentMemberCount={selectedInstructors.length}
+                        onInviteSent={() => {
+                            loadGroups();
+                            onGroupUpdate?.();
+                        }}
+                    />
+                );
+            })()}
 
             <Dialog open={renameDialogOpen} onOpenChange={(open) => {
                 setRenameDialogOpen(open);

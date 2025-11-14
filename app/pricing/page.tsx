@@ -228,11 +228,11 @@ export default function PricingPage() {
                 className="mb-20 mt-20"
               >
                 {/* Group Header */}
-                <div className="text-center mb-12 font-saira">
-                  <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <div className="text-center mb-12">
+                  <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent uppercase">
                     {groupName}
                   </h2>
-                  <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                  <p className="text-lg text-muted-foreground max-w-2xl mx-auto tracking-widest uppercase">
                     Choose the perfect plan for your needs
                   </p>
                 </div>

@@ -518,7 +518,7 @@ export function InstructorInvitationsPanel({
                         />
                         <TabsTrigger 
                             value="received" 
-                            className="relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-300 data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground hover:text-foreground data-[state=active]:font-semibold"
+                            className="relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-300 data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground hover:text-foreground data-[state=active]:font-semibold data-[state=active]:dark:bg-transparent"
                         >
                             <motion.div
                                 animate={{ rotate: activeTab === "received" ? [0, 10, -10, 0] : 0 }}
@@ -535,7 +535,7 @@ export function InstructorInvitationsPanel({
                         </TabsTrigger>
                         <TabsTrigger 
                             value="sent" 
-                            className="relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-300 data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground hover:text-foreground data-[state=active]:font-semibold"
+                            className="relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-300 data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground hover:text-foreground data-[state=active]:font-semibold data-[state=active]:dark:bg-transparent"
                         >
                             <motion.div
                                 animate={{ rotate: activeTab === "sent" ? [0, 10, -10, 0] : 0 }}

@@ -6,12 +6,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Edit, Trash2, Crown, Users, DollarSign, CheckCircle, XCircle, UserPlus, Bell, ExternalLink, FolderOpen, ArrowLeft, Search, MoreVertical, Lock, Users2, Edit3 } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Crown, Users, DollarSign, CheckCircle, XCircle, UserPlus, Bell, ExternalLink, FolderOpen, ArrowLeft, Search, MoreVertical, Lock, Users2, Edit3, Shield } from "lucide-react";
 import { QuantumAvatar } from "@/components/ui/quantum-avatar";
 import { getInstructors, deleteInstructor, Instructor, getInstructor } from "@/integrations/strapi/instructor";
 import { getCollaboratingInstructors, getPendingInvitationsCount } from "@/integrations/strapi/instructor-invitation";
 import { getUserSubscription, calculateSubscriptionBilling, Subscription } from "@/integrations/strapi/subscription";
-import { getUserInstructorGroups, getInstructorGroupsForInstructor, InstructorGroup, removeInstructorFromGroup, deleteInstructorGroup, addInstructorToGroup, addInstructorsToGroup, getInstructorGroup, updateGroupName } from "@/integrations/strapi/instructor-group";
+import { getUserInstructorGroups, getInstructorGroupsForInstructor, InstructorGroup, removeInstructorFromGroup, deleteInstructorGroup, addInstructorToGroup, addInstructorsToGroup, getInstructorGroup, updateGroupName, updateInstructorGroupPrivacy } from "@/integrations/strapi/instructor-group";
 import { toast } from "sonner";
 import CreateInstructorForm from "./CreateInstructorForm";
 import { InstructorInvitationsPanel } from "./InstructorInvitationsPanel";
@@ -32,6 +32,7 @@ import {
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
 
 interface DashboardInstructorsProps {
@@ -74,9 +75,14 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
     const [renamingGroup, setRenamingGroup] = useState<InstructorGroup | null>(null);
     const [renameValue, setRenameValue] = useState("");
     const [renaming, setRenaming] = useState(false);
+    const [updatingGroupPrivacyId, setUpdatingGroupPrivacyId] = useState<string | number | null>(null);
 
     const numericUserId = useMemo(() => (user?.id ? Number(user.id) : undefined), [user?.id]);
     const documentUserId: string | undefined = user?.documentId ?? undefined;
+    const instructorGroupMemberLimit = useMemo(
+        () => parsePositiveInteger((user as any)?.instructor_group_member_limit, DEFAULT_INSTRUCTOR_GROUP_MEMBER_LIMIT),
+        [user]
+    );
 
     const isCurrentUserOwner = useCallback(
         (owner: any): boolean => {
@@ -276,7 +282,12 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
     const loadGroupInstructors = async (group: InstructorGroup) => {
         if (!group.instructors || !Array.isArray(group.instructors)) {
             setGroupInstructors([]);
-            return;
+            setGroupInstructorsMap((prev) => {
+                const next = new Map(prev);
+                next.set(group.id, []);
+                return next;
+            });
+            return [] as Instructor[];
         }
 
         const instructorsList: Instructor[] = [];
@@ -291,6 +302,12 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
             }
         }
         setGroupInstructors(instructorsList);
+        setGroupInstructorsMap((prev) => {
+            const next = new Map(prev);
+            next.set(group.id, instructorsList);
+            return next;
+        });
+        return instructorsList;
     };
 
     const handleGroupClick = async (group: InstructorGroup) => {
@@ -325,15 +342,40 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
         }
     };
 
+    const handleToggleGroupPrivacy = async (group: InstructorGroup, nextValue: boolean) => {
+        try {
+            setUpdatingGroupPrivacyId(group.documentId || group.id);
+            await updateInstructorGroupPrivacy(group.documentId || group.id, nextValue);
+            toast.success(`Group is now ${nextValue ? "private" : "public"}`);
+            await loadGroups();
+            if (selectedGroup && (selectedGroup.documentId || selectedGroup.id) === (group.documentId || group.id)) {
+                await loadGroupInstructors(group);
+                setSelectedGroup((prev) => (prev ? { ...prev, isPrivate: nextValue } : prev));
+            }
+        } catch (error: any) {
+            console.error("Error updating group privacy:", error);
+            toast.error(error?.message || "Failed to update group privacy");
+        } finally {
+            setUpdatingGroupPrivacyId(null);
+        }
+    };
+
     const handleRemoveInstructor = async (groupId: string | number, instructorId: string | number) => {
         if (!confirm("Remove this instructor from the group?")) return;
+        const targetGroupIdentifier = selectedGroup?.documentId || groupId;
 
         try {
-            const success = await removeInstructorFromGroup(groupId, instructorId);
+            const success = await removeInstructorFromGroup(targetGroupIdentifier, instructorId);
             if (success) {
                 toast.success("Instructor removed from group");
                 if (selectedGroup) {
-                    await loadGroupInstructors(selectedGroup);
+                    const refreshedGroup = await getInstructorGroup(targetGroupIdentifier);
+                    if (refreshedGroup) {
+                        setSelectedGroup(refreshedGroup);
+                        await loadGroupInstructors(refreshedGroup);
+                    } else {
+                        await loadGroupInstructors(selectedGroup);
+                    }
                 }
                 await loadGroups();
             } else {
@@ -587,6 +629,11 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
     // Group View - Show instructors in selected group
     if (viewMode === "group" && selectedGroup) {
         const isOwner = isCurrentUserOwner(selectedGroup.owner);
+        const isPrivate = !!(selectedGroup.isPrivate ?? (selectedGroup as any)?.privete ?? (selectedGroup as any)?.private);
+        const memberLimitReached = isOwner && groupInstructors.length >= instructorGroupMemberLimit;
+        const memberSlotsRemaining = Math.max(instructorGroupMemberLimit - groupInstructors.length, 0);
+        const selectedGroupIdentifier = selectedGroup.documentId || selectedGroup.id;
+        const isUpdatingPrivacy = updatingGroupPrivacyId === selectedGroupIdentifier;
 
         return (
             <div className="space-y-6">
@@ -616,6 +663,13 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                             </h2>
                             <p className="text-muted-foreground mt-1">
                                 {groupInstructors.length} instructor{groupInstructors.length !== 1 ? 's' : ''} in this group
+                                {isOwner && (
+                                    <span className={`ml-2 text-xs ${memberLimitReached ? 'text-destructive/80' : 'text-muted-foreground/70'}`}>
+                                        {memberLimitReached
+                                            ? 'Member limit reached'
+                                            : `${memberSlotsRemaining} slot${memberSlotsRemaining === 1 ? '' : 's'} remaining`}
+                                    </span>
+                                )}
                             </p>
                 </div>
                     </div>
@@ -623,22 +677,46 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                         {isOwner && (
                         <>
                             <Button
-                                onClick={() => setShowInviteModal(true)}
-                                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
-                                    size="sm"
+                                onClick={() => {
+                                    if (memberLimitReached) {
+                                        toast.error("You've reached the member limit for this group.")
+                                        return
+                                    }
+                                    setShowInviteModal(true)
+                                }}
+                                className="relative bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                                size="sm"
+                                disabled={memberLimitReached}
                             >
                                 <UserPlus className="w-4 h-4 mr-2" />
-                                    Invite Instructors
+                                {memberLimitReached ? 'Member limit reached' : 'Invite Instructors'}
+                                {memberLimitReached && (
+                                    <span className="absolute -top-2 -right-2">
+                                        <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-white border-transparent shadow-sm">
+                                            Pro
+                                        </Badge>
+                                    </span>
+                                )}
                             </Button>
                             <Button
-                                    onClick={handleAssignMyInstructor}
+                                onClick={handleAssignMyInstructor}
                                 variant="outline"
-                                    size="sm"
-                                    className="border-primary/50 text-primary hover:bg-primary/10"
+                                size="sm"
+                                className="border-primary/50 text-primary hover:bg-primary/10"
                             >
-                                    <PlusCircle className="w-4 h-4 mr-2" />
-                                    Add My Instructor
+                                <PlusCircle className="w-4 h-4 mr-2" />
+                                Add My Instructor
                             </Button>
+                            {/* <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-primary/40 text-primary hover:bg-primary/10"
+                                onClick={() => selectedGroup && handleToggleGroupPrivacy(selectedGroup, !isPrivate)}
+                                disabled={!selectedGroup}
+                            >
+                                <Shield className="w-4 h-4 mr-2" />
+                                {isPrivate ? 'Make Public' : 'Make Private'}
+                            </Button> */}
                         </>
                     )}
                         <DropdownMenu>
@@ -650,6 +728,25 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                             <DropdownMenuContent align="end">
                                 {isOwner ? (
                                     <>
+                                        <DropdownMenuItem
+                                            onSelect={(event) => event.preventDefault()}
+                                            className="flex items-center justify-between gap-4"
+                                        >
+                                            <div className="flex flex-col leading-tight">
+                                                <span className="text-xs text-muted-foreground">Privacy</span>
+                                                <span className="text-sm font-medium text-foreground flex items-center gap-1">
+                                                    <Shield className="w-3 h-3" />
+                                                    {isPrivate ? "Private" : "Public"}
+                                                </span>
+                                            </div>
+                                            <Switch
+                                                checked={isPrivate}
+                                                onCheckedChange={(value) => selectedGroup && handleToggleGroupPrivacy(selectedGroup, value)}
+                                                disabled={!selectedGroup || isUpdatingPrivacy}
+                                                className="h-4 w-9"
+                                            />
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
                                         <DropdownMenuItem
                                             onClick={() => openRenameDialog(selectedGroup)}
                                         >
@@ -703,11 +800,18 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                             </p>
                             {isOwner && (
                     <Button
-                                onClick={() => setShowInviteModal(true)}
+                                onClick={() => {
+                                    if (memberLimitReached) {
+                                        toast.error("You've reached the member limit for this group.")
+                                        return
+                                    }
+                                    setShowInviteModal(true)
+                                }}
                         className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                        disabled={memberLimitReached}
                     >
                                     <UserPlus className="w-5 h-5 mr-2" />
-                                    Add Instructors
+                                    {memberLimitReached ? 'Member limit reached' : 'Add Instructors'}
                     </Button>
                             )}
                 </div>
@@ -747,7 +851,7 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 // Owner can kick any instructor (including their own)
-                                                handleRemoveInstructor(selectedGroup.id, instructor.id);
+                                                handleRemoveInstructor(selectedGroup.documentId || selectedGroup.id, instructor.id);
                                             }}
                                             className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                                             title="Kick instructor from group"
@@ -800,6 +904,9 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                             groupName={selectedGroup.name}
                             currentUserId={user.id}
                             currentUserDocumentId={documentUserId}
+                            isLimitReached={memberLimitReached}
+                            memberLimit={instructorGroupMemberLimit}
+                            currentMemberCount={groupInstructors.length}
                     onInviteSent={() => {
                                 loadGroupInstructors(selectedGroup);
                                 loadGroups();
@@ -1061,7 +1168,7 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                     
                     <TabsTrigger 
                         value="list"
-                        className="relative z-10 data-[state=active]:text-gray-600 dark:data-[state=active]:text-white data-[state=inactive]:text-muted-foreground dark:data-[state=inactive]:text-slate-400 font-semibold transition-all duration-300 hover:text-foreground dark:hover:text-slate-200"
+                        className="relative z-10 data-[state=active]:text-gray-600 dark:data-[state=active]:text-white data-[state=inactive]:text-muted-foreground dark:data-[state=inactive]:text-slate-400 font-semibold transition-all duration-300 hover:text-foreground dark:hover:text-slate-200 data-[state=active]:dark:bg-transparent"
                     >
                         <motion.div
                             className="flex items-center justify-center"
@@ -1074,7 +1181,7 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                     </TabsTrigger>
                     <TabsTrigger 
                         value="invitations"
-                        className="relative z-10 data-[state=active]:text-gray-600 dark:data-[state=active]:text-white data-[state=inactive]:text-muted-foreground dark:data-[state=inactive]:text-slate-400 font-semibold transition-all duration-300 hover:text-foreground dark:hover:text-slate-200"
+                        className="relative z-10 data-[state=active]:text-gray-600 dark:data-[state=active]:text-white data-[state=inactive]:text-muted-foreground dark:data-[state=inactive]:text-slate-400 font-semibold transition-all duration-300 hover:text-foreground dark:hover:text-slate-200 data-[state=active]:dark:bg-transparent"
                     >
                         <motion.div
                             className="flex items-center justify-center"
@@ -1452,6 +1559,11 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                                     const isOwner = isCurrentUserOwner(group.owner);
                                     const groupInstructors = groupInstructorsMap.get(group.id) || [];
                                     const instructorCount = groupInstructors.length;
+                                    const groupIdentifier = group.documentId || group.id;
+                                    const isPrivate = !!(group.isPrivate ?? (group as any)?.privete ?? (group as any)?.private);
+                                    const isUpdatingPrivacy = updatingGroupPrivacyId === groupIdentifier;
+                                    const memberLimitReachedForGroup = isOwner && instructorCount >= instructorGroupMemberLimit;
+                                    const updatedLabel = group.updatedAt ? new Date(group.updatedAt).toLocaleDateString() : "recently";
                                                         
                                                         return (
                                         <motion.div
@@ -1462,6 +1574,11 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                                             onClick={() => handleGroupClick(group)}
                                             className="group relative bg-gradient-to-br from-background/80 via-background/60 to-background/80 backdrop-blur-xl border-2 border-border hover:border-primary/50 rounded-xl p-5 cursor-pointer transition-all duration-300 hover:shadow-xl hover:shadow-primary/10"
                                         >
+                                            {memberLimitReachedForGroup && (
+                                                <Badge className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-yellow-400 text-white border-transparent shadow-sm">
+                                                    Pro
+                                                </Badge>
+                                            )}
                                             <div className="flex items-start justify-between mb-3">
                                                 <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 group-hover:from-blue-500/30 group-hover:via-purple-500/30 group-hover:to-pink-500/30 transition-colors">
                                                     <Users2 className="w-6 h-6 text-primary" />
@@ -1470,9 +1587,20 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                                                     <Crown className="w-4 h-4 text-yellow-500 flex-shrink-0" />
                                                 )}
                                             </div>
-                                            <h4 className="font-bold text-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">
-                                                {group.name}
-                                            </h4>
+                                            <div className="flex items-center justify-between gap-3 mb-2">
+                                                <h4 className="font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                                                    {group.name}
+                                                </h4>
+                                                <Badge
+                                                    variant="outline"
+                                                    className={`flex items-center gap-1 border border-border/60 ${
+                                                        isPrivate ? "bg-primary/10 text-primary" : "bg-emerald-500/10 text-emerald-500"
+                                                    }`}
+                                                >
+                                                    <Shield className="w-3 h-3" />
+                                                    {isPrivate ? "Private" : "Public"}
+                                                </Badge>
+                                            </div>
                                             
                                             {/* Instructor Avatars */}
                                             {groupInstructors.length > 0 ? (
@@ -1539,10 +1667,33 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                                                                         setSelectedGroup(group);
                                                                         setShowInviteModal(true);
                                                                     }}
+                                                                    disabled={memberLimitReachedForGroup}
                                                                 >
                                                                     <UserPlus className="w-4 h-4 mr-2" />
-                                                                    Add Instructors
+                                                                    {memberLimitReachedForGroup ? "Limit reached" : "Add Instructors"}
                                                                 </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    onSelect={(event) => {
+                                                                        event.preventDefault();
+                                                                        event.stopPropagation();
+                                                                    }}
+                                                                    className="flex items-center justify-between gap-4"
+                                                                >
+                                                                    <div className="flex flex-col leading-tight">
+                                                                        <span className="text-xs text-muted-foreground">Privacy</span>
+                                                                        <span className="text-sm font-medium text-foreground flex items-center gap-1">
+                                                                            <Shield className="w-3 h-3" />
+                                                                            {isPrivate ? "Private" : "Public"}
+                                                                        </span>
+                                                                    </div>
+                                                                    <Switch
+                                                                        checked={isPrivate}
+                                                                        onCheckedChange={(value) => selectedGroup && handleToggleGroupPrivacy(selectedGroup, value)}
+                                                                        disabled={!selectedGroup || isUpdatingPrivacy}
+                                                                        className="h-4 w-9"
+                                                                    />
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuSeparator />
                                                                 <DropdownMenuItem
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
@@ -1552,11 +1703,6 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                                                                     <Edit3 className="w-4 h-4 mr-2" />
                                                                     Rename Group
                                                                 </DropdownMenuItem>
-                                                                <DropdownMenuSeparator />
-                                                            </>
-                                                        )}
-                                                        {isOwner ? (
-                                                            <>
                                                                 <DropdownMenuItem
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
@@ -1582,7 +1728,8 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                                                                     </DropdownMenuItem>
                                                                 )}
                                                             </>
-                                                        ) : (
+                                                        )}
+                                                        {!isOwner && (
                                                             <DropdownMenuItem
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -1597,6 +1744,9 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                                 </div>
+                                            <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground/80">
+                                                <span>Updated {updatedLabel}</span>
+                                            </div>
                                             </motion.div>
                                     );
                                 })}
@@ -1677,6 +1827,9 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
                     groupName={selectedGroup.name}
                     currentUserId={user.id}
                     currentUserDocumentId={documentUserId}
+                    isLimitReached={selectedGroup ? groupInstructors.length >= instructorGroupMemberLimit : false}
+                    memberLimit={instructorGroupMemberLimit}
+                    currentMemberCount={groupInstructors.length}
                     onInviteSent={() => {
                         loadGroups();
                         if (viewMode === "group" && selectedGroup) {
@@ -1728,3 +1881,14 @@ export function DashboardInstructors({ onCreateInstructor }: DashboardInstructor
         </div>
     );
 }
+
+const DEFAULT_INSTRUCTOR_GROUP_MEMBER_LIMIT = 30;
+
+const parsePositiveInteger = (value: unknown, fallback: number): number => {
+    if (typeof value === "number" && Number.isFinite(value) && value > 0) return Math.floor(value);
+    if (typeof value === "string" && /^\d+$/.test(value)) {
+        const parsed = Number(value);
+        if (Number.isFinite(parsed) && parsed > 0) return Math.floor(parsed);
+    }
+    return fallback;
+};

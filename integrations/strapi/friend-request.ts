@@ -67,13 +67,49 @@ async function resolveUserId(userId: string | number): Promise<number> {
     if (typeof userId === "number" && userId > 0) return userId;
     if (typeof userId === "string" && /^\d+$/.test(userId)) return Number(userId);
 
-    const response = await strapiPublic.get(
-        `/api/users?filters[$or][0][id][$eq]=${encodeURIComponent(String(userId))}&filters[$or][1][documentId][$eq]=${encodeURIComponent(
-            String(userId)
-        )}&fields[0]=id`
-    );
+    const params = new URLSearchParams();
+    params.set("fields[0]", "id");
 
-    const found = response.data?.data?.[0]?.id;
+    let orIndex = 0;
+    const addOrFilter = (field: string, value?: string | number | null) => {
+        if (!value && value !== 0) return;
+        params.set(`filters[$or][${orIndex}][${field}][$eq]`, String(value));
+        orIndex += 1;
+    };
+
+    if (typeof userId === "string") {
+        const trimmed = userId.trim();
+        if (trimmed.length === 0) {
+            throw new Error("Unable to resolve user ID: empty identifier");
+        }
+
+        addOrFilter("documentId", trimmed);
+        addOrFilter("username", trimmed);
+        addOrFilter("email", trimmed);
+    } else if (typeof userId === "object" && userId !== null) {
+        const candidate: any = userId;
+        const candidateId = candidate.id ?? candidate.userId;
+        if (candidateId !== undefined) {
+            if (typeof candidateId === "number") {
+                addOrFilter("id", candidateId);
+            } else if (typeof candidateId === "string" && /^\d+$/.test(candidateId)) {
+                addOrFilter("id", candidateId);
+            }
+        }
+
+        addOrFilter("documentId", candidate.documentId ?? candidate.document_id);
+        addOrFilter("username", candidate.username);
+        addOrFilter("email", candidate.email);
+    }
+
+    if (orIndex === 0) {
+        throw new Error(`Unable to resolve user ID for "${String(userId)}"`);
+    }
+
+    const response = await strapiPublic.get(`/api/users?${params.toString()}`);
+    const payload = response.data;
+    const record = Array.isArray(payload) ? payload[0] : payload?.data?.[0];
+    const found = record?.id ?? (typeof record === "number" ? record : undefined);
     if (!found) {
         throw new Error(`Unable to resolve user ID for "${userId}"`);
     }
@@ -90,13 +126,19 @@ function buildPaginationMeta(meta: any, fallbackPage: number, fallbackPageSize: 
     };
 }
 
-function formatPaginatedResult<T>(records: T[], pagination: PaginationMeta): PaginatedResult<T> {
-    const hasMore = pagination.page < pagination.pageCount;
+function formatPaginatedResult<T>(
+    records: T[],
+    pagination: PaginationMeta,
+    overrides: { hasMore?: boolean; nextPage?: number | null } = {}
+): PaginatedResult<T> {
+    const defaultHasMore = pagination.page < pagination.pageCount;
+    const hasMore = overrides.hasMore ?? defaultHasMore;
+    const nextPage = overrides.nextPage ?? (hasMore ? pagination.page + 1 : null);
     return {
         data: records,
         pagination,
         hasMore,
-        nextPage: hasMore ? pagination.page + 1 : null,
+        nextPage,
     };
 }
 
@@ -131,8 +173,16 @@ export async function getUserFriendsPaginated(
         })
         .filter(Boolean);
 
-    const pagination = buildPaginationMeta(response.data?.meta, page, pageSize, friends.length);
-    return formatPaginatedResult(friends, pagination);
+    const total = response.data?.meta?.pagination?.total ?? friends.length;
+    const pagination = buildPaginationMeta(response.data?.meta, page, pageSize, total);
+    const overrides = response.data?.meta?.pagination
+        ? undefined
+        : {
+              hasMore: friends.length === pageSize,
+              nextPage: friends.length === pageSize ? page + 1 : null,
+          };
+
+    return formatPaginatedResult(friends, pagination, overrides);
 }
 
 interface FriendRequestPageOptions {
@@ -225,9 +275,8 @@ export async function sendFriendRequest(
             from_user: fromId,
             to_user: toId,
             friend_status: "pending" as const,
-            message: message ?? null,
             requested_at: new Date().toISOString(),
-            read: false,
+            metadata: message ? { note: message } : null,
         };
 
         const response = await strapi.post(REQUEST_ENDPOINT, { data: basePayload });
@@ -290,12 +339,7 @@ export async function acceptFriendRequest(
 
 export async function rejectFriendRequest(requestId: string | number): Promise<boolean> {
     try {
-        await strapi.put(`${REQUEST_ENDPOINT}/${requestId}`, {
-            data: {
-                friend_status: "declined",
-                responded_at: new Date().toISOString(),
-            },
-        });
+        await strapi.delete(`${REQUEST_ENDPOINT}/${requestId}`);
         return true;
     } catch (error: any) {
         console.error("Error rejecting friend request:", error);
@@ -305,12 +349,7 @@ export async function rejectFriendRequest(requestId: string | number): Promise<b
 
 export async function cancelFriendRequest(requestId: string | number): Promise<boolean> {
     try {
-        await strapi.put(`${REQUEST_ENDPOINT}/${requestId}`, {
-            data: {
-                friend_status: "cancelled",
-                responded_at: new Date().toISOString(),
-            },
-        });
+        await strapi.delete(`${REQUEST_ENDPOINT}/${requestId}`);
         return true;
     } catch (error: any) {
         console.error("Error cancelling friend request:", error);
@@ -407,16 +446,21 @@ export async function unfriendUser(userId: string | number, friendId: string | n
 
         const response = await strapi.get(`${REQUEST_ENDPOINT}?${params.toString()}`);
         const record = response.data?.data?.[0];
-        if (!record?.id) {
+        if (!record) {
             return true;
         }
 
-        await strapi.put(`${REQUEST_ENDPOINT}/${record.id}`, {
-            data: {
-                friend_status: "cancelled",
-                responded_at: new Date().toISOString(),
-            },
-        });
+        const recordIdentifier =
+            record.documentId ||
+            record.id ||
+            record?.attributes?.documentId ||
+            record?.attributes?.id;
+
+        if (!recordIdentifier) {
+            throw new Error("Unable to determine friend relationship identifier");
+        }
+
+        await strapi.delete(`${REQUEST_ENDPOINT}/${recordIdentifier}`);
 
         return true;
     } catch (error: any) {
@@ -442,7 +486,8 @@ export async function searchUsersPaginated(
     params.set("populate", "*");
 
     const response = await strapi.get(`/api/users?${params.toString()}`);
-    const rawUsers = response.data?.data || [];
+    const payload = response.data;
+    const rawUsers = Array.isArray(payload) ? payload : payload?.data || [];
 
     const users = rawUsers.map((user: any) => {
         if (user?.attributes) {
@@ -455,8 +500,17 @@ export async function searchUsersPaginated(
         return user;
     });
 
-    const pagination = buildPaginationMeta(response.data?.meta, page, pageSize, users.length);
-    return formatPaginatedResult(users, pagination);
+    const metaPagination = response.data?.meta?.pagination;
+    const inferredTotal =
+        metaPagination?.total ?? (page - 1) * pageSize + users.length + (users.length === pageSize ? 1 : 0);
+    const pagination = buildPaginationMeta(response.data?.meta, page, pageSize, inferredTotal);
+    const hasMore = metaPagination ? pagination.page < pagination.pageCount : users.length === pageSize;
+    const nextPage = hasMore ? page + 1 : null;
+
+    return formatPaginatedResult(users, pagination, {
+        hasMore,
+        nextPage,
+    });
 }
 
 export async function searchUsers(query: string): Promise<any[]> {
@@ -501,6 +555,12 @@ export async function getUsersWithFriendshipContext(
         const docId = user.documentId || user?.attributes?.documentId;
 
         let status: CandidateStatus = "available";
+        const outgoingMatch = requestsSent.data.find(
+            (req) => req.to_user?.id === numericId || req.to_user?.documentId === docId
+        );
+        const incomingMatch = requestsReceived.data.find(
+            (req) => req.from_user?.id === numericId || req.from_user?.documentId === docId
+        );
         if (numericId === Number(currentUserId) || (docId && docId === String(currentUserId))) {
             status = "self";
         } else if ((numericId && friendIds.has(numericId)) || (docId && friendDocs.has(docId))) {
@@ -516,9 +576,9 @@ export async function getUsersWithFriendshipContext(
             friendshipStatus: status,
             pendingRequestId:
                 status === "outgoing"
-                    ? requestsSent.data.find((req) => req.to_user?.id === numericId || req.to_user?.documentId === docId)?.id
+                    ? outgoingMatch?.documentId || outgoingMatch?.id
                     : status === "incoming"
-                    ? requestsReceived.data.find((req) => req.from_user?.id === numericId || req.from_user?.documentId === docId)?.id
+                    ? incomingMatch?.documentId || incomingMatch?.id
                     : undefined,
         };
     });

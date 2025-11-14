@@ -23,14 +23,17 @@ const charactorOptions: { value: UserRoleSlug; label: string; icon: React.Elemen
 
 export function RoleSelectionCombobox({ charactor, onCharactorChange }: RoleSelectionComboboxProps) {
     const selectedCharactorData = charactorOptions.find((option) => option.value === charactor);
+    const labelId = React.useId();
 
     return (
         <div className="space-y-2">
-            <Label>
+            <Label id={labelId}>
                 <Briefcase className="w-4 h-4 mr-2 text-purple-500" />
                 Your Character
             </Label>
             <Select
+                aria-labelledby={labelId}
+                aria-label="Select your character"
                 classNames={{
                     base: "w-full",
                     trigger: "min-h-12 py-2 border-2 hover:border-primary transition-colors rounded-lg",

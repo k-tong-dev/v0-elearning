@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
@@ -17,7 +17,12 @@ import {
     Star,
     CheckCircle,
     AlertCircle,
-  X,
+    X,
+    UserPlus,
+    Users2,
+    Layers,
+    UsersRound,
+    Gauge,
 } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { BasicInfoFields } from "@/components/dashboard/profile-settings/BasicInfoFields"
@@ -57,6 +62,14 @@ interface DashboardSettingsProps {
     currentUser: User
     stats?: DashboardStats
 }
+
+type SettingsSection = "profile" | "settings" | "limits" | "devices" | "account"
+
+const SECTION_ALIASES: Record<string, SettingsSection> = {
+    notifications: "settings",
+}
+
+const VALID_SECTIONS: SettingsSection[] = ["profile", "settings", "limits", "devices", "account"]
 
 export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps) {
     const { user, refreshUser } = useAuth()
@@ -114,7 +127,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
     })
 
     const [isSavingProfile, setIsSavingProfile] = useState(false)
-    const [activeSection, setActiveSection] = useState<"profile" | "notifications" | "limits" | "devices" | "account">("profile")
+    const [activeSection, setActiveSection] = useState<SettingsSection>("profile")
 
     // Fetch characters on mount
     useEffect(() => {
@@ -163,8 +176,13 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
         if (typeof window === "undefined") return
         const params = new URLSearchParams(window.location.search)
         const section = params.get("section")
-        if (section && ["profile", "notifications", "limits", "devices", "account"].includes(section) && section !== activeSection) {
-            setActiveSection(section as "profile" | "notifications" | "limits" | "devices" | "account")
+        if (section) {
+            const normalized =
+                SECTION_ALIASES[section] ??
+                (VALID_SECTIONS.includes(section as SettingsSection) ? (section as SettingsSection) : null)
+            if (normalized && normalized !== activeSection) {
+                setActiveSection(normalized)
+            }
         }
     }, [activeSection])
 
@@ -194,6 +212,80 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
         })
         setAvatarPreview(getAvatarUrl(currentUser.avatar));
     }, [currentUser, strapiURL])
+
+    const limitEntries = useMemo(() => {
+        const record = currentUser as any
+        const parseLimit = (value: unknown): number | null => {
+            if (value === null || value === undefined) return null
+            if (typeof value === "number" && Number.isFinite(value)) return value > 0 ? value : null
+            if (typeof value === "string") {
+                const num = Number(value)
+                if (!Number.isNaN(num) && Number.isFinite(num) && num > 0) return num
+            }
+            return null
+        }
+
+        const friendUsage =
+            typeof record?.friend_count === "number"
+                ? record.friend_count
+                : Array.isArray(record?.friends)
+                ? record.friends.length
+                : null
+        const instructorUsage = instructorsCount
+        const instructorGroupUsage = instructorGroupsCount
+        const userGroupUsage = Array.isArray(record?.user_groups) ? record.user_groups.length : null
+
+        return [
+            {
+                key: "friend_limit",
+                label: "Friend limit",
+                helper: "Maximum number of friends you can have.",
+                value: parseLimit(record?.friend_limit),
+                usage: friendUsage,
+                icon: UserPlus,
+            },
+            {
+                key: "user_group_limit",
+                label: "User group limit",
+                helper: "How many user groups you can create or join.",
+                value: parseLimit(record?.user_group_limit),
+                usage: userGroupUsage,
+                icon: Users,
+            },
+            {
+                key: "user_group_member_limit",
+                label: "Members per user group",
+                helper: "Maximum members allowed in a single user group you own.",
+                value: parseLimit(record?.user_group_member_limit),
+                usage: null,
+                icon: UsersRound,
+            },
+            {
+                key: "instructor_limit",
+                label: "Instructor limit",
+                helper: "Number of instructors you can manage.",
+                value: parseLimit(record?.instructor_limit),
+                usage: instructorUsage,
+                icon: Users2,
+            },
+            {
+                key: "instructor_group_limit",
+                label: "Instructor group limit",
+                helper: "How many instructor groups you can create or join.",
+                value: parseLimit(record?.instructor_group_limit),
+                usage: instructorGroupUsage,
+                icon: Layers,
+            },
+            {
+                key: "instructor_group_member_limit",
+                label: "Members per instructor group",
+                helper: "Maximum members allowed in each instructor group you own.",
+                value: parseLimit(record?.instructor_group_member_limit),
+                usage: null,
+                icon: Crown,
+            },
+        ]
+    }, [currentUser, instructorsCount, instructorGroupsCount])
 
     // Sync notification settings
     useEffect(() => {
@@ -512,15 +604,21 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
     }
 
     const handleSectionChange = (value: string) => {
-        const section = value as "profile" | "notifications" | "limits" | "devices" | "account"
-        if (section !== activeSection) {
-            setActiveSection(section)
-            if (typeof window !== "undefined") {
-                const url = new URL(window.location.href)
-                url.searchParams.set("tab", "settings")
-                url.searchParams.set("section", section)
-                window.history.replaceState(null, "", url.toString())
+        const normalized =
+            SECTION_ALIASES[value] ??
+            (VALID_SECTIONS.includes(value as SettingsSection) ? (value as SettingsSection) : null)
+        if (!normalized || normalized === activeSection) return
+
+        setActiveSection(normalized)
+        if (typeof window !== "undefined") {
+            const url = new URL(window.location.href)
+            url.searchParams.set("tab", "settings")
+            if (normalized === "profile") {
+                url.searchParams.delete("section")
+            } else {
+                url.searchParams.set("section", normalized)
             }
+            window.history.replaceState(null, "", url.toString())
         }
     }
 
@@ -570,9 +668,9 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                 </TabsTrigger>
                                 <TabsTrigger
                                     className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-blue-600 dark:data-[state=active]:to-purple-500 text-xs sm:text-sm"
-                                    value="notifications"
+                                    value="settings"
                                 >
-                                    <FaCog className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Notifications</span>
+                                    <FaCog className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Settings</span>
                                 </TabsTrigger>
                                 <TabsTrigger
                                     className="dark:data-[state=active]:bg-gradient-to-r dark:data-[state=active]:from-blue-600 dark:data-[state=active]:to-purple-500 text-xs sm:text-sm"
@@ -728,10 +826,86 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                                         </form>
                                     </CardContent>
                                 </Card>
+
+                                <Card className="liquid-glass-card border-muted/40">
+                                    <CardHeader className="pb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-gradient-to-r from-sky-500 to-blue-500 rounded-lg">
+                                                <Gauge className="w-5 h-5 text-white" />
+                                            </div>
+                                            <div>
+                                                <CardTitle className="text-xl">Usage Limits</CardTitle>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Review the caps configured for your account.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {limitEntries.map((entry, index) => {
+                                                const Icon = entry.icon
+                                                const isUnlimited = entry.value === null
+                                                const usage =
+                                                    typeof entry.usage === "number" && entry.usage >= 0
+                                                        ? entry.usage
+                                                        : null
+                                                const remaining =
+                                                    !isUnlimited && usage !== null
+                                                        ? Math.max(entry.value! - usage, 0)
+                                                        : null
+
+                                                return (
+                                                    <motion.div
+                                                        key={entry.key}
+                                                        initial={{ opacity: 0, y: 10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ delay: 0.05 * index }}
+                                                        className="flex items-start gap-3 rounded-xl border border-border/60 bg-muted/20 p-4 backdrop-blur-sm"
+                                                    >
+                                                        <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                                                            <Icon className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <p className="font-semibold text-foreground">{entry.label}</p>
+                                                            <p className="text-xs text-muted-foreground">{entry.helper}</p>
+                                                            <div className="text-xs text-muted-foreground/80">
+                                                                Limit:{" "}
+                                                                <span className="font-medium text-foreground">
+                                                                    {isUnlimited ? "Unlimited" : entry.value}
+                                                                </span>
+                                                                {usage !== null && (
+                                                                    <>
+                                                                        <span className="mx-2 text-muted-foreground/40">•</span>
+                                                                        <span>
+                                                                            Used{" "}
+                                                                            <span className="font-medium text-foreground">
+                                                                                {usage}
+                                                                            </span>
+                                                                            {remaining !== null && (
+                                                                                <>
+                                                                                    {" "}
+                                                                                    — Remaining{" "}
+                                                                                    <span className="font-medium text-foreground">
+                                                                                        {remaining}
+                                                                                    </span>
+                                                                                </>
+                                                                            )}
+                                                                        </span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                )
+                                            })}
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             </TabsContent>
 
-                            {/* Notifications Tab Content */}
-                            <TabsContent value="notifications" className="space-y-6 mt-6">
+                            {/* Settings Tab Content */}
+                            <TabsContent value="settings" className="space-y-6 mt-6">
                                 <Card className="liquid-glass-card border-blue-500/20">
                                     <CardHeader className="pb-4">
                                         <div className="flex items-center gap-3">

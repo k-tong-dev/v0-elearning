@@ -119,238 +119,83 @@ export function QuantumAvatar({
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
         {/* Outer glow rings */}
-        <motion.div
-          className="absolute inset-0"
-          style={{ transform: "translateZ(-20px)" }}
-        >
-          {[...Array(3)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute inset-0 rounded-full"
-              style={{
-                border: `2px solid ${statusColor.color}`,
-                opacity: 0.3 - i * 0.1,
-              }}
-              animate={{
-                scale: isHovered ? [1, 1.3 + i * 0.1, 1] : 1,
-                opacity: isHovered ? [0.3 - i * 0.1, 0, 0.3 - i * 0.1] : 0.3 - i * 0.1,
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                delay: i * 0.3,
-              }}
-            />
-          ))}
-        </motion.div>
-
-        {/* Quantum variant */}
-        {variant === "quantum" && (
-          <>
-            {/* Particle field */}
-            <div className="absolute inset-[-20px]">
-              {[...Array(12)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute w-1 h-1 rounded-full bg-cyan-400"
-                  style={{
-                    left: "50%",
-                    top: "50%",
-                  }}
-                  animate={{
-                    x: [
-                      0,
-                      Math.cos(i * 30 * (Math.PI / 180)) * (pixelSize / 2 + 20),
-                      0,
-                    ],
-                    y: [
-                      0,
-                      Math.sin(i * 30 * (Math.PI / 180)) * (pixelSize / 2 + 20),
-                      0,
-                    ],
-                    opacity: [0, 1, 0],
-                    scale: [0, 1.5, 0],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    delay: i * 0.1,
-                  }}
-                />
-              ))}
-            </div>
-            
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-900/40 to-cyan-900/40 backdrop-blur-2xl border border-cyan-400/30 overflow-hidden">
-              <Avatar className="relative w-full h-full">
-                <AvatarImage 
-                  src={src || "/placeholder.svg"} 
-                  alt={alt} 
-                  className="object-cover w-full h-full" 
-                />
-                <AvatarFallback className="text-white font-semibold bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500">
-                  {fallback || "U"}
-                </AvatarFallback>
-              </Avatar>
-              
-              {/* Energy waves */}
-              <motion.div
-                className="absolute inset-0"
-                style={{
-                  background: `radial-gradient(
-                    circle,
-                    rgba(0, 255, 255, 0.3) 0%,
-                    transparent 70%
-                  )`,
-                }}
-                animate={{
-                  scale: isHovered ? [1, 1.5, 1] : 1,
-                  opacity: isHovered ? [0.3, 0, 0.3] : 0,
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-            </div>
-          </>
-        )}
-
-        {/* Holographic variant */}
-        {variant === "holographic" && (
-          <>
-            <motion.div
-              className="absolute inset-[-8px] rounded-full"
-              style={{
-                background: `conic-gradient(
-                  from 0deg,
-                  #ff00ff, #00ffff, #ffff00, #ff00ff
-                )`,
-                filter: "blur(8px)",
-              }}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-            />
-            
-            <div className="absolute inset-0 rounded-full bg-black/40 backdrop-blur-2xl border-2 border-white/20 overflow-hidden">
-              <motion.div
-                className="absolute inset-0 w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent"
-                animate={{ y: [-10, pixelSize + 10] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              />
-              
-              <Avatar className="relative w-full h-full">
-                <AvatarImage src={src || "/placeholder.svg"} alt={alt} className="object-cover w-full h-full" />
-                <AvatarFallback className="text-white font-semibold bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600">
-                  {fallback || "U"}
-                </AvatarFallback>
-              </Avatar>
-              
-              <motion.div
-                className="absolute inset-0"
-                style={{
-                  background: `linear-gradient(
-                    135deg,
-                    rgba(255, 0, 255, 0.2) 0%,
-                    rgba(0, 255, 255, 0.2) 50%,
-                    rgba(255, 255, 0, 0.2) 100%
-                  )`,
-                  mixBlendMode: "overlay",
-                }}
-                animate={{ backgroundPosition: ["0% 0%", "100% 100%"] }}
-                transition={{ duration: 3, repeat: Infinity, repeatType: "reverse" }}
-              />
-            </div>
-          </>
-        )}
-
-        {/* Neon variant */}
-        {variant === "neon" && (
-          <>
-            <motion.div
-              className="absolute inset-[-4px] rounded-full"
-              style={{
-                boxShadow: `
-                  0 0 20px ${statusColor.glow},
-                  0 0 40px ${statusColor.glow},
-                  inset 0 0 20px ${statusColor.glow}
-                `,
-              }}
-              animate={{
-                opacity: isHovered ? [0.8, 1, 0.8] : 0.6,
-              }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            />
-            
-            <div className="absolute inset-0 rounded-full bg-black/60 backdrop-blur-xl border border-white/30 overflow-hidden">
-              <Avatar className="relative w-full h-full">
-                <AvatarImage src={src || "/placeholder.svg"} alt={alt} className="object-cover w-full h-full" />
-                <AvatarFallback className="text-white font-semibold bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600">
-                  {fallback || "U"}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="absolute inset-0 opacity-20"
-                style={{
-                  backgroundImage: `
-                    linear-gradient(${statusColor.color} 1px, transparent 1px),
-                    linear-gradient(90deg, ${statusColor.color} 1px, transparent 1px)
-                  `,
-                  backgroundSize: "20px 20px",
-                }}
-              />
-            </div>
-          </>
-        )}
-
-        {/* Crystal variant */}
-        {variant === "crystal" && (
-          <>
-            {[...Array(6)].map((_, i) => (
+        {glow && (
+          <motion.div
+            className="absolute inset-0"
+            style={{ transform: "translateZ(-20px)" }}
+          >
+            {[...Array(3)].map((_, i) => (
               <motion.div
                 key={i}
                 className="absolute inset-0 rounded-full"
                 style={{
-                  background: `linear-gradient(
-                    ${i * 60}deg,
-                    rgba(255, 255, 255, 0.3) 0%,
-                    transparent 50%
-                  )`,
-                  transform: `rotate(${i * 60}deg)`,
-                  clipPath: "polygon(50% 50%, 50% 0%, 100% 50%)",
+                  border: `2px solid ${statusColor.color}`,
+                  opacity: 0.3 - i * 0.1,
                 }}
                 animate={{
-                  opacity: isHovered ? [0.3, 0.6, 0.3] : 0.2,
+                  scale: isHovered ? [1, 1.3 + i * 0.1, 1] : 1,
+                  opacity: isHovered ? [0.3 - i * 0.1, 0, 0.3 - i * 0.1] : 0.3 - i * 0.1,
                 }}
-                transition={{ duration: 2, repeat: Infinity, delay: i * 0.1 }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  delay: i * 0.3,
+                }}
               />
             ))}
-            
-            <div className="absolute inset-0 rounded-full bg-white/10 backdrop-blur-3xl border-2 border-white/40 overflow-hidden">
-              <Avatar className="relative w-full h-full">
-                <AvatarImage src={src || "/placeholder.svg"} alt={alt} className="object-cover w-full h-full" />
-                <AvatarFallback className="text-white font-semibold bg-gradient-to-br from-indigo-400 via-blue-500 to-violet-600">
-                  {fallback || "U"}
-                </AvatarFallback>
-              </Avatar>
-              
-              <motion.div
-                className="absolute inset-0"
-                style={{
-                  background: `radial-gradient(
-                    circle at 30% 30%,
-                    rgba(255, 255, 255, 0.4) 0%,
-                    transparent 60%
-                  )`,
-                }}
-                animate={{
-                  background: isHovered
-                    ? [
-                        "radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 60%)",
-                        "radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.4) 0%, transparent 60%)",
-                      ]
-                    : "radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 60%)",
-                }}
-                transition={{ duration: 2 }}
+          </motion.div>
+        )}
+
+        {/* Quantum variant */}
+        {variant === "quantum" && (
+          <div className="absolute inset-0 rounded-full overflow-hidden" style={{ background: "radial-gradient(circle at top, rgba(99,102,241,0.25), transparent 70%)" }}>
+            <Avatar className="relative w-full h-full">
+              <AvatarImage
+                src={src || undefined}
+                alt={alt}
+                className="object-cover w-full h-full"
               />
-            </div>
-          </>
+              <AvatarFallback className="text-white font-semibold bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500">
+                {fallback || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        )}
+
+        {/* Holographic variant */}
+        {variant === "holographic" && (
+          <div className="absolute inset-0 rounded-full overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(236,72,153,0.2), rgba(14,165,233,0.2))" }}>
+            <Avatar className="relative w-full h-full">
+              <AvatarImage src={src || undefined} alt={alt} className="object-cover w-full h-full" />
+              <AvatarFallback className="text-white font-semibold bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600">
+                {fallback || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        )}
+
+        {/* Neon variant */}
+        {variant === "neon" && (
+          <div className="absolute inset-0 rounded-full overflow-hidden" style={{ background: "radial-gradient(circle, rgba(72, 187, 120, 0.15), transparent 70%)" }}>
+            <Avatar className="relative w-full h-full">
+              <AvatarImage src={src || undefined} alt={alt} className="object-cover w-full h-full" />
+              <AvatarFallback className="text-white font-semibold bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600">
+                {fallback || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        )}
+
+        {/* Crystal variant */}
+        {variant === "crystal" && (
+          <div className="absolute inset-0 rounded-full overflow-hidden" style={{ background: "radial-gradient(circle, rgba(59,130,246,0.2), transparent 70%)" }}>
+            <Avatar className="relative w-full h-full">
+              <AvatarImage src={src || undefined} alt={alt} className="object-cover w-full h-full" />
+              <AvatarFallback className="text-white font-semibold bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600">
+                {fallback || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
         )}
 
         {/* Aurora variant */}

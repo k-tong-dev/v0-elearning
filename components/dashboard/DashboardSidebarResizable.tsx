@@ -33,6 +33,7 @@ import { cn } from "@/utils/utils"
 import { SpecialNoticeTag } from "@/components/dashboard/SpecialNoticeTag"
 import { getPendingInvitationsCount } from "@/integrations/strapi/instructor-invitation"
 import { getPendingFriendRequests } from "@/integrations/strapi/friend-request"
+import { getGroupInvitationsForUser } from "@/integrations/strapi/group-invitation"
 import { getInstructors } from "@/integrations/strapi/instructor"
 
 interface DashboardSidebarResizableProps {
@@ -117,7 +118,12 @@ export function DashboardSidebarResizable({
                 const friendRequests = await getPendingFriendRequests(user.id)
                 const totalFriendRequests = friendRequests.length
 
-                setNotificationCount(totalInvitations + totalFriendRequests)
+                const groupInvitations = await getGroupInvitationsForUser(user.id)
+                const totalGroupInvites = groupInvitations.filter(
+                    (invite) => invite.request_status === "pending"
+                ).length
+
+                setNotificationCount(totalInvitations + totalFriendRequests + totalGroupInvites)
             } catch (error) {
                 console.error("Error loading notification count:", error)
             }

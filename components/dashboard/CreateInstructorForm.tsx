@@ -333,14 +333,14 @@ export default function CreateInstructorForm({ onCancel, onSuccess, editingInstr
     return (
         <div className="max-w-4xl mx-auto">
             {/* Back Button */}
-            <Button
+            {/* <Button
                 onClick={onCancel}
                 variant="ghost"
                 className="mb-6 text-foreground hover:bg-accent"
             >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Instructors
-            </Button>
+            </Button> */}
 
             {/* Facebook-style Profile Card */}
             <motion.div
@@ -465,7 +465,7 @@ export default function CreateInstructorForm({ onCancel, onSuccess, editingInstr
                                 
                                 <TabsTrigger 
                                     value="profile" 
-                                    className="relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-300 data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground hover:text-foreground data-[state=active]:font-semibold"
+                                    className="relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-300 data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground hover:text-foreground data-[state=active]:font-semibold data-[state=active]:dark:bg-transparent"
                                 >
                                     <motion.div
                                         animate={{ rotate: activeTab === "profile" ? [0, 10, -10, 0] : 0 }}
@@ -477,7 +477,7 @@ export default function CreateInstructorForm({ onCancel, onSuccess, editingInstr
                                 </TabsTrigger>
                                 <TabsTrigger 
                                     value="social" 
-                                    className="relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-300 data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground hover:text-foreground data-[state=active]:font-semibold"
+                                    className="relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-300 data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground hover:text-foreground data-[state=active]:font-semibold data-[state=active]:dark:bg-transparent"
                                 >
                                     <motion.div
                                         animate={{ rotate: activeTab === "social" ? [0, 10, -10, 0] : 0 }}
@@ -489,7 +489,7 @@ export default function CreateInstructorForm({ onCancel, onSuccess, editingInstr
                                 </TabsTrigger>
                                 <TabsTrigger 
                                     value="admin" 
-                                    className="relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-300 data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground hover:text-foreground data-[state=active]:font-semibold"
+                                    className="relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-300 data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground hover:text-foreground data-[state=active]:font-semibold data-[state=active]:dark:bg-transparent"
                                 >
                                     <motion.div
                                         animate={{ rotate: activeTab === "admin" ? [0, 10, -10, 0] : 0 }}
