@@ -365,7 +365,7 @@ export default function InstructorProfilePage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.15 }}
-                    className="relative bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6 sm:p-8 -mt-16 sm:-mt-20 mb-6 shadow-xl"
+                    className="relative bg-card/10 backdrop-blur-xl border border-0 rounded-2xl p-6 sm:p-8 -mt-16 sm:-mt-20 mb-6 shadow-xl"
                 >
                     {/* Avatar positioned at top */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-6">

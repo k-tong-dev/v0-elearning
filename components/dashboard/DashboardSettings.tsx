@@ -42,6 +42,7 @@ import { motion } from "framer-motion"
 import { useAuth } from "@/hooks/use-auth"
 import { toast } from "sonner"
 import { User, UserRoleSlug, StrapiMedia } from "@/types/user"
+import { getAvatarUrl } from "@/lib/getAvatarUrl"
 import { getAccessToken } from "@/lib/cookies"
 import { RoleSelectionCombobox } from "@/components/dashboard/profile-settings/RoleSelectionCombobox"
 import { getCharacters, Character } from "@/integrations/strapi/character"
@@ -81,14 +82,6 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
     const [loadingSubscriptions, setLoadingSubscriptions] = useState(false)
     const [instructorsCount, setInstructorsCount] = useState(0)
     const [instructorGroupsCount, setInstructorGroupsCount] = useState(0)
-
-    // Helper to get avatar URL
-    const getAvatarUrl = (avatar: StrapiMedia | string | null | undefined): string | null => {
-        if (!avatar) return null;
-        if (typeof avatar === 'string') return avatar;
-        if (avatar.url) return `${strapiURL}${avatar.url}`;
-        return null;
-    };
 
     // Initialize notification settings with fallback defaults
     const [notificationSettings, setNotificationSettings] = useState({
@@ -352,11 +345,10 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
             }
 
             // Use the uploadStrapiFile utility which handles FormData properly
-            const uploadedFile = await uploadStrapiFile(fileToUpload)
+            const uploadedFile = await uploadStrapiFile(fileToUpload, "userAvatar")
 
-            const objectUrl = uploadedFile.url
-            const previewUrl = uploadedFile.formats?.thumbnail?.url || uploadedFile.formats?.small?.url || uploadedFile.url
-            setAvatarPreview(previewUrl ? `${strapiURL}${previewUrl}` : `${strapiURL}${objectUrl}`)
+            const previewUrl = getAvatarUrl(uploadedFile) || uploadedFile?.url || null
+            setAvatarPreview(previewUrl)
             setFormData((prev) => ({ ...prev, avatar: uploadedFile })) // Store the full StrapiMedia object
 
             // Update user with avatar ID

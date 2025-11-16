@@ -4,6 +4,7 @@ import type React from "react"
 import { QuantumAvatar } from "./quantum-avatar"
 import defaultAvatar from "@/public/avatars/robotic.png"
 import { UserRoleSlug, StrapiMedia } from "@/types/user"
+import { getAvatarUrl } from "@/lib/getAvatarUrl"
 
 type Charactor = UserRoleSlug | "" // Use UserRoleSlug for charactor type
 
@@ -88,11 +89,8 @@ export function EnhancedAvatar({
 }
 
 // Helper to get avatar URL from StrapiMedia object
-const getStrapiMediaUrl = (avatar: StrapiMedia | string | null | undefined, strapiURL: string | undefined): string | null => {
-    if (!avatar) return null;
-    if (typeof avatar === 'string') return avatar; // Already a URL string
-    if (avatar.url) return `${strapiURL}${avatar.url}`;
-    return null;
+const getStrapiMediaUrl = (avatar: StrapiMedia | string | null | undefined): string | null => {
+    return getAvatarUrl(avatar);
 };
 
 export function UserMenuAvatar({
@@ -100,8 +98,7 @@ export function UserMenuAvatar({
                                    onClick,
                                    size,
                                }: { user: any; onClick?: () => void; size?: "sm" | "md" | "lg" | "xl" | "2xl" }) {
-    const strapiURL = process.env.NEXT_PUBLIC_STRAPI_URL;
-    const avatarUrl = getStrapiMediaUrl(user?.avatar, strapiURL);
+    const avatarUrl = getStrapiMediaUrl(user?.avatar);
 
     return (
         <EnhancedAvatar
@@ -129,8 +126,7 @@ export function UserMenuAvatar({
 }
 
 export function DashboardAvatar({ user, size = "lg" }: { user: any; size?: "sm" | "md" | "lg" | "xl" | "2xl" }) {
-    const strapiURL = process.env.NEXT_PUBLIC_STRAPI_URL;
-    const avatarUrl = getStrapiMediaUrl(user?.avatar, strapiURL);
+    const avatarUrl = getStrapiMediaUrl(user?.avatar);
 
     return (
         <EnhancedAvatar
@@ -161,8 +157,7 @@ export function CourseInstructorAvatar({
                                            instructor,
                                            size = "md",
                                        }: { instructor: any; size?: "sm" | "md" | "lg" | "xl" | "2xl" }) {
-    const strapiURL = process.env.NEXT_PUBLIC_STRAPI_URL;
-    const avatarUrl = getStrapiMediaUrl(instructor?.avatar, strapiURL);
+    const avatarUrl = getStrapiMediaUrl(instructor?.avatar);
 
     return (
         <EnhancedAvatar
@@ -190,8 +185,7 @@ export function CourseInstructorAvatar({
 }
 
 export function ForumUserAvatar({ user, size = "sm" }: { user: any; size?: "sm" | "md" | "lg" | "xl" | "2xl" }) {
-    const strapiURL = process.env.NEXT_PUBLIC_STRAPI_URL;
-    const avatarUrl = getStrapiMediaUrl(user?.avatar, strapiURL);
+    const avatarUrl = getStrapiMediaUrl(user?.avatar);
 
     return (
         <EnhancedAvatar

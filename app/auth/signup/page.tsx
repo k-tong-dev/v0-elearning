@@ -221,7 +221,7 @@ export default function MultiStepSignupPage() {
                             size: avatarFileToUpload.size,
                             type: avatarFileToUpload.type,
                         })
-                        const uploadedFile = await uploadStrapiFile(avatarFileToUpload, "users/avatars");
+                        const uploadedFile = await uploadStrapiFile(avatarFileToUpload, "userAvatar");
                         console.log("[Signup] Upload response", uploadedFile)
                         updatePayload.avatar = uploadedFile.id ?? uploadedFile.documentId
                     } else {
@@ -258,7 +258,7 @@ export default function MultiStepSignupPage() {
                                 size: avatarFileToUpload.size,
                                 type: avatarFileToUpload.type,
                             })
-                            const uploadedFile = await uploadStrapiFile(avatarFileToUpload, "users/avatars");
+                            const uploadedFile = await uploadStrapiFile(avatarFileToUpload, "userAvatar");
                             console.log("[Signup] Retry upload response", uploadedFile)
                             updatePayload.avatar = uploadedFile.id ?? uploadedFile.documentId
                         } else {

@@ -104,7 +104,7 @@ export default function CreateInstructorForm({ onCancel, onSuccess, editingInstr
             }
 
             // Upload new avatar
-            const uploadedFile = await uploadStrapiFile(fileToUpload);
+            const uploadedFile = await uploadStrapiFile(fileToUpload, "userInstructor");
             
             // Delete old avatar if exists (non-blocking)
             if (oldAvatarId && oldAvatarId !== uploadedFile.id) {
@@ -113,9 +113,7 @@ export default function CreateInstructorForm({ onCancel, onSuccess, editingInstr
                 });
             }
 
-            const previewUrl = uploadedFile.formats?.thumbnail?.url || uploadedFile.formats?.small?.url || uploadedFile.url;
-            const strapiURL = process.env.NEXT_PUBLIC_STRAPI_URL || '';
-            const fullPreviewUrl = previewUrl ? `${strapiURL}${previewUrl}` : `${strapiURL}${uploadedFile.url}`;
+            const fullPreviewUrl = getAvatarUrl(uploadedFile) || uploadedFile.url || null;
 
             setFormData(prev => ({
                 ...prev,
@@ -263,7 +261,7 @@ export default function CreateInstructorForm({ onCancel, onSuccess, editingInstr
                 // Fallback: if avatar was selected but not uploaded via modal
                 try {
                     setUploading(true);
-                    const uploadResult = await uploadStrapiFile(formData.avatar);
+                    const uploadResult = await uploadStrapiFile(formData.avatar, "userInstructor");
                     if (uploadResult?.id) {
                         await updateInstructor(instructorId, {
                             avatar: uploadResult.id,
@@ -281,7 +279,7 @@ export default function CreateInstructorForm({ onCancel, onSuccess, editingInstr
                 try {
                     setUploading(true);
                     // Upload file to media library
-                    const uploadResult = await uploadStrapiFile(formData.cover);
+                    const uploadResult = await uploadStrapiFile(formData.cover, "instructorCover");
                     if (uploadResult?.id) {
                         // Attach file to instructor's cover field
                         await updateInstructor(instructorId, {

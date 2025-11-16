@@ -1,6 +1,48 @@
 import { strapi, strapiPublic } from './client';
 import { storeAccessToken as storeCookieToken, getAccessToken as getCookieToken, removeAccessToken as removeCookieToken } from '@/lib/cookies';
 
+const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+const DEFAULT_MEDIA_ROOT = (process.env.NEXT_PUBLIC_STRAPI_MEDIA_ROOT || 'eLearning').trim().replace(/^\/+|\/+$/g, '') || 'eLearning';
+
+type NormalizedFolder = {
+    id: number;
+    name?: string;
+    path?: string;
+    pathId?: number;
+    parent?: any;
+};
+
+const normalizeFolderEntry = (entry: any): NormalizedFolder | null => {
+    if (!entry) return null;
+    if (Array.isArray(entry)) {
+        return entry.length > 0 ? normalizeFolderEntry(entry[0]) : null;
+    }
+    if (entry.data) {
+        return normalizeFolderEntry(entry.data);
+    }
+    if (!entry.id && !entry.documentId) {
+        return null;
+    }
+
+    const rawId = entry.id ?? entry.documentId;
+    const numericId = typeof rawId === 'string' ? parseInt(rawId, 10) : rawId;
+    if (numericId === undefined || numericId === null || Number.isNaN(numericId)) {
+        return null;
+    }
+
+    return {
+        id: numericId,
+        name: entry.attributes?.name ?? entry.name,
+        path: entry.attributes?.path ?? entry.path,
+        pathId: entry.attributes?.pathId ?? entry.pathId,
+        parent: entry.attributes?.parent ?? entry.parent,
+    };
+};
+
+// NOTE: We intentionally do NOT call any folder endpoints here because your Strapi
+// instance does not expose them on the public API. Folder placement is controlled
+// purely via the `folder` (numeric id) or `path` (string) fields on the upload FormData.
+
 export async function checkStrapiUserExists(email: string): Promise<boolean> {
     try {
         if (!email) return false;
@@ -99,60 +141,19 @@ export async function strapiLogin(identifier: string, password: string) {
  * @param parentId - Optional parent folder ID (for nested folders)
  * @returns Folder object with id and name
  */
-export async function createStrapiFolder(folderName: string, parentId?: number | string): Promise<any> {
-    try {
-        const accessToken = getCookieToken();
-        if (!accessToken) throw new Error("Missing access token for folder creation");
-
-        if (!folderName || folderName.trim() === '') {
-            throw new Error("Folder name is required");
-        }
-
-        const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
-        const axiosInstance = (await import('axios')).default;
-
-        const payload: any = {
-            name: folderName.trim(),
-        };
-
-        // Add parent folder if specified
-        if (parentId) {
-            payload.parent = parentId;
-        }
-
-        const response = await axiosInstance.post(
-            `${STRAPI_BASE_URL}/api/upload/folders`,
-            payload,
-            {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
-
-        console.log("[createStrapiFolder] Folder created:", response.data);
-        return response.data;
-    } catch (error: any) {
-        const errorMessage = error.response?.data?.error?.message 
-            || error.response?.data?.message 
-            || error.message 
-            || "Failed to create folder in Strapi";
-        console.error("Strapi folder creation error:", {
-            message: errorMessage,
-            status: error.response?.status,
-            data: error.response?.data,
-            error: error.message
-        });
-        throw new Error(errorMessage);
-    }
+// NOTE: `createStrapiFolder` used to call Strapi's folder API, but your instance
+// does not expose that endpoint. If you later enable it, we can reintroduce this
+// helper; for now all folder placement is handled via the `path` field on upload.
+export async function createStrapiFolder(folderName: string, parentId?: number | string, tokenOverride?: string): Promise<any> {
+    console.warn("[createStrapiFolder] Folder API not used in this project. Use `path` or `folder` on upload instead.");
+    return null;
 }
 
 /**
  * Step 1: Upload file to Strapi media library
  * This uploads the file and returns the file object with ID
  * @param file - File to upload
- * @param folderPath - Optional folder path (e.g., 'users/avatars' or folder ID)
+ * @param folderPath - Optional folder path or preset key (e.g., 'userAvatar', 'userInstructor', or 'eLearning/userAvatar')
  */
 export async function uploadStrapiFile(file: File, folderPath?: string | number): Promise<any> {
     try {
@@ -166,13 +167,13 @@ export async function uploadStrapiFile(file: File, folderPath?: string | number)
         const formData = new FormData();
         formData.append('files', file);
 
-        // Add folder path if specified
+        // Basic folder handling:
+        // - if folderPath is a number, treat it as a Strapi media folder id
+        // - if it's a string, treat it as a Strapi media path (e.g. "userAvatar")
         if (folderPath) {
-            // If folderPath is a number, it's a folder ID
-            // If it's a string, it's a folder path
             if (typeof folderPath === 'number') {
                 formData.append('folder', folderPath.toString());
-            } else {
+            } else if (typeof folderPath === 'string') {
                 formData.append('path', folderPath);
             }
         }
@@ -188,7 +189,6 @@ export async function uploadStrapiFile(file: File, folderPath?: string | number)
         // Use axios directly to avoid default Content-Type header from strapi client
         // The strapi client sets 'Content-Type: application/json' which breaks FormData uploads
         const axiosInstance = (await import('axios')).default;
-        const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
         
         // Create a new axios instance for file uploads without default Content-Type
         const uploadClient = axiosInstance.create({
@@ -198,8 +198,7 @@ export async function uploadStrapiFile(file: File, folderPath?: string | number)
         
         console.log("[uploadStrapiFile] Sending upload request", {
             baseURL: STRAPI_BASE_URL,
-            hasFolderPath: Boolean(folderPath),
-            folderPath,
+            folderPath: folderPath || 'root',
         });
 
         const response = await uploadClient.post('/api/upload', formData, {
@@ -253,7 +252,6 @@ export async function deleteStrapiFile(fileId: number | string): Promise<boolean
             return false;
         }
 
-        const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
         const axiosInstance = (await import('axios')).default;
         
         // Determine the file identifier (numeric ID or documentId)
