@@ -20,6 +20,13 @@ import {
     GroupInvitation,
 } from "@/integrations/strapi/group-invitation"
 import { getUsersByIdentifiers } from "@/integrations/strapi/user"
+import { SpecialNoticeTag } from "@/components/dashboard/SpecialNoticeTag"
+import { 
+    Crown,
+
+} from "lucide-react"
+
+
 
 const extractNumericId = (value: any): number | undefined => {
     if (typeof value === "number" && Number.isFinite(value)) return value
@@ -344,7 +351,7 @@ export function NotificationSidebar({ isOpen, onClose }: NotificationSidebarProp
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:z-50"
+                        className="fixed inset-0 z-40 lg:z-50"
                     />
 
                     {/* Sidebar */}
@@ -353,16 +360,16 @@ export function NotificationSidebar({ isOpen, onClose }: NotificationSidebarProp
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                        className="fixed top-0 right-0 h-screen w-full max-w-md bg-background border-l border-border shadow-2xl z-50 flex flex-col"
+                        className="fixed top-0 right-0 h-screen w-full max-w-md bg-transparent backdrop-blur-sm border-l border-border shadow-2xl z-50 flex flex-col"
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-border bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10">
+                        <div className="flex items-center justify-between p-3 border-b border-border bg-transparent">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
-                                    <Bell className="w-5 h-5 text-white" />
+                                <div className="p-2 bg-transparent rounded-full text-foreground">
+                                    <Bell className="w-5 h-5 text-foreground" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-foreground">Notifications</h2>
+                                    <h2 className="text-md font-bold text-foreground">Notifications</h2>
                                     {totalPending > 0 ? (
                                         <div className="flex items-center gap-2">
                                             <Badge className="bg-primary text-white border-primary/20 shadow-sm">
@@ -373,7 +380,7 @@ export function NotificationSidebar({ isOpen, onClose }: NotificationSidebarProp
                                             </p>
                                         </div>
                                     ) : (
-                                        <p className="text-xs text-muted-foreground">
+                                        <p className="text-xs text-foreground">
                                             You're all caught up
                                         </p>
                                     )}
@@ -389,22 +396,32 @@ export function NotificationSidebar({ isOpen, onClose }: NotificationSidebarProp
                             </Button>
                         </div>
 
-                            <div className="flex-1 overflow-y-auto scrollbar-hide">
-                                    {loading ? (
-                                <div className="flex items-center justify-center py-16">
-                                    <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                                </div>
+                        <div className="flex-1 overflow-y-auto scrollbar-hide bg-transparent">
+                            <div className="p-6">
+                                <SpecialNoticeTag
+                                    isExpanded={true}
+                                    title="New Features!"
+                                    message="Unlock exclusive tools. Upgrade to Pro!"
+                                    linkHref="/pricing"
+                                    linkText="Upgrade Now"
+                                    icon={Crown}
+                                />
+                            </div>
+                            {loading ? (
+                                    <div className="flex items-center justify-center py-16">
+                                        <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                                    </div>
                             ) : combinedNotifications.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full gap-3 text-center text-muted-foreground">
-                                    <Bell className="w-10 h-10 text-muted-foreground/40" />
-                                    <div>
-                                        <p className="font-semibold text-foreground">You're all caught up!</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            Invitations and requests will appear here.
-                                        </p>
+                                    <div className="flex flex-col items-center justify-center h-full gap-3 text-center text-muted-foreground">
+                                        <Bell className="w-10 h-10 text-muted-foreground/40" />
+                                        <div>
+                                            <p className="font-semibold text-foreground">You're all caught up!</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Invitations and requests will appear here.
+                                            </p>
                                         </div>
-                                        </div>
-                                    ) : (
+                                    </div>
+                                ) : (
                                 <div className="space-y-3 p-6">
                                     {combinedNotifications.map((item) => {
                                         if (item.type === "instructor") {
@@ -621,7 +638,7 @@ export function NotificationSidebar({ isOpen, onClose }: NotificationSidebarProp
                                     })}
                                 </div>
                             )}
-                            </div>
+                        </div>
                     </motion.div>
                 </>
             )}

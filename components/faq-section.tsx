@@ -56,8 +56,8 @@ export function FAQSection() {
                         </h2>
                         <p className="text-slate-600 dark:text-gray-300 mb-8 max-w-80 text-lg">
                             Still you have any questions? Contact our Team via
-                            <a href="mailto:support@camedu.com" className="text-blue-500 dark:text-blue-400 ml-1 hover:underline">
-                                support@camedu.com
+                            <a href="mailto:support@next4learn.com" className="text-blue-500 dark:text-blue-400 ml-1 hover:underline">
+                                support@next4learn.com
                             </a>
                         </p>
                         <Button className="liquid-glass-button text-slate-900 dark:text-white border-slate-200 dark:border-blue-400/50 hover:border-slate-300 dark:hover:border-blue-400/50 px-6 py-3 rounded-full text-sm font-normal">

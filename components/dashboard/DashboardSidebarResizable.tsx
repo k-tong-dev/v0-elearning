@@ -21,6 +21,7 @@ import {
     Bell,
     GripVertical,
     UserPlus,
+    Award,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -35,6 +36,7 @@ import { getPendingInvitationsCount } from "@/integrations/strapi/instructor-inv
 import { getPendingFriendRequests } from "@/integrations/strapi/friend-request"
 import { getGroupInvitationsForUser } from "@/integrations/strapi/group-invitation"
 import { getInstructors } from "@/integrations/strapi/instructor"
+import {Image} from "@heroui/react"
 
 interface DashboardSidebarResizableProps {
     currentUser: any
@@ -47,6 +49,7 @@ interface DashboardSidebarResizableProps {
 const navItems = [
     { label: "Overview", icon: LayoutDashboard, value: "overview" },
     { label: "My Courses", icon: BookOpenText, value: "my-courses" },
+    { label: "Certificates", icon: Award, value: "certificates" },
     { label: "Instructors", icon: Users, value: "instructors" },
     { label: "Enrollments", icon: GraduationCap, value: "enrollments" },
     { label: "Expenditure", icon: DollarSign, value: "expenditure" },
@@ -278,21 +281,20 @@ export function DashboardSidebarResizable({
                             <Link href="/" className="flex items-center gap-2 justify-center py-2">
                                 <motion.div
                                     className="w-10 h-10 rounded-xl flex items-center justify-center"
-                                    style={{
-                                        background: "linear-gradient(135deg, rgba(139,92,246,.95) 0%, rgba(168,85,247,.95) 50%, rgba(236,72,153,.95) 100%)",
-                                    }}
+                                    style={{}}
                                     whileHover={{ scale: 1.1, rotate: 5 }}
                                     transition={{ type: "spring", stiffness: 300 }}
                                 >
-                                    <BookOpenText className="w-5 h-5 text-white" />
+                                    <Image src="/logoNoBg.png" alt="Logo with text" className={"rounded-none"}/>
+
                                 </motion.div>
                                 {showLabels && (
                                     <motion.span
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
-                                        className="text-lg font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+                                        className="text-lg font-saira font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
                                     >
-                                        CamEdu
+                                    Dashboard
                                     </motion.span>
                                 )}
                             </Link>
@@ -377,18 +379,6 @@ export function DashboardSidebarResizable({
 
                     {/* Bottom Actions - Not Fixed */}
                     <div className="flex flex-col gap-2 p-4 border-t border-border/50">
-                        {/* Special Notice */}
-                        {showLabels && (
-                            <SpecialNoticeTag
-                                isExpanded={true}
-                                title="New Features!"
-                                message="Unlock exclusive tools. Upgrade to Pro!"
-                                linkHref="/pricing"
-                                linkText="Upgrade Now"
-                                icon={Crown}
-                            />
-                        )}
-
                         {/* Create Course */}
                         {currentUser.subscription === "unlock" && onCreateCourse && (
                             <Button
@@ -480,7 +470,7 @@ export function DashboardSidebarResizable({
                         <BookOpenText className="w-5 h-5 text-white" />
                     </motion.div>
                     <span className="text-lg font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                        CamEdu
+                        NEXT4LEARN
                     </span>
                 </Link>
 

@@ -88,6 +88,7 @@ export interface User {
     id: string;
     documentId?: string;
     username: string;
+    name?: string;
     email: string;
     provider?: string;
     confirmed?: boolean;

@@ -20,6 +20,7 @@ import {
     MessageCircle,
     Users,
     Bell,
+    Award,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -48,6 +49,7 @@ interface DashboardSidebarProps {
 const navItems = [
     { label: "Overview",      icon: LayoutDashboard,   value: "overview" },
     { label: "My Courses",    icon: BookOpenText,      value: "my-courses" },
+    { label: "Certificates",  icon: Award,             value: "certificates" },
     { label: "Instructors",   icon: Users,             value: "instructors" },
     { label: "Enrollments",   icon: GraduationCap,     value: "enrollments" },
     { label: "Expenditure",   icon: DollarSign,        value: "expenditure" },
@@ -153,7 +155,7 @@ export function DashboardSidebar({
                             transition={{ duration: 0.2 }}
                             className="text-2xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 dark:from-indigo-300 dark:via-purple-300 dark:to-pink-300 bg-clip-text text-transparent"
                         >
-                            CamEdu
+                            NEXT4LEARN
                         </motion.span>
                     )}
                 </Link>

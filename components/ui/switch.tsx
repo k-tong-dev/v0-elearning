@@ -11,7 +11,14 @@ const Switch = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SwitchPrimitives.Root
     className={cn(
-      "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input ",
+      "peer relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-0 transition-all duration-300 ease-in-out",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+      "disabled:cursor-not-allowed disabled:opacity-50",
+      // iOS 26 style: Green when checked, gray when unchecked
+      "data-[state=checked]:bg-green-500 dark:data-[state=checked]:bg-green-500",
+      "data-[state=unchecked]:bg-gray-300 dark:data-[state=unchecked]:bg-gray-600",
+      // Smooth color transition
+      "transition-colors duration-300 ease-in-out",
       className
     )}
     {...props}
@@ -19,7 +26,14 @@ const Switch = React.forwardRef<
   >
     <SwitchPrimitives.Thumb
       className={cn(
-        "pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0"
+        "pointer-events-none block h-6 w-6 rounded-full bg-white shadow-lg ring-0",
+        "transition-all duration-300 ease-in-out",
+        // iOS 26 style: Smooth spring animation
+        "data-[state=checked]:translate-x-[22px] data-[state=unchecked]:translate-x-[2px]",
+        // Scale animation on toggle
+        "data-[state=checked]:scale-100 data-[state=unchecked]:scale-100",
+        // Smooth shadow transition
+        "data-[state=checked]:shadow-[0_2px_4px_rgba(0,0,0,0.2)] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.15)]"
       )}
     />
   </SwitchPrimitives.Root>

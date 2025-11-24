@@ -115,7 +115,7 @@ export function HeroSection() {
                         </motion.div>
                         <h1 className="text-5xl lg:text-7xl font-bold mb-8 leading-tight">
                             <span className="font-saira bg-gradient-to-r from-blue-400 via-blue-500 to-blue-500 bg-clip-text text-transparent animate-glow-text relative">
-                                Camedu Learning
+                                NEXT4LEARN
                                 <div className="absolute -inset-1 bg-gradient-to-r from-blue-400/20 via-blue-500/20 to-blue-500/20 rounded-lg blur opacity-30 animate-pulse"/>
                             </span>
                             <span className="block mb-4"></span>

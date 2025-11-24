@@ -228,6 +228,28 @@ async function getGroupByType(
     }
 }
 
+// Helper to resolve documentId from numeric ID
+async function resolveDocumentIdByNumericId(
+    collection: string,
+    numericId: number,
+): Promise<string | null> {
+    const query = [`filters[id][$eq]=${numericId}`, "fields[0]=documentId"].join("&");
+    const url = `/api/${collection}?${query}`;
+    const clients = [strapi, strapiPublic];
+    for (const client of clients) {
+        try {
+            const response = await client.get(url);
+            const items = response.data?.data ?? [];
+            if (items.length > 0) {
+                return items[0].documentId;
+            }
+        } catch (error) {
+            console.warn(`Failed to resolve documentId for ${collection}`, error);
+        }
+    }
+    return null;
+}
+
 async function updateGroupInternal(
     groupId: string | number,
     updates: Record<string, any>,
@@ -235,9 +257,21 @@ async function updateGroupInternal(
 ): Promise<InstructorGroup | null> {
     const { documentId } = await fetchGroupIdentifier(groupId, groupType);
 
+    // If updates contains 'users' array, convert to set with documentIds
+    const processedUpdates = { ...updates };
+    if (processedUpdates.users && Array.isArray(processedUpdates.users)) {
+        const userDocIds = await Promise.all(
+            processedUpdates.users.map((id: number) => resolveDocumentIdByNumericId("users", id))
+        );
+        const validUserDocIds = userDocIds.filter((docId): docId is string => Boolean(docId));
+        processedUpdates.users = {
+            set: validUserDocIds.map(docId => ({ documentId: docId })),
+        };
+    }
+
     await strapi.put(`${GROUP_ENDPOINT}/${documentId}`, {
         data: {
-            ...updates,
+            ...processedUpdates,
             group_types: groupType,
         },
     });
@@ -404,10 +438,20 @@ export async function createInstructorGroup(name: string, ownerId: string | numb
             throw new Error("Owner ID is required to create group");
         }
 
+        // Resolve documentId for the owner relation to ensure Strapi Admin UI displays it
+        const ownerDocumentId = await resolveDocumentIdByNumericId("users", numericOwner);
+        if (!ownerDocumentId) {
+            console.error("Failed to resolve owner documentId for instructor group creation");
+            return null;
+        }
+
         const response = await strapi.post(GROUP_ENDPOINT, {
             data: {
                 name,
-                owner: numericOwner,
+                // Use connect with documentId for CREATE to ensure Strapi Admin UI displays the relation
+                owner: {
+                    connect: [{ documentId: ownerDocumentId }],
+                },
                 group_types: INSTRUCTOR_GROUP_TYPE,
                 instructors: [],
                 publishedAt: new Date().toISOString(),
@@ -435,10 +479,20 @@ export async function createUserGroup(
             throw new Error("Owner ID is required to create group");
         }
 
+        // Resolve documentId for the owner relation to ensure Strapi Admin UI displays it
+        const ownerDocumentId = await resolveDocumentIdByNumericId("users", numericOwner);
+        if (!ownerDocumentId) {
+            console.error("Failed to resolve owner documentId for user group creation");
+            return null;
+        }
+
         const response = await strapi.post(GROUP_ENDPOINT, {
             data: {
                 name,
-                owner: numericOwner,
+                // Use connect with documentId for CREATE to ensure Strapi Admin UI displays the relation
+                owner: {
+                    connect: [{ documentId: ownerDocumentId }],
+                },
                 group_types: USER_GROUP_TYPE,
                 users: [],
                 private: options.private ?? options.privete ?? false,
@@ -463,7 +517,7 @@ export async function updateInstructorGroup(groupId: string | number, data: Part
             throw new Error("Group not found");
         }
 
-        const updateId = current.documentId || (await resolveGroupId(current.id)).documentId;
+        const updateId = current.documentId || (await fetchGroupIdentifier(current.id, INSTRUCTOR_GROUP_TYPE)).documentId;
         if (!updateId) {
             throw new Error("Unable to resolve document ID for group");
         }
@@ -517,14 +571,23 @@ export async function addInstructorsToGroup(groupId: string | number, instructor
 
         const merged = Array.from(new Set([...currentIds, ...numericInstructorIds]));
 
-        const updateId = group.documentId || (await resolveGroupId(group.id)).documentId;
+        // Resolve documentIds for all instructors to ensure Strapi Admin UI displays the relations
+        const instructorDocIds = await Promise.all(
+            merged.map(id => resolveDocumentIdByNumericId("instructors", id))
+        );
+        const validInstructorDocIds = instructorDocIds.filter((docId): docId is string => Boolean(docId));
+
+        const updateId = group.documentId || (await fetchGroupIdentifier(group.id, INSTRUCTOR_GROUP_TYPE)).documentId;
         if (!updateId) {
             throw new Error("Unable to resolve document ID for group");
         }
 
         await strapi.put(`${GROUP_ENDPOINT}/${updateId}`, {
             data: {
-                instructors: merged,
+                // Use set with documentId for UPDATE to ensure Strapi Admin UI displays the relation
+                instructors: {
+                    set: validInstructorDocIds.map(docId => ({ documentId: docId })),
+                },
             },
         });
 
@@ -577,14 +640,23 @@ export async function removeInstructorFromGroup(groupId: string | number, instru
         const updateId =
             group.documentId ||
             resolvedIdentifiers?.documentId ||
-            (await resolveGroupId(group.id)).documentId;
+            (await fetchGroupIdentifier(group.id, INSTRUCTOR_GROUP_TYPE)).documentId;
         if (!updateId) {
             throw new Error("Unable to resolve document ID for group");
         }
 
+        // Resolve documentIds for all instructors to ensure Strapi Admin UI displays the relations
+        const instructorDocIds = await Promise.all(
+            updated.map(id => resolveDocumentIdByNumericId("instructors", id))
+        );
+        const validInstructorDocIds = instructorDocIds.filter((docId): docId is string => Boolean(docId));
+
         await strapi.put(`${GROUP_ENDPOINT}/${updateId}`, {
             data: {
-                instructors: updated,
+                // Use set with documentId for UPDATE to ensure Strapi Admin UI displays the relation
+                instructors: {
+                    set: validInstructorDocIds.map(docId => ({ documentId: docId })),
+                },
             },
         });
 

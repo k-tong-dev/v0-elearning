@@ -289,7 +289,7 @@ export function ChatWidget() {
                                                         autoplay
                                                     />
                                                 </Avatar>
-                                                <span className="text-sm">CamEdu AI is typing...</span>
+                                                <span className="text-sm">Typing...</span>
                                             </div>
                                         </div>
                                     )}

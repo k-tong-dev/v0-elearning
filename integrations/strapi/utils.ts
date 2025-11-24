@@ -212,6 +212,23 @@ export async function uploadStrapiFile(file: File, folderPath?: string | number)
         
         if (response.data && Array.isArray(response.data) && response.data.length > 0) {
             const uploadedFile = response.data[0];
+            
+            // Log Cloudinary info if available
+            if (uploadedFile.provider === 'cloudinary' || uploadedFile.provider_metadata) {
+                console.log("[uploadStrapiFile] Cloudinary provider detected:", {
+                    provider: uploadedFile.provider,
+                    provider_metadata: uploadedFile.provider_metadata,
+                    url: uploadedFile.url,
+                });
+            }
+            
+            // Verify file was uploaded to Cloudinary (check if URL contains cloudinary.com)
+            if (uploadedFile.url && uploadedFile.url.includes('cloudinary.com')) {
+                console.log("[uploadStrapiFile] ✅ File successfully uploaded to Cloudinary:", uploadedFile.url);
+            } else {
+                console.warn("[uploadStrapiFile] ⚠️ File URL does not appear to be from Cloudinary:", uploadedFile.url);
+            }
+            
             // Return the file object with ID - this will be used in step 2
             return {
                 id: uploadedFile.id,
@@ -236,8 +253,70 @@ export async function uploadStrapiFile(file: File, folderPath?: string | number)
 }
 
 /**
- * Delete a file from Strapi media library
- * This removes the file from the media library to prevent unused files
+ * Get file details from Strapi to extract Cloudinary public_id
+ */
+async function getStrapiFileDetails(fileId: number | string): Promise<any | null> {
+    try {
+        const accessToken = getCookieToken();
+        if (!accessToken) return null;
+
+        const axiosInstance = (await import('axios')).default;
+        const fileIdentifier = fileId;
+        
+        const response = await axiosInstance.get(
+            `${STRAPI_BASE_URL}/api/upload/files/${fileIdentifier}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            }
+        );
+
+        return response.data?.data || null;
+    } catch (error: any) {
+        console.warn("[getStrapiFileDetails] Failed to get file details:", error.message);
+        return null;
+    }
+}
+
+/**
+ * Extract Cloudinary public_id from Strapi file object
+ */
+function extractCloudinaryPublicId(fileData: any): string | null {
+    if (!fileData) return null;
+    
+    // Check provider_metadata for Cloudinary public_id
+    // Structure: provider_metadata.public_id or formats.thumbnail.provider_metadata.public_id
+    if (fileData.provider_metadata?.public_id) {
+        return fileData.provider_metadata.public_id;
+    }
+    
+    // Check formats (thumbnail, small, medium, large)
+    const formats = fileData.formats || {};
+    for (const formatKey of ['thumbnail', 'small', 'medium', 'large']) {
+        const format = formats[formatKey];
+        if (format?.provider_metadata?.public_id) {
+            return format.provider_metadata.public_id;
+        }
+    }
+    
+    // Try to extract from URL if it's a Cloudinary URL
+    const url = fileData.url || fileData.attributes?.url;
+    if (url && url.includes('cloudinary.com')) {
+        // Extract public_id from Cloudinary URL
+        // Format: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/folder/filename.jpg
+        const match = url.match(/\/upload\/[^\/]+\/(.+?)(?:\.[^.]+)?$/);
+        if (match && match[1]) {
+            return match[1];
+        }
+    }
+    
+    return null;
+}
+
+/**
+ * Delete a file from Strapi media library and Cloudinary
+ * This removes the file from both Strapi and Cloudinary to prevent unused files
  */
 export async function deleteStrapiFile(fileId: number | string): Promise<boolean> {
     try {
@@ -254,12 +333,17 @@ export async function deleteStrapiFile(fileId: number | string): Promise<boolean
 
         const axiosInstance = (await import('axios')).default;
         
-        // Determine the file identifier (numeric ID or documentId)
-        // For Strapi v5, we can use either numeric ID or documentId
-        const fileIdentifier = fileId;
+        // First, get file details to extract Cloudinary public_id
+        const fileData = await getStrapiFileDetails(fileId);
+        let cloudinaryPublicId: string | null = null;
         
-        // Try to delete using the file ID
-        // Strapi v5 supports both numeric IDs and documentIds in the URL
+        if (fileData) {
+            cloudinaryPublicId = extractCloudinaryPublicId(fileData);
+            console.log("[deleteStrapiFile] Extracted Cloudinary public_id:", cloudinaryPublicId);
+        }
+        
+        // Delete from Strapi first
+        const fileIdentifier = fileId;
         const response = await axiosInstance.delete(
             `${STRAPI_BASE_URL}/api/upload/files/${fileIdentifier}`,
             {
@@ -270,7 +354,26 @@ export async function deleteStrapiFile(fileId: number | string): Promise<boolean
             }
         );
 
-        console.log("[deleteStrapiFile] File deleted successfully:", fileIdentifier);
+        console.log("[deleteStrapiFile] File deleted from Strapi:", fileIdentifier);
+        
+        // If Cloudinary public_id found, also delete from Cloudinary
+        if (cloudinaryPublicId) {
+            try {
+                const { deleteFromCloudinary } = await import('@/integrations/cloudinary/upload');
+                const deleted = await deleteFromCloudinary(cloudinaryPublicId);
+                if (deleted) {
+                    console.log("[deleteStrapiFile] File also deleted from Cloudinary:", cloudinaryPublicId);
+                } else {
+                    console.warn("[deleteStrapiFile] Failed to delete from Cloudinary:", cloudinaryPublicId);
+                }
+            } catch (cloudinaryError) {
+                console.warn("[deleteStrapiFile] Error deleting from Cloudinary:", cloudinaryError);
+                // Don't fail the whole operation if Cloudinary deletion fails
+            }
+        } else {
+            console.log("[deleteStrapiFile] No Cloudinary public_id found, skipping Cloudinary deletion");
+        }
+        
         return true;
     } catch (error: any) {
         // Log error but don't throw - file deletion failure shouldn't break the flow

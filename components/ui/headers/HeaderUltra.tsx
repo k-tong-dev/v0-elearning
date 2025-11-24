@@ -44,6 +44,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { AdvancedSearchModal } from "@/components/ui/search/AdvancedSearchModal"
+import {Image} from "@heroui/react";
 
 export function HeaderUltra() {
     const router = useRouter()
@@ -114,8 +115,8 @@ export function HeaderUltra() {
         try {
             if (navigator.share) {
                 await navigator.share({
-                    title: "CamEducation",
-                    text: "Check out CamEducation - the best online learning platform!",
+                    title: "NEXT4LEARN",
+                    text: "Check out NEXT4LEARN - the best online learning platform!",
                     url: window.location.origin,
                 })
                 toast.success("Shared successfully!")
@@ -206,7 +207,7 @@ export function HeaderUltra() {
                 ref={headerRef}
                 className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
                     isScrolled
-                        ? "bg-background/95 backdrop-blur-2xl border-b border-border/50 shadow-2xl shadow-black/5"
+                        ? "bg-background/95 backdrop-blur-2xl shadow-2xl shadow-black/5"
                         : "bg-transparent"
                 }`}
             >
@@ -273,32 +274,10 @@ export function HeaderUltra() {
                                 whileHover={{ scale: 1.1, rotate: 5 }}
                                 whileTap={{ scale: 0.95 }}
                             >
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
-                                <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-                                    <BookOpen className="w-6 h-6 text-white" />
-                                    <motion.div
-                                        className="absolute inset-0 rounded-2xl"
-                                        animate={{
-                                            background: [
-                                                "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 100%)",
-                                                "linear-gradient(225deg, rgba(255,255,255,0.3) 0%, transparent 100%)",
-                                                "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 100%)",
-                                            ],
-                                        }}
-                                        transition={{
-                                            duration: 3,
-                                            repeat: Infinity,
-                                            ease: "easeInOut",
-                                        }}
-                                    />
+                                <div className="relative w-12 h-12 flex items-center justify-center ">
+                                    <Image src="/logoNoBg.png" alt="Logo with text" className={"rounded-none"}/>
                                 </div>
                             </motion.div>
-                            <motion.span
-                                className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-purple-400 dark:to-pink-400"
-                                animate={activeHover === "logo" ? { scale: 1.05 } : { scale: 1 }}
-                            >
-                                CamEdu
-                            </motion.span>
                         </Link>
 
                         {/* Desktop Navigation */}

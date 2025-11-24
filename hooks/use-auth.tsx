@@ -11,13 +11,24 @@ import { removeAccessToken } from "@/lib/cookies";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
+const areUsersEqual = (a: User | null, b: User | null) => {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    try {
+        return JSON.stringify(a) === JSON.stringify(b);
+    } catch {
+        return false;
+    }
+};
+
 interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
     isLoading: boolean;
+    isRefreshing: boolean;
     loginWithGoogle: (credential: string) => Promise<{ newUser: boolean; user: any }>;
     logout: () => Promise<void>;
-    refreshUser: () => Promise<void>;
+    refreshUser: (options?: { silent?: boolean }) => Promise<void>;
     userContext: (strapiUser: any) => void;
 }
 
@@ -27,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const router = useRouter();
 
     const userContext = useCallback((strapiUser: any) => {
@@ -34,18 +46,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.error("[userContext] No strapiUser provided");
             return;
         }
-        setUser((prev) => ({
-            ...strapiUser, // Dynamically include all Strapi fields
-            id: strapiUser.id?.toString() || prev?.id || null,
-            supabaseId: prev?.supabaseId || strapiUser.supabaseId || null,
-            email: strapiUser.email || prev?.email || "",
-            name: strapiUser.username || strapiUser.email || prev?.username || "",
-        }));
+        setUser((prev) => {
+            const nextUser: User = {
+                ...(prev || {}),
+                ...(strapiUser as User),
+                id: strapiUser.id?.toString() || prev?.id || "",
+                supabaseId: prev?.supabaseId || strapiUser.supabaseId || undefined,
+                email: strapiUser.email || prev?.email || "",
+                username:
+                    strapiUser.username ||
+                    prev?.username ||
+                    strapiUser.email ||
+                    prev?.email ||
+                    "",
+                name:
+                    strapiUser.name ||
+                    strapiUser.username ||
+                    prev?.name ||
+                    prev?.username ||
+                    strapiUser.email ||
+                    prev?.email ||
+                    "",
+            };
+            return areUsersEqual(prev, nextUser) ? prev : nextUser;
+        });
         setIsAuthenticated(true);
     }, []);
 
-    const refreshUser = useCallback(async () => {
-        setIsLoading(true);
+    const refreshUser = useCallback(async (options?: { silent?: boolean }) => {
+        const silent = options?.silent ?? false;
+        silent ? setIsRefreshing(true) : setIsLoading(true);
         try {
             const token = getAccessToken();
             if (token) {
@@ -55,13 +85,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 if (res.ok) {
                     const userData = await res.json();
-                    setUser({
-                        ...userData,
-                        id: userData.id.toString(),
-                        supabaseId: userData.supabaseId || null,
-                        email: userData.email || "",
-                        name: userData.username || userData.email || "",
-                    });
+                    const normalizedUser: User = {
+                        ...(userData as User),
+                        id: userData?.id != null ? String(userData.id) : "",
+                        username: userData?.username || userData?.email || "",
+                        name: userData?.name || userData?.username || userData?.email || "",
+                        email: userData?.email || "",
+                        supabaseId: userData?.supabaseId,
+                    };
+                    setUser((prev) => (areUsersEqual(prev, normalizedUser) ? prev : normalizedUser));
                     setIsAuthenticated(true);
                     return;
                 } else {
@@ -75,42 +107,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (supabaseUser) {
                 const strapiUser = await getStrapiUserByEmail(supabaseUser.email!);
                 if (strapiUser) {
-                    setUser({
-                        ...strapiUser,
-                        id: strapiUser.id.toString(),
+                    const normalizedUser: User = {
+                        ...(strapiUser as User),
+                        id: strapiUser?.id != null ? String(strapiUser.id) : "",
                         supabaseId: supabaseUser.id,
                         email: supabaseUser.email!,
-                        name: strapiUser.username || supabaseUser.email!,
-                    });
+                        username: strapiUser?.username || supabaseUser.email!,
+                        name: strapiUser?.name || strapiUser?.username || supabaseUser.email!,
+                    };
+                    setUser((prev) => (areUsersEqual(prev, normalizedUser) ? prev : normalizedUser));
                     setIsAuthenticated(true);
                 } else {
-                    setUser({
-                        ...strapiUser,
-                        id: null,
+                    const normalizedUser = {
+                        ...(strapiUser ? (strapiUser as User) : {}),
+                        id: "",
                         supabaseId: supabaseUser.id,
                         email: supabaseUser.email!,
-                        username: null,
+                        username: supabaseUser.user_metadata?.full_name || supabaseUser.email!,
                         name: supabaseUser.user_metadata?.full_name || supabaseUser.email!,
                         avatar: supabaseUser.user_metadata?.avatar_url || null,
-                    });
+                    } as User;
+                    setUser((prev) => (areUsersEqual(prev, normalizedUser) ? prev : normalizedUser));
                     setIsAuthenticated(true);
                 }
             } else {
-                setUser(null);
+                setUser((prev) => (prev === null ? prev : null));
                 setIsAuthenticated(false);
             }
         } catch (err: any) {
             console.error("[refreshUser] Error:", err);
-            setUser(null);
+            setUser((prev) => (prev === null ? prev : null));
             setIsAuthenticated(false);
         } finally {
-            setIsLoading(false);
+            silent ? setIsRefreshing(false) : setIsLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        refreshUser();
-        const { data: sub } = supabase.auth.onAuthStateChange(() => refreshUser());
+        refreshUser({ silent: false });
+        const { data: sub } = supabase.auth.onAuthStateChange(() => refreshUser({ silent: true }));
         return () => sub?.subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // Only run once on mount, not when refreshUser changes
@@ -186,6 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 user,
                 isAuthenticated,
                 isLoading,
+                isRefreshing,
                 loginWithGoogle,
                 logout,
                 refreshUser,

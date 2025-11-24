@@ -621,7 +621,7 @@ export function AdvancedSearchModal({
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="Search features, courses, pages..."
-                                        className="flex-1 bg-transparent text-lg font-medium outline-none text-foreground placeholder:text-muted-foreground"
+                                        className="flex-1 bg-transparent text-md font-normal outline-none text-foreground placeholder:text-muted-foreground"
                                     />
                                     <kbd className="hidden sm:inline-flex h-7 items-center gap-1 rounded-lg border border-border bg-muted px-2.5 text-xs font-medium text-muted-foreground">
                                         ESC

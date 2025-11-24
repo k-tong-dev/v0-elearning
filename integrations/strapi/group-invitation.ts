@@ -63,6 +63,44 @@ async function resolveGroupId(groupId: string | number): Promise<number> {
     return Number(found)
 }
 
+// Helper to resolve documentId from numeric user ID
+async function resolveUserDocumentId(userId: number): Promise<string | null> {
+    const query = [`filters[id][$eq]=${userId}`, "fields[0]=documentId"].join("&")
+    const url = `/api/users?${query}`
+    const clients = [strapi, strapiPublic]
+    for (const client of clients) {
+        try {
+            const response = await client.get(url)
+            const items = response.data?.data ?? []
+            if (items.length > 0) {
+                return items[0].documentId
+            }
+        } catch (error) {
+            console.warn(`Failed to resolve user documentId`, error)
+        }
+    }
+    return null
+}
+
+// Helper to resolve documentId from numeric group ID
+async function resolveGroupDocumentId(groupId: number): Promise<string | null> {
+    const query = [`filters[id][$eq]=${groupId}`, "fields[0]=documentId"].join("&")
+    const url = `/api/user-group-groups?${query}`
+    const clients = [strapi, strapiPublic]
+    for (const client of clients) {
+        try {
+            const response = await client.get(url)
+            const items = response.data?.data ?? []
+            if (items.length > 0) {
+                return items[0].documentId
+            }
+        } catch (error) {
+            console.warn(`Failed to resolve group documentId`, error)
+        }
+    }
+    return null
+}
+
 const mapGroupInvitation = (item: any): GroupInvitation => {
     const fromUser = item.from_user?.data ?? item.from_user
     const toUser = item.to_user?.data ?? item.to_user
@@ -145,12 +183,28 @@ export async function sendGroupInvitation(
             throw new Error("Failed to create invitation")
         }
 
+        // Resolve documentIds for relations to ensure Strapi Admin UI displays them
+        const fromUserDocId = await resolveUserDocumentId(fromId)
+        const toUserDocId = await resolveUserDocumentId(toId)
+        const groupDocId = await resolveGroupDocumentId(groupNumericId)
+
+        if (!fromUserDocId || !toUserDocId || !groupDocId) {
+            throw new Error("Failed to resolve documentIds for invitation relations")
+        }
+
         const updateId = created.documentId || created.id
         await strapi.put(`${REQUEST_ENDPOINT}/${updateId}`, {
             data: {
-                from_user: fromId,
-                to_user: toId,
-                user_group_group: groupNumericId,
+                // Use connect with documentId for UPDATE to ensure Strapi Admin UI displays the relation
+                from_user: {
+                    connect: [{ documentId: fromUserDocId }],
+                },
+                to_user: {
+                    connect: [{ documentId: toUserDocId }],
+                },
+                user_group_group: {
+                    connect: [{ documentId: groupDocId }],
+                },
             },
         })
 

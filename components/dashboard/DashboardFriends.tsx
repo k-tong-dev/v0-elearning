@@ -2346,7 +2346,7 @@ export function DashboardFriends() {
                                     Find Learning Allies
                                 </h2>
                                 <p className="text-sm text-muted-foreground/85">
-                                    Search across the CamEdu universe and build your circle of mentors, collaborators, and lifelong friends.
+                                    Search across the NEXT4LEARN universe and build your circle of mentors, collaborators, and lifelong friends.
                                 </p>
                     </div>
                             <div className="flex items-center gap-2">

@@ -105,8 +105,8 @@ export function Header() {
         try {
             if (navigator.share) {
                 await navigator.share({
-                    title: 'CamEducation',
-                    text: 'Check out CamEducation - the best online learning platform!',
+                    title: 'NEXT4LEARN',
+                    text: 'Check out NEXT4LEARN - the best online learning platform!',
                     url: window.location.origin,
                 })
                 toast.success('Shared successfully!', {
@@ -232,7 +232,7 @@ export function Header() {
                                 <BookOpen className="w-5 h-5 text-primary-foreground" />
                             </div>
                             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                                CamEdu
+                                NEXT4LEARN
                             </span>
                         </Link>
 

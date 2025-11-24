@@ -4,6 +4,7 @@ import {GeistSans} from "geist/font/sans"
 import {GeistMono} from "geist/font/mono"
 import {ThemeProvider} from "@/components/theme-provider"
 import { AuthProvider } from "@/hooks/use-auth"
+import { CartProvider } from "@/contexts/CartContext"
 import { AuthRedirector } from "@/components/AuthRedirector" // Import the new AuthRedirector
 import { CookieConsent } from '@/components/CookieConsent';
 
@@ -19,15 +20,15 @@ import { ActivityTracker } from "@/components/ActivityTracker"
 
 
 export const metadata: Metadata = {
-    title: "CamEducation",
+    title: "NEXT4LEARN",
     description: "Modern eLearning platform with cutting-edge courses and interactive learning experiences",
     generator: "Tong",
     appleWebApp: true,
-    publisher: "CamEducation",
+    publisher: "NEXT4LEARN",
     appLinks: {},
-    applicationName: "CamEducation",
+    applicationName: "NEXT4LEARN",
     classification: 'My Classification',
-    abstract: 'CamEducation',
+    abstract: 'NEXT4LEARN',
     authors: {
         name: "CMU Team Project Final Year 2025",
         url: "https://khontong.vercel.app",
@@ -58,13 +59,16 @@ export default function RootLayout({
         <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange={false}>
             <AuthProvider>
-                <ActivityTracker />
-                <UltraLiquidToaster />
-                <AuthRedirector>
-                    <CookieConsent/>
-                    {children}
-                    <ChatWidget />
-                </AuthRedirector>
+                <CartProvider>
+                    <ActivityTracker />
+                    <UltraLiquidToaster />
+                    <AuthRedirector>
+                        <CookieConsent/>
+                        <div id="modal-root"></div>
+                        {children}
+                        <ChatWidget />
+                    </AuthRedirector>
+                </CartProvider>
             </AuthProvider>
         </ThemeProvider>
         </body>

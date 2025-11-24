@@ -40,10 +40,10 @@ export default function DemoPage() {
                     className="text-center mb-12"
                 >
                     <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                        Experience CamEdu in Action
+                        Experience NEXT4LEARN in Action
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                        Watch our quick demo to see how CamEdu empowers your learning journey.
+                        Watch our quick demo to see how NEXT4LEARN empowers your learning journey.
                     </p>
                 </motion.div>
 
@@ -57,7 +57,7 @@ export default function DemoPage() {
                     <iframe
                         className="absolute inset-0 w-full h-full"
                         src="https://www.youtube.com/embed/dQw4w9WgXcQ?si=dQw4w9WgXcQ" // Replace with your actual demo video URL
-                        title="CamEdu Demo Video"
+                        title="NEXT4LEARN Demo Video"
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
@@ -109,7 +109,7 @@ export default function DemoPage() {
                 >
                     <h2 className="text-3xl font-bold mb-4">Ready to Start Your Journey?</h2>
                     <p className="text-lg text-muted-foreground mb-6">
-                        Join CamEdu today and unlock a world of knowledge and opportunities.
+                        Join NEXT4LEARN today and unlock a world of knowledge and opportunities.
                     </p>
                     <Button
                         size="lg"

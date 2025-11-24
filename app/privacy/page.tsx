@@ -30,7 +30,7 @@ export default function PrivacyPolicyPage() {
 
                         <section className="prose dark:prose-invert max-w-none space-y-6">
                             <p>
-                                Your privacy is important to us. This Privacy Policy explains how CamEdu ("we," "us," or "our") collects, uses, discloses, and protects your information when you use our website, products, and services (collectively, the "Services").
+                                Your privacy is important to us. This Privacy Policy explains how NEXT4LEARN ("we," "us," or "our") collects, uses, discloses, and protects your information when you use our website, products, and services (collectively, the "Services").
                             </p>
 
                             <h2>1. Information We Collect</h2>

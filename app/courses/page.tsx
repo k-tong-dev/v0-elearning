@@ -22,35 +22,66 @@ import {
     ChevronUp,
 } from "lucide-react"
 import {CourseSkeleton} from "@/components/courses/course-skeleton"
+import {CourseLoading} from "@/components/courses/course-loading"
 import {CourseCard} from "@/components/courses/CourseCard"
 import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import {Footer} from "@/components/ui/footers/footer"
-import {CourseLoading} from "@/components/courses/course-loading"
+import { toast } from "sonner"
 import { getCourseCategories, CourseCategory } from "@/integrations/strapi/courseCategory"
 import { getCourseLevels, CourseLevel } from "@/integrations/strapi/courseLevel"
+import { getSkills, Skill } from "@/integrations/strapi/skill"
+import { getCourseBadges, CourseBadge } from "@/integrations/strapi/courseBadge"
+import { getPublicCourseCourses, CourseCourse } from "@/integrations/strapi/courseCourse"
+import { getInstructors, Instructor } from "@/integrations/strapi/instructor"
+import { getCourseTages, CourseTage } from "@/integrations/strapi/courseTage"
+import { DraggableFilterModal } from "@/components/courses/DraggableFilterModal"
+import { SlideableFilters } from "@/components/courses/SlideableFilters"
+import { useAuth } from "@/hooks/use-auth"
+import {
+    createUserWishlist,
+    deleteUserWishlist,
+    getUserWishlists,
+    mapWishlistToCourseIds,
+    UserWishlistEntry,
+} from "@/integrations/strapi/userWishlist"
+import { UserWishlistModal } from "@/components/courses/UserWishlistModal"
 
 export default function CoursesPage() {
     const router = useRouter()
+    const { user, isAuthenticated } = useAuth()
     const [isSearching, setIsSearching] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
-    const [selectedCategory, setSelectedCategory] = useState("all")
-    const [selectedLevel, setSelectedLevel] = useState("all")
+    const [selectedCategories, setSelectedCategories] = useState<string[]>(["all"])
+    const [selectedLevels, setSelectedLevels] = useState<string[]>(["all"])
     const [selectedEducator, setSelectedEducator] = useState("all")
     const [showFavorites, setShowFavorites] = useState(false)
-    const [sortBy, setSortBy] = useState("popular")
     const [showFilters, setShowFilters] = useState(false)
     const [favorites, setFavorites] = useState<number[]>([])
     const [categories, setCategories] = useState<CourseCategory[]>([])
     const [isLoadingCategories, setIsLoadingCategories] = useState(true)
     const [levels, setLevels] = useState<CourseLevel[]>([])
     const [isLoadingLevels, setIsLoadingLevels] = useState(true)
-
-    // Infinite scroll states
-    const initialCoursesToShow = 10
-    const coursesToLoadIncrement = 10
+    const [skills, setSkills] = useState<Skill[]>([])
+    const [badges, setBadges] = useState<CourseBadge[]>([])
+    const [courseTages, setCourseTages] = useState<CourseTage[]>([])
+    const [selectedSkills, setSelectedSkills] = useState<string[]>([])
+    const [selectedBadges, setSelectedBadges] = useState<string[]>([])
+    const [selectedTags, setSelectedTags] = useState<string[]>([])
+    const [showPaidOnly, setShowPaidOnly] = useState(false)
+    const defaultPriceRange: [number, number] = [0, 5000]
+    const [priceRange, setPriceRange] = useState<[number, number]>(defaultPriceRange)
+    const [instructors, setInstructors] = useState<Instructor[]>([])
+    const [coursesData, setCoursesData] = useState<CourseCourse[]>([])
+    const [isLoadingCourses, setIsLoadingCourses] = useState(true)
+    const initialCoursesToShow = 6
+    const coursesToLoadIncrement = 6
     const [coursesToDisplayCount, setCoursesToDisplayCount] = useState(initialCoursesToShow)
     const [hasMore, setHasMore] = useState(true)
-    const loadingRef = useRef(null)
+    const loadingRef = useRef<HTMLDivElement | null>(null)
+    const [wishlistEntries, setWishlistEntries] = useState<UserWishlistEntry[]>([])
+    const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false)
+    const [isWishlistLoading, setIsWishlistLoading] = useState(false)
+    const [isWishlistSyncing, setIsWishlistSyncing] = useState(false)
 
     // Fetch categories from Strapi
     useEffect(() => {
@@ -82,296 +113,479 @@ export default function CoursesPage() {
         fetchLevels()
     }, [])
 
-    const courses = [
-        {
-            id: 1, title: "Complete React Development Course",
-            description: "Master React from basics to advanced concepts with hands-on projects and real-world applications",
-            image: "/react-development-course.png", price: "$89.99", originalPrice: "$129.99", rating: 4.8, students: 12543,
-            duration: "42 hours", level: "Intermediate", category: "Web Development", educator: "John Smith", educatorId: "1",
-            tags: ["React", "JavaScript", "Frontend"], trending: true, bestseller: false, discount: "31% off", lectures: 156, projects: 8,
-        },
-        {
-            id: 2, title: "AI & Machine Learning Fundamentals",
-            description: "Learn AI and ML concepts with Python and real-world applications in data science",
-            image: "/ai-saas-development.png", price: "$99.99", originalPrice: "$149.99", rating: 4.9, students: 8765,
-            duration: "38 hours", level: "Beginner", category: "Artificial Intelligence", educator: "Dr. Sarah Johnson", educatorId: "2",
-            tags: ["Python", "AI", "Machine Learning"], trending: false, bestseller: true,
-        },
-        {
-            id: 3, title: "Full-Stack Web Development",
-            description: "Build complete web applications with modern technologies and deployment strategies",
-            image: "/react-router-tutorial.png", price: "$119.99", originalPrice: "$179.99", rating: 4.7, students: 15432,
-            duration: "56 hours", level: "Advanced", category: "Web Development", educator: "Mike Chen", educatorId: "3",
-            tags: ["Full-Stack", "Node.js", "Database"], trending: true, bestseller: true,
-        },
-        {
-            id: 4, title: "Mobile App Development with React Native",
-            description: "Create cross-platform mobile apps for iOS and Android with React Native",
-            image: "/e-commerce-react-app.png", price: "$94.99", originalPrice: "$139.99", rating: 4.6, students: 9876,
-            duration: "45 hours", level: "Intermediate", category: "Mobile Development", educator: "Lisa Wang", educatorId: "6",
-            tags: ["React Native", "Mobile", "Cross-platform"], trending: false, bestseller: false,
-        },
-        {
-            id: 5, title: "Data Science with Python",
-            description: "Comprehensive data science course covering statistics, visualization, and machine learning",
-            image: "/data-science-python.png", price: "$109.99", originalPrice: "$159.99", rating: 4.8, students: 11234,
-            duration: "48 hours", level: "Intermediate", category: "Data Science", educator: "Dr. Sarah Johnson", educatorId: "2",
-            tags: ["Python", "Data Analysis", "Statistics"], trending: true, bestseller: false,
-        },
-        {
-            id: 6, title: "UI/UX Design Masterclass",
-            description: "Learn modern design principles, user research, and prototyping with industry tools",
-            image: "/ui-ux-design-concept.png", price: "$79.99", originalPrice: "$119.99", rating: 4.7, students: 7890,
-            duration: "35 hours", level: "Beginner", category: "Design", educator: "Emma Rodriguez", educatorId: "3",
-            tags: ["UI/UX", "Figma", "Design Thinking"], trending: false, bestseller: true,
-        },
-        {
-            id: 7, title: "Advanced TypeScript for Developers",
-            description: "Deep dive into advanced TypeScript features and patterns for robust applications.",
-            image: "https://images.unsplash.com/photo-1617042375876-a13e36732a04?w=800&h=400&fit=crop",
-            price: "$99.99", originalPrice: "$149.99", rating: 4.9, students: 6500, duration: "30 hours", level: "Advanced",
-            category: "Web Development", educator: "John Smith", educatorId: "1", tags: ["TypeScript", "Frontend", "Backend"],
-            trending: true, bestseller: false,
-        },
-        {
-            id: 8, title: "Cloud Computing with AWS",
-            description: "Learn to deploy, manage, and scale applications on Amazon Web Services.",
-            image: "https://images.unsplash.com/photo-1581092336000-3e2f2b2f2b2f?w=800&h=400&fit=crop",
-            price: "$129.99", originalPrice: "$199.99", rating: 4.8, students: 7200, duration: "50 hours", level: "Intermediate",
-            category: "Cloud Computing", educator: "Dr. Sarah Johnson", educatorId: "2", tags: ["AWS", "Cloud", "DevOps"],
-            trending: false, bestseller: true,
-        },
-        {
-            id: 9, title: "Cybersecurity Fundamentals",
-            description: "An introduction to cybersecurity concepts, threats, and protective measures.",
-            image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&h=400&fit=crop",
-            price: "$79.99", originalPrice: "$119.99", rating: 4.6, students: 9100, duration: "25 hours", level: "Beginner",
-            category: "Cybersecurity", educator: "Mike Chen", educatorId: "3", tags: ["Security", "Networking", "Privacy"],
-            trending: true, bestseller: false,
-        },
-        {
-            id: 10, title: "Game Development with Unity",
-            description: "Create 2D and 3D games using the Unity engine and C#.",
-            image: "https://images.unsplash.com/photo-1542744095-291d1f67b221?w=800&h=400&fit=crop",
-            price: "$109.99", originalPrice: "$169.99", rating: 4.7, students: 5800, duration: "40 hours", level: "Intermediate",
-            category: "Game Development", educator: "Lisa Wang", educatorId: "6", tags: ["Unity", "C#", "Game Design"],
-            trending: false, bestseller: false,
-        },
-        {
-            id: 11, title: "Blockchain Development with Ethereum",
-            description: "Learn to build decentralized applications (dApps) on the Ethereum blockchain.",
-            image: "https://images.unsplash.com/photo-1639322537228-f710d846310a?w=800&h=400&fit=crop",
-            price: "$139.99", originalPrice: "$209.99", rating: 4.8, students: 4200, duration: "45 hours", level: "Advanced",
-            category: "Blockchain", educator: "Emma Rodriguez", educatorId: "3", tags: ["Blockchain", "Ethereum", "Solidity"],
-            trending: true, bestseller: true,
-        },
-        {
-            id: 12, title: "Digital Marketing Fundamentals",
-            description: "An essential guide to digital marketing strategies and tools.",
-            image: "https://images.unsplash.com/photo-1557804506-669a67965da0?w=800&h=400&fit=crop",
-            price: "$69.99", originalPrice: "$99.99", rating: 4.5, students: 10500, duration: "20 hours", level: "Beginner",
-            category: "Business", educator: "David Park", educatorId: "5", tags: ["Marketing", "SEO", "Social Media"],
-            trending: false, bestseller: false,
-        },
-        {
-            id: 13, title: "Python for Data Analysis",
-            description: "Master data manipulation and analysis using Python, Pandas, and NumPy.",
-            image: "https://images.unsplash.com/photo-1526374965328-7f66d40afb53?w=800&h=400&fit=crop",
-            price: "$84.99", originalPrice: "$124.99", rating: 4.7, students: 9800, duration: "32 hours", level: "Intermediate",
-            category: "Data Science", educator: "Dr. Sarah Johnson", educatorId: "2", tags: ["Python", "Data Analysis", "Pandas"],
-            trending: true, bestseller: false,
-        },
-        {
-            id: 14, title: "Frontend Development with Vue.js",
-            description: "Build modern and reactive user interfaces with Vue.js.",
-            image: "https://images.unsplash.com/photo-1610563166150-b34df4f3dd69?w=800&h=400&fit=crop",
-            price: "$89.99", originalPrice: "$139.99", rating: 4.6, students: 7100, duration: "35 hours", level: "Intermediate",
-            category: "Web Development", educator: "John Smith", educatorId: "1", tags: ["Vue.js", "Frontend", "JavaScript"],
-            trending: false, bestseller: true,
-        },
-        {
-            id: 15, title: "Backend with Node.js and GraphQL",
-            description: "Develop powerful and flexible APIs using Node.js, Express, and GraphQL.",
-            image: "https://images.unsplash.com/photo-1599305445671-ac291c9a87d9?w=800&h=400&fit=crop",
-            price: "$114.99", originalPrice: "$174.99", rating: 4.8, students: 6200, duration: "40 hours", level: "Advanced",
-            category: "Web Development", educator: "Mike Chen", educatorId: "3", tags: ["Node.js", "GraphQL", "Backend"],
-            trending: true, bestseller: false,
-        },
-        {
-            id: 16, title: "Mobile UI/UX Design with Figma",
-            description: "Design stunning mobile app interfaces from scratch using Figma.",
-            image: "https://images.unsplash.com/photo-1616763355548-f4993bb4f0d4?w=800&h=400&fit=crop",
-            price: "$74.99", originalPrice: "$109.99", rating: 4.7, students: 8300, duration: "28 hours", level: "Beginner",
-            category: "Design", educator: "Emma Rodriguez", educatorId: "3", tags: ["Figma", "UI/UX", "Mobile Design"],
-            trending: false, bestseller: true,
-        },
-        {
-            id: 17, title: "Introduction to Quantum Computing",
-            description: "Explore the fascinating world of quantum mechanics and quantum computing.",
-            image: "https://images.unsplash.com/photo-1626786926530-2f2f2f2f2f2f?w=800&h=400&fit=crop",
-            price: "$149.99", originalPrice: "$229.99", rating: 4.9, students: 3100, duration: "35 hours", level: "Advanced",
-            category: "Science & Tech", educator: "Dr. Sarah Johnson", educatorId: "2", tags: ["Quantum", "Physics", "Computing"],
-            trending: true, bestseller: false,
-        },
-        {
-            id: 18, title: "Mastering SQL for Data Science",
-            description: "Learn SQL from basic queries to advanced database management for data analysis.",
-            image: "https://images.unsplash.com/photo-1542744095-291d1f67b221?w=800&h=400&fit=crop",
-            price: "$79.99", originalPrice: "$119.99", rating: 4.6, students: 11800, duration: "25 hours", level: "Beginner",
-            category: "Data Science", educator: "David Park", educatorId: "5", tags: ["SQL", "Databases", "Data Analysis"],
-            trending: false, bestseller: false,
-        },
-        {
-            id: 19, title: "DevOps Fundamentals with Docker & Kubernetes",
-            description: "Understand and implement DevOps practices using Docker and Kubernetes.",
-            image: "https://images.unsplash.com/photo-1605792657620-f6e2f2f2f2f2?w=800&h=400&fit=crop",
-            price: "$129.99", originalPrice: "$189.99", rating: 4.8, students: 5500, duration: "48 hours", level: "Advanced",
-            category: "DevOps", educator: "Lisa Wang", educatorId: "6", tags: ["DevOps", "Docker", "Kubernetes"],
-            trending: true, bestseller: true,
-        },
-        {
-            id: 20, title: "Introduction to Ethical Hacking",
-            description: "Learn the basics of ethical hacking and penetration testing.",
-            image: "https://images.unsplash.com/photo-1581092336000-3e2f2b2f2b2f?w=800&h=400&fit=crop",
-            price: "$99.99", originalPrice: "$149.99", rating: 4.7, students: 8900, duration: "30 hours", level: "Intermediate",
-            category: "Cybersecurity", educator: "Mike Chen", educatorId: "3", tags: ["Hacking", "Security", "Penetration Testing"],
-            trending: false, bestseller: false,
-        },
-        {
-            id: 21, title: "Machine Learning with TensorFlow",
-            description: "Build and train machine learning models using Google's TensorFlow library.",
-            image: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&h=400&fit=crop",
-            price: "$119.99", originalPrice: "$179.99", rating: 4.9, students: 7300, duration: "40 hours", level: "Advanced",
-            category: "Artificial Intelligence", educator: "Dr. Sarah Johnson", educatorId: "2", tags: ["Machine Learning", "TensorFlow", "AI"],
-            trending: true, bestseller: true,
-        },
-        {
-            id: 22, title: "Web Accessibility Masterclass",
-            description: "Learn to build inclusive web experiences for all users.",
-            image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&h=400&fit=crop",
-            price: "$79.99", originalPrice: "$119.99", rating: 4.7, students: 4500, duration: "25 hours", level: "Intermediate",
-            category: "Web Development", educator: "Emma Rodriguez", educatorId: "3", tags: ["Accessibility", "Frontend", "UX"],
-            trending: false, bestseller: false,
-        },
-        {
-            id: 23, title: "Introduction to Data Structures & Algorithms",
-            description: "Fundamental concepts of data structures and algorithms for problem-solving.",
-            image: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=800&h=400&fit=crop",
-            price: "$69.99", originalPrice: "$99.99", rating: 4.8, students: 13000, duration: "30 hours", level: "Beginner",
-            category: "Computer Science", educator: "John Smith", educatorId: "1", tags: ["Algorithms", "Data Structures", "Programming"],
-            trending: true, bestseller: true,
-        },
-        {
-            id: 24, title: "Full-Stack with Django & React",
-            description: "Build robust full-stack applications using Django REST Framework and React.",
-            image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=400&fit=crop",
-            price: "$129.99", originalPrice: "$189.99", rating: 4.7, students: 5900, duration: "55 hours", level: "Advanced",
-            category: "Web Development", educator: "Mike Chen", educatorId: "3", tags: ["Django", "React", "Python", "Full-Stack"],
-            trending: false, bestseller: false,
-        },
-    ]
+    // Fetch skills from Strapi
+    useEffect(() => {
+        const fetchSkills = async () => {
+            try {
+                const skillsData = await getSkills()
+                setSkills(skillsData)
+            } catch (error) {
+                console.error("Failed to fetch skills:", error)
+            }
+        }
+        fetchSkills()
+    }, [])
 
-    const levelOptions = ["all", ...levels.map((level) => level.name)]
-    const educators = ["all", ...Array.from(new Set(courses.map((course) => course.educator)))]
+    // Fetch badges from Strapi
+    useEffect(() => {
+        const fetchBadges = async () => {
+            try {
+                const badgesData = await getCourseBadges()
+                setBadges(badgesData)
+            } catch (error) {
+                console.error("Failed to fetch badges:", error)
+            }
+        }
+        fetchBadges()
+    }, [])
+
+    // Fetch course tags from Strapi
+    useEffect(() => {
+        const fetchCourseTages = async () => {
+            try {
+                const tagsData = await getCourseTages()
+                setCourseTages(tagsData)
+            } catch (error) {
+                console.error("Failed to fetch course tags:", error)
+            }
+        }
+        fetchCourseTages()
+    }, [])
+
+    // Fetch instructors from Strapi
+    useEffect(() => {
+        const fetchInstructors = async () => {
+            try {
+                const instructorsData = await getInstructors()
+                setInstructors(instructorsData)
+            } catch (error) {
+                console.error("Failed to fetch instructors:", error)
+            }
+        }
+        fetchInstructors()
+    }, [])
+
+    // Fetch courses from Strapi
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                setIsLoadingCourses(true)
+                const coursesData = await getPublicCourseCourses()
+                console.log(">>>>>>>>>>>>>>>>>> Get Courses:", JSON.stringify(coursesData))
+                // Filter only published courses
+                const publishedCourses = coursesData.filter(
+                    course => course.course_status === "published" && course.active !== false
+                )
+                setCoursesData(publishedCourses)
+            } catch (error) {
+                console.error("Failed to fetch courses:", error)
+            } finally {
+                setIsLoadingCourses(false)
+            }
+        }
+        fetchCourses()
+    }, [])
+
+    // Fetch wishlist for authenticated user
+    useEffect(() => {
+        if (!user?.id) {
+            setWishlistEntries([])
+            setFavorites([])
+            return
+        }
+
+        let isMounted = true
+        const loadWishlist = async () => {
+            try {
+                setIsWishlistLoading(true)
+                const entries = await getUserWishlists(user.id)
+                if (!isMounted) return
+                setWishlistEntries(entries)
+                setFavorites(mapWishlistToCourseIds(entries))
+            } catch (error) {
+                console.error("Failed to fetch user wishlist:", error)
+            } finally {
+                if (isMounted) {
+                    setIsWishlistLoading(false)
+                }
+            }
+        }
+
+        loadWishlist()
+
+        return () => {
+            isMounted = false
+        }
+    }, [user?.id])
+
+    // Transform CourseCourse to CourseCard format
+    const courses = useMemo(() => {
+        const baseMediaUrl = process.env.NEXT_PUBLIC_STRAPI_URL || ""
+        const resolveMediaUrl = (value?: string | null) => {
+            if (!value) return "/placeholder.svg"
+            if (value.startsWith("http")) return value
+            return baseMediaUrl ? `${baseMediaUrl}${value}` : value
+        }
+
+        return coursesData.map((course) => {
+            const categoryName = course.course_categories?.[0]?.name || "Uncategorized"
+            const levelName = course.course_level?.name || "Beginner"
+            const primaryInstructor = course.instructors?.[0]
+            const instructorName = primaryInstructor?.name || "Unknown Instructor"
+            const instructorAvatar = primaryInstructor?.avatar || null
+            const tags = course.course_tages?.map(tag => tag.name) || []
+            const courseSkills = course.relevant_skills?.map(skill => skill.name) || []
+            const courseBadges = course.course_badges?.map(badge => badge.name) || []
+            // Also get skill documentIds and badge documentIds for filtering
+            const skillDocumentIds = course.relevant_skills?.map(skill => {
+                // Find matching skill by name to get documentId
+                const matchingSkill = skills.find(s => s.name === skill.name)
+                return matchingSkill?.documentId || skill.id.toString()
+            }) || []
+            const badgeDocumentIds = course.course_badges?.map(badge => {
+                // Find matching badge by name to get documentId
+                const matchingBadge = badges.find(b => b.name === badge.name)
+                return matchingBadge?.documentId || badge.id.toString()
+            }) || []
+            
+            const durationHours = Math.floor(course.duration_minutes / 60)
+            const durationMinutes = course.duration_minutes % 60
+            const duration = durationHours > 0 
+                ? `${durationHours} hour${durationHours > 1 ? 's' : ''}${durationMinutes > 0 ? ` ${durationMinutes} min` : ''}`
+                : `${durationMinutes} min`
+            
+            // Calculate price with currency
+            const price = course.Price || 0
+            const currencyCode = course.currency?.code || "USD"
+            const formattedPrice = `$${price.toFixed(2)}`
+            
+            // Get thumbnail from course preview - use preview_url which is already extracted by extractPreviewUrl
+            // The preview_url field already contains the correct URL based on preview type (image/video/url)
+            const thumbnail = resolveMediaUrl(course.preview_url)
+            const instructorsList = (course.instructors || []).map((inst, idx) => ({
+                id: inst.id?.toString() ?? inst.id ?? `${course.id}-${idx}`,
+                name: inst.name || "Instructor",
+                avatar: inst.avatar,
+            }))
+            const companyData = (course as any)?.company
+            const companyName = companyData?.name || null
+            const companyLogoUrl = companyData?.logoUrl || null
+            
+            // Get course preview data - preview_url is already extracted by extractPreviewUrl in courseCourse.ts
+            // It handles image.url, video.url, or url field based on types
+            const previewUrl = course.preview_url
+            const previewAvailable = course.preview_available || false
+            
+            return {
+                id: course.id,
+                title: course.name,
+                description: course.description || "No description available",
+                image: thumbnail,
+                price: formattedPrice,
+                priceValue: price,
+                originalPrice: course.discount_type === "percentage" && course.discount_percentage
+                    ? `$${(price / (1 - course.discount_percentage / 100)).toFixed(2)}`
+                    : formattedPrice,
+                rating: 4.5, // Default rating, can be fetched from reviews if available
+                students: course.enrollment_count || course.purchase_count || 0,
+                duration: duration,
+                level: levelName,
+                category: categoryName,
+                educator: instructorName,
+                educatorId: primaryInstructor?.id?.toString() || "0",
+                instructorId: primaryInstructor?.id?.toString() || "0",
+                instructorAvatar: instructorAvatar,
+                tags: tags,
+                skills: courseSkills,
+                skillDocumentIds: skillDocumentIds,
+                badges: courseBadges,
+                badgeDocumentIds: badgeDocumentIds,
+                company: companyName,
+                companyAvatar: companyLogoUrl,
+                instructors: instructorsList,
+                is_paid: course.is_paid || false,
+                trending: course.purchase_count > 100,
+                bestseller: course.purchase_count > 500,
+                discount: course.discount_type === "percentage" && course.discount_percentage
+                    ? `${course.discount_percentage}% off`
+                    : undefined,
+                lectures: 0, // Will be calculated from course materials
+                projects: 0,
+                preview_available: course.preview_available || false,
+                preview_url: course.preview_url || null,
+            }
+        })
+    }, [coursesData, skills, badges])
+
+    // Use courses from database, fallback to empty array if loading
+    const finalCourses = courses.length > 0 ? courses : []
+
+    const levelOptions = useMemo(() => {
+        if (levels.length > 0) {
+            return [
+                { id: "all", name: "All Levels" },
+                ...levels.map((level) => ({
+                    id: level.name,
+                    name: level.name,
+                })),
+            ]
+        }
+        const fallbackLevels = ["Beginner", "Intermediate", "Advanced", "Expert"]
+        return [
+            { id: "all", name: "All Levels" },
+            ...fallbackLevels.map((name) => ({ id: name, name })),
+        ]
+    }, [levels])
+    const educators = ["all", ...Array.from(new Set(finalCourses.map((course) => course.educator)))]
+
+    // Extract unique skills from courses (used to prioritize skills that have courses)
+    const allCourseSkills = useMemo(() => {
+        const skillSet = new Set<string>()
+        finalCourses.forEach(course => {
+            if (course.skillDocumentIds) {
+                course.skillDocumentIds.forEach(skillId => skillSet.add(skillId))
+            }
+        })
+        return Array.from(skillSet)
+    }, [finalCourses])
+
+    // Extract unique badges from courses (for filter display)
+    const allCourseBadges = useMemo(() => {
+        const badgeSet = new Set<string>()
+        finalCourses.forEach(course => {
+            if (course.badgeDocumentIds) {
+                course.badgeDocumentIds.forEach(badgeId => badgeSet.add(badgeId))
+            }
+        })
+        return Array.from(badgeSet)
+    }, [finalCourses])
 
     const filteredCourses = useMemo(() => {
-        const filtered = courses.filter((course) => {
+        const filtered = finalCourses.filter((course) => {
             const matchesSearch =
                 course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 course.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                course.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-            const matchesCategory = selectedCategory === "all" || course.category === selectedCategory
-            const matchesLevel = selectedLevel === "all" || course.level === selectedLevel
+                course.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (course.skills && course.skills.some((skill) => skill.toLowerCase().includes(searchQuery.toLowerCase())))
+            const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes("all") || selectedCategories.includes(course.category)
+            const matchesLevel = selectedLevels.length === 0 || selectedLevels.includes("all") || selectedLevels.includes(course.level)
             const matchesEducator = selectedEducator === "all" || course.educator === selectedEducator
             const matchesFavorites = !showFavorites || favorites.includes(course.id)
+            // Filter by skills - check if course has any of the selected skills
+            const matchesSkills = selectedSkills.length === 0 || 
+                (course.skillDocumentIds && course.skillDocumentIds.some(skillId => selectedSkills.includes(skillId))) ||
+                (course.skills && course.skills.some(skillName => {
+                    // Find skill by name and check if its documentId is in selectedSkills
+                    const matchingSkill = skills.find(s => s.name === skillName)
+                    return matchingSkill && selectedSkills.includes(matchingSkill.documentId)
+                }))
+            // Filter by badges - check if course has any of the selected badges
+            const matchesBadges = selectedBadges.length === 0 || 
+                (course.badgeDocumentIds && course.badgeDocumentIds.some(badgeId => selectedBadges.includes(badgeId))) ||
+                (course.badges && course.badges.some(badgeName => {
+                    // Find badge by name and check if its documentId is in selectedBadges
+                    const matchingBadge = badges.find(b => b.name === badgeName)
+                    return matchingBadge && selectedBadges.includes(matchingBadge.documentId)
+                }))
+            // Filter by tags
+            const matchesTags = selectedTags.length === 0 || course.tags.some(tag => selectedTags.includes(tag))
+            const coursePriceValue = typeof course.priceValue === "number"
+                ? course.priceValue
+                : Number.parseFloat(course.price.replace("$", "")) || 0
+            const matchesPriceRange = coursePriceValue >= priceRange[0] && coursePriceValue <= priceRange[1]
+            const matchesPaidSwitch = !showPaidOnly || course.is_paid
+            // Filter by instructor - check all instructors in the course
+            const matchesInstructor = selectedEducator === "all" || 
+                course.instructorId === selectedEducator ||
+                course.educator === selectedEducator ||
+                (course.instructors && Array.isArray(course.instructors) && course.instructors.some((inst: any) => {
+                    if (!inst) return false
+                    const instIdValue: any = inst.id
+                    const instId = instIdValue !== undefined && instIdValue !== null
+                        ? (typeof instIdValue === 'number' ? instIdValue.toString() : String(instIdValue))
+                        : ""
+                    const instName = inst.name || ""
+                    return instId === selectedEducator || instName === selectedEducator
+                }))
 
-            return matchesSearch && matchesCategory && matchesLevel && matchesEducator && matchesFavorites
+            return matchesSearch && matchesCategory && matchesLevel && matchesInstructor && matchesFavorites && matchesSkills && matchesBadges && matchesTags && matchesPriceRange && matchesPaidSwitch
         })
 
-        switch (sortBy) {
-            case "popular":
-                filtered.sort((a, b) => b.students - a.students)
-                break
-            case "rating":
-                filtered.sort((a, b) => b.rating - a.rating)
-                break
-            case "price-low":
-                filtered.sort(
-                    (a, b) => Number.parseFloat(a.price.replace("$", "")) - Number.parseFloat(b.price.replace("$", "")),
-                )
-                break
-            case "price-high":
-                filtered.sort(
-                    (a, b) => Number.parseFloat(b.price.replace("$", "")) - Number.parseFloat(a.price.replace("$", "")),
-                )
-                break
-            case "newest":
-                filtered.reverse();
-                break;
-        }
-
         return filtered
-    }, [courses, searchQuery, selectedCategory, selectedLevel, selectedEducator, showFavorites, sortBy, favorites])
+    }, [finalCourses, searchQuery, selectedCategories, selectedLevels, selectedEducator, showFavorites, favorites, selectedSkills, selectedBadges, selectedTags, showPaidOnly, priceRange, skills, badges])
 
-    // Courses to display based on infinite scroll
     const displayedCourses = useMemo(() => {
-        return filteredCourses.slice(0, coursesToDisplayCount);
-    }, [filteredCourses, coursesToDisplayCount]);
+        return filteredCourses.slice(0, coursesToDisplayCount)
+    }, [filteredCourses, coursesToDisplayCount])
 
-    // Effect to update hasMore when filteredCourses or coursesToDisplayCount changes
-    useEffect(() => {
-        setHasMore(coursesToDisplayCount < filteredCourses.length);
-    }, [coursesToDisplayCount, filteredCourses.length]);
+    const wishlistWithCourse = useMemo(() => {
+        return wishlistEntries.map(entry => ({
+            ...entry,
+            course: finalCourses.find(course => course.id === entry.courseId),
+        }))
+    }, [wishlistEntries, finalCourses])
 
-    // Intersection Observer for infinite scrolling
     useEffect(() => {
+        setHasMore(coursesToDisplayCount < filteredCourses.length)
+    }, [coursesToDisplayCount, filteredCourses.length])
+
+    useEffect(() => {
+        if (!loadingRef.current) return
         const observer = new IntersectionObserver(
-            (entries) => {
+            entries => {
                 if (entries[0].isIntersecting && hasMore && !isSearching) {
-                    setCoursesToDisplayCount((prevCount) => prevCount + coursesToLoadIncrement);
+                    setCoursesToDisplayCount(prev => prev + coursesToLoadIncrement)
                 }
             },
-            { threshold: 1.0 }
-        );
+            { threshold: 1 },
+        )
 
-        if (loadingRef.current) {
-            observer.observe(loadingRef.current);
-        }
-
+        const currentRef = loadingRef.current
+        observer.observe(currentRef)
         return () => {
-            if (loadingRef.current) {
-                observer.unobserve(loadingRef.current);
-            }
-        };
-    }, [hasMore, isSearching, coursesToDisplayCount]);
+            observer.unobserve(currentRef)
+        }
+    }, [hasMore, isSearching])
 
-    // Reset infinite scroll states when filters change
     useEffect(() => {
-        setCoursesToDisplayCount(initialCoursesToShow);
-        setHasMore(true);
-    }, [searchQuery, selectedCategory, selectedLevel, selectedEducator, showFavorites, sortBy]);
+        setCoursesToDisplayCount(initialCoursesToShow)
+        setHasMore(true)
+    }, [searchQuery, selectedCategories, selectedLevels, selectedEducator, showFavorites, selectedSkills, selectedBadges, selectedTags, showPaidOnly, priceRange])
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault()
         setIsSearching(true)
-        setCoursesToDisplayCount(initialCoursesToShow);
-        setHasMore(true);
+        resetPagination()
         console.log("[v0] Searching for courses:", searchQuery)
         setTimeout(() => setIsSearching(false), 1000)
     }
 
-    const toggleFavorite = (courseId: number) => {
-        setFavorites((prev) => (prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]))
+    const toggleFavorite = async (courseId: number) => {
+        if (!user?.id) {
+            setFavorites((prev) => (prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]))
+            return
+        }
+
+        const existing = wishlistEntries.find(entry => entry.courseId === courseId)
+
+        try {
+            setIsWishlistSyncing(true)
+            if (existing) {
+                await deleteUserWishlist(existing.id)
+                setWishlistEntries(prev => prev.filter(entry => entry.id !== existing.id))
+                setFavorites(prev => prev.filter(id => id !== courseId))
+                toast.success("Removed from wishlist")
+            } else {
+                const created = await createUserWishlist(user.id, courseId)
+                if (created) {
+                    setWishlistEntries(prev => [...prev, created])
+                    setFavorites(prev => [...prev, courseId])
+                    toast.success("Saved to wishlist")
+                }
+            }
+        } catch (error: any) {
+            console.error("Failed to update wishlist:", error)
+            toast.error(error?.message || "Unable to update wishlist")
+        } finally {
+            setIsWishlistSyncing(false)
+        }
+    }
+
+    const resetPagination = () => {
+        setCoursesToDisplayCount(initialCoursesToShow)
+        setHasMore(true)
+    }
+
+    const handleLevelsChange = (value: string[]) => {
+        setSelectedLevels(value)
+        resetPagination()
+    }
+
+    const handleCategoriesChange = (value: string[]) => {
+        setSelectedCategories(value)
+        resetPagination()
+    }
+
+    const handleBadgesChange = (value: string[]) => {
+        setSelectedBadges(value)
+        resetPagination()
+    }
+
+    const handleTagsChange = (value: string[]) => {
+        setSelectedTags(value)
+        resetPagination()
+    }
+
+    const handleInstructorChange = (value: string) => {
+        setSelectedEducator(value)
+        resetPagination()
+    }
+
+    const handleFavoritesChange = (value: boolean) => {
+        setShowFavorites(value)
+        resetPagination()
+    }
+
+    const handlePriceRangeChange = (value: number[]) => {
+        if (value.length === 0) return
+        if (value.length === 1) {
+            const clamped = Math.min(Math.max(value[0], defaultPriceRange[0]), defaultPriceRange[1])
+            setPriceRange([defaultPriceRange[0], clamped] as [number, number])
+        } else {
+            const [first, second] = value
+            const sorted: [number, number] = [Math.min(first, second), Math.max(first, second)]
+            setPriceRange(sorted)
+        }
+        resetPagination()
+    }
+
+    const handlePaidToggle = (value: boolean) => {
+        setShowPaidOnly(value)
+        resetPagination()
     }
 
     const clearFilters = () => {
-        setSelectedCategory("all")
-        setSelectedLevel("all")
+        setSelectedCategories(["all"])
+        setSelectedLevels(["all"])
         setSelectedEducator("all")
         setShowFavorites(false)
         setSearchQuery("")
-        setCoursesToDisplayCount(initialCoursesToShow);
-        setHasMore(true);
+        setSelectedSkills([])
+        setSelectedBadges([])
+        setSelectedTags([])
+        setShowPaidOnly(false)
+        setPriceRange([...defaultPriceRange] as [number, number])
+        resetPagination()
+    }
+
+    const toggleWithAll = (current: string[], value: string) => {
+        if (value === "all") {
+            return ["all"]
+        }
+        const withoutAll = current.filter(item => item !== "all")
+        const next = withoutAll.includes(value)
+            ? withoutAll.filter(item => item !== value)
+            : [...withoutAll, value]
+        return next.length === 0 ? ["all"] : next
+    }
+
+    const handleFilterItemClick = (id: string, type: "skill" | "category" | "badge") => {
+        if (type === "category") {
+            setSelectedCategories(prev => toggleWithAll(prev, id))
+        } else if (type === "skill") {
+            if (id === "all-skills") {
+                setSelectedSkills([])
+            } else {
+                setSelectedSkills(prev => 
+                    prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
+                )
+            }
+        } else if (type === "badge") {
+            setSelectedBadges(prev => 
+                prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]
+            )
+        }
+        resetPagination()
     }
 
     const handleCourseClick = (courseId: number) => {
@@ -384,10 +598,105 @@ export default function CoursesPage() {
         router.push(`/courses/${courseId}`)
     }
 
-    // Dynamic category list from Strapi or fallback
-    const categoryList = categories.length > 0 
-        ? ["all", ...categories.map(cat => cat.name)]
-        : ["all", "Web Development", "Artificial Intelligence", "Mobile Development", "Data Science", "Design", "Cloud Computing", "Cybersecurity", "Game Development", "Blockchain", "Business", "Science & Tech", "DevOps", "Computer Science"]
+    const categoryOptions = useMemo(() => {
+        if (categories.length > 0) {
+            return [
+                { id: "all", name: "All Categories" },
+                ...categories.map(cat => ({
+                    id: cat.name,
+                    name: cat.name,
+                })),
+            ]
+        }
+        const fallbackCategories = [
+            "Web Development",
+            "Artificial Intelligence",
+            "Mobile Development",
+            "Data Science",
+            "Design",
+            "Cloud Computing",
+            "Cybersecurity",
+            "Game Development",
+            "Blockchain",
+            "Business",
+            "Science & Tech",
+            "DevOps",
+            "Computer Science",
+        ]
+        return [
+            { id: "all", name: "All Categories" },
+            ...fallbackCategories.map((name) => ({ id: name, name })),
+        ]
+    }, [categories])
+
+    // Get all tags from Strapi API (for filter modal)
+    const allTags = useMemo(() => {
+        return courseTages.map(tag => tag.name).sort()
+    }, [courseTages])
+
+    const normalizedSkillOptions = useMemo(() => {
+        const seen = new Set<string>()
+        const items: Array<{ id: string; name: string }> = []
+        skills.forEach(skill => {
+            const id = skill.documentId || (skill.id ? skill.id.toString() : "")
+            if (!id || seen.has(id)) return
+            seen.add(id)
+            items.push({
+                id,
+                name: skill.name || "Untitled Skill",
+            })
+        })
+        items.sort((a, b) => a.name.localeCompare(b.name))
+        return items
+    }, [skills])
+
+    const prioritizedSkillOptions = useMemo(() => {
+        if (normalizedSkillOptions.length === 0) return []
+        const activeSkillSet = new Set(allCourseSkills)
+        return [...normalizedSkillOptions].sort((a, b) => {
+            const aActive = activeSkillSet.has(a.id) ? 0 : 1
+            const bActive = activeSkillSet.has(b.id) ? 0 : 1
+            if (aActive !== bActive) return aActive - bActive
+            return a.name.localeCompare(b.name)
+        })
+    }, [normalizedSkillOptions, allCourseSkills])
+
+    // Prepare filter items for slideable filters - ONLY SKILLS
+    const skillFilterItems = [
+        { id: "all-skills", name: "All Skills", type: "skill" as const },
+        ...prioritizedSkillOptions.map((skill) => ({
+            id: skill.id,
+            name: skill.name,
+            type: "skill" as const,
+        })),
+    ]
+
+    // Prepare badge options for filter modal (always show fetched badges)
+    const badgeFilterOptions = useMemo(() => {
+        if (!badges || badges.length === 0) return []
+        return badges.map((badge) => ({
+            id: badge.documentId || badge.id.toString(),
+            name: badge.name || "Untitled Badge",
+        }))
+    }, [badges])
+
+    // Prepare instructor options for filter modal
+    const instructorFilterOptions = useMemo(() => {
+        if (!instructors || instructors.length === 0) return []
+        const instructorMap = new Map<string | number, Instructor>()
+        instructors.forEach(inst => {
+            if (!inst) return
+            const key = inst.id ?? inst.documentId
+            if (key !== undefined && key !== null && !instructorMap.has(key)) {
+                instructorMap.set(key, inst)
+            }
+        })
+        return Array.from(instructorMap.values()).map(inst => ({
+            id: inst.id ?? inst.documentId,
+            name: inst.name,
+            avatar: inst.avatar
+        }))
+    }, [instructors])
 
     return (
         <div className="min-h-screen bg-white dark:bg-slate-950 relative">
@@ -405,29 +714,24 @@ export default function CoursesPage() {
 
             <HeaderUltra/>
 
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-28 relative z-10">
-                {/* Category Filter - Compact Scrollable Pills */}
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-24 relative z-10">
+                {/* Slideable Filters - ONLY SKILLS */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="mb-8"
+                    className="mb-6"
                 >
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                        {categoryList.map((category) => (
-                            <button
-                                key={category}
-                                onClick={() => { setSelectedCategory(category); setCoursesToDisplayCount(initialCoursesToShow); }}
-                                className={`px-4 py-2 rounded-full backdrop-blur-md border transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
-                                    selectedCategory === category
-                                        ? "bg-gradient-to-r from-blue-500/90 to-purple-500/90 text-white border-blue-400 shadow-lg"
-                                        : "bg-white/80 dark:bg-slate-900/10 text-slate-900 dark:text-white border-slate-200 dark:border-white/20 hover:border-blue-400/50"
-                                }`}
-                            >
-                                {category === "all" ? "All" : category}
-                            </button>
-                        ))}
+                    {skillFilterItems.length > 0 && (
+                        <div className="w-full overflow-hidden">
+                            <SlideableFilters
+                                items={skillFilterItems}
+                                selectedItems={selectedSkills.length > 0 ? selectedSkills : ["all-skills"]}
+                                onItemClick={(id) => handleFilterItemClick(id, "skill")}
+                                maxItems={999}
+                            />
                     </div>
+                    )}
                 </motion.div>
 
                 {/* Search and Filters */}
@@ -435,141 +739,73 @@ export default function CoursesPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="mb-8 space-y-6"
+                    className="mb-6"
                 >
-                    <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-1 relative">
-                            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-600 dark:text-gray-400 w-5 h-5 z-10"/>
+                    <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 justify-end">
+                        <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-slate-600 dark:text-gray-400 w-3.5 h-3.5 z-10"/>
                             <Input
                                 type="text"
                                 placeholder="Search courses, topics, or instructors..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyPress={() => setCoursesToDisplayCount(initialCoursesToShow)}
-                                className="liquid-glass-input focus-visible:ring-0 pl-12 py-5 text-base rounded-xl"
+                                className="liquid-glass-input focus-visible:ring-0 pl-9 py-2 h-9 text-xs !rounded-sm w-[20rem] focus:w-[30rem] transition-all duration-300 origin-right"
                             />
                         </div>
                         <div className="flex gap-2">
                             <Button
                                 type="submit"
                                 disabled={isSearching}
-                                className="py-5 px-8 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-white"
+                                className="py-2 px-4 h-9 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-white text-xs"
                             >
-                                <Search className="w-5 h-5 mr-1"/>
+                                <Search className="w-3.5 h-3.5 mr-1"/>
                                 {isSearching ? "Searching..." : "Search"}
                             </Button>
                             <Button
                                 type="button"
                                 variant="bordered"
-                                className="liquid-glass-button py-5 px-6 border-2 rounded-xl hover:scale-105 transition-all duration-300"
-                                onClick={() => setShowFilters(!showFilters)}
+                                className="liquid-glass-button py-2 px-3 h-9 border-2 !rounded-sm hover:scale-105 transition-all duration-300 text-xs"
+                                onClick={() => setShowFilters(true)}
                             >
-                                <Filter className="w-4 h-4 mr-2"/>
+                                <Filter className="w-3.5 h-3.5 mr-1"/>
                                 Filters
-                                {showFilters ? <ChevronUp className="w-4 h-4 ml-2" /> : <ChevronDown className="w-4 h-4 ml-2" />}
                             </Button>
                         </div>
                     </form>
-
-                    {showFilters && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="liquid-glass-card p-8 rounded-2xl space-y-6"
-                        >
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600">
-                                        <Zap className="w-5 h-5 text-white"/>
-                                    </div>
-                                    <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                        Smart Filters
-                                    </h3>
-                                </div>
-                                <Button variant="ghost" size="sm" onClick={clearFilters} className="hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
-                                    <X className="w-4 h-4 mr-2"/>
-                                    Clear All
-                                </Button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div className="space-y-3">
-                                    <label className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500"></div>
-                                        Sort By
-                                    </label>
-                                    <Select value={sortBy} onValueChange={setSortBy}>
-                                        <SelectTrigger className="liquid-glass-card border-2 hover:border-blue-300 rounded-xl">
-                                            <SelectValue/>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="popular">Most Popular</SelectItem>
-                                            <SelectItem value="rating">Highest Rated</SelectItem>
-                                            <SelectItem value="price-low">Price: Low to High</SelectItem>
-                                            <SelectItem value="price-high">Price: High to Low</SelectItem>
-                                            <SelectItem value="newest">Newest</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <label className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"></div>
-                                        Level
-                                    </label>
-                                    <Select value={selectedLevel} onValueChange={(value) => {setSelectedLevel(value); setCoursesToDisplayCount(initialCoursesToShow);}}>
-                                        <SelectTrigger className="liquid-glass-card border-2 hover:border-blue-300 rounded-xl">
-                                            <SelectValue/>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {levelOptions.map((level) => (
-                                                <SelectItem key={level} value={level}>
-                                                    {level === "all" ? "All Levels" : level}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <label className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-orange-500 to-red-500"></div>
-                                        Educator
-                                    </label>
-                                    <Select value={selectedEducator} onValueChange={(value) => {setSelectedEducator(value); setCoursesToDisplayCount(initialCoursesToShow);}}>
-                                        <SelectTrigger className="liquid-glass-card border-2 hover:border-blue-300 rounded-xl">
-                                            <SelectValue/>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {educators.map((educator) => (
-                                                <SelectItem key={educator} value={educator}>
-                                                    {educator === "all" ? "All Educators" : educator}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="flex items-center space-x-3 pt-8">
-                                    <Button
-                                        variant={showFavorites ? "solid" : "bordered"}
-                                        onClick={() => {setShowFavorites(!showFavorites); setCoursesToDisplayCount(initialCoursesToShow);}}
-                                        className={`flex items-center gap-2 ${showFavorites ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800'} rounded-xl`}
-                                    >
-                                        <Heart className={`w-4 h-4 ${showFavorites ? 'fill-white' : 'text-red-500'}`} />
-                                        Favorites
-                                    </Button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
                 </motion.div>
 
+                {/* Draggable Filter Modal */}
+                <DraggableFilterModal
+                    isOpen={showFilters}
+                    onClose={() => setShowFilters(false)}
+                    selectedLevels={selectedLevels}
+                    onLevelsChange={handleLevelsChange}
+                    selectedCategories={selectedCategories}
+                    onCategoriesChange={handleCategoriesChange}
+                    selectedBadges={selectedBadges}
+                    onBadgesChange={handleBadgesChange}
+                    selectedTags={selectedTags}
+                    onTagsChange={handleTagsChange}
+                    priceRange={priceRange}
+                    onPriceRangeChange={handlePriceRangeChange}
+                    priceLimit={defaultPriceRange[1]}
+                    showPaidOnly={showPaidOnly}
+                    onPaidToggle={handlePaidToggle}
+                    selectedInstructor={selectedEducator}
+                    setSelectedInstructor={handleInstructorChange}
+                    showFavorites={showFavorites}
+                    setShowFavorites={handleFavoritesChange}
+                    levelOptions={levelOptions}
+                    categoryOptions={categoryOptions}
+                    badgeOptions={badgeFilterOptions}
+                    tagOptions={allTags}
+                    instructorOptions={instructorFilterOptions}
+                    onClearFilters={clearFilters}
+                />
+
                 {/* Courses Grid with Liquid Glass Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                    {isSearching
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10 min-h-[70vh]">
+                    {isLoadingCourses || isSearching
                         ? Array.from({length: initialCoursesToShow}).map((_, index) => <CourseSkeleton key={index}/>)
                         : displayedCourses.map((course, index) => (
                             <div
@@ -580,28 +816,20 @@ export default function CoursesPage() {
                                 <CourseCard
                                     course={course}
                                     onEnrollClick={handleEnrollClick}
+                                    onCourseClick={handleCourseClick}
+                                    onToggleFavorite={toggleFavorite}
+                                    onOpenWishlist={() => setIsWishlistModalOpen(true)}
+                                    isFavorite={favorites.includes(course.id)}
                                 />
                             </div>
                         ))}
                 </div>
 
-                {!isSearching && filteredCourses.length === 0 && (
-                    <div className="text-center py-12">
-                        <BookOpen className="w-16 h-16 text-slate-600 dark:text-gray-400 mx-auto mb-4"/>
-                        <h3 className="text-xl font-semibold mb-2 text-slate-900 dark:text-white">No courses found</h3>
-                        <p className="text-slate-600 dark:text-gray-300 mb-4">Try adjusting your search or filters</p>
-                        <Button onClick={clearFilters} className="bg-gradient-to-r from-blue-500 to-purple-600">
-                            Clear all filters
-                        </Button>
-                    </div>
-                )}
-
-                {/* Infinite scroll loading indicator */}
-                {hasMore && filteredCourses.length > 0 && (
+                {hasMore && displayedCourses.length > 0 && (
                     <div ref={loadingRef} className="text-center">
                         <CourseLoading/>
                         <motion.p 
-                            className="text-slate-600 dark:text-gray-400 mt-4 text-sm font-medium"
+                            className="text-slate-600 dark:text-gray-400 mt-3 text-xs font-medium"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.3 }}
@@ -610,6 +838,28 @@ export default function CoursesPage() {
                         </motion.p>
                     </div>
                 )}
+
+                {!isLoadingCourses && !isSearching && filteredCourses.length === 0 && (
+                    <div className="text-center h-[70vh]">
+                        <BookOpen className="w-12 h-12 text-slate-600 dark:text-gray-400 mx-auto mb-3"/>
+                        <h3 className="text-lg font-semibold mb-2 text-slate-900 dark:text-white">No courses found</h3>
+                        <p className="text-sm text-slate-600 dark:text-gray-300 mb-4">Try adjusting your search or filters</p>
+                        <Button onClick={clearFilters} className="text-white bg-gradient-to-r from-blue-500 to-purple-600 text-sm h-9 px-4 rounded-sm">
+                            Clear all filters
+                        </Button>
+                    </div>
+                )}
+
+                <UserWishlistModal
+                    isOpen={isWishlistModalOpen}
+                    onClose={() => setIsWishlistModalOpen(false)}
+                    wishlists={wishlistWithCourse}
+                    onRemove={toggleFavorite}
+                    onNavigate={handleCourseClick}
+                    isLoading={isWishlistLoading}
+                    isSyncing={isWishlistSyncing}
+                    isAuthenticated={isAuthenticated}
+                />
             </div>
 
             <Footer/>

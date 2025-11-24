@@ -148,7 +148,7 @@ export default function ForumPage() {
         },
         {
             id: 2,
-            title: "Welcome to the CamEdu Community Forum!",
+            title: "Welcome to the NEXT4LEARN Community Forum!",
             content: "Welcome everyone! This is our new community forum where you can ask questions, share projects, and connect with fellow learners.",
             author: {
                 name: "Admin Team",

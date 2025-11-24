@@ -208,7 +208,7 @@ export function DashboardMyContacts() {
                                 <Mail className="w-5 h-5 text-blue-600" />
                                 <div>
                                     <p className="text-sm font-medium">Email</p>
-                                    <p className="text-xs text-muted-foreground">support@camedu.com</p>
+                                    <p className="text-xs text-muted-foreground">support@next4learn.com</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-purple-500/10 border border-green-200/20">

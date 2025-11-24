@@ -158,6 +158,66 @@ export async function getInstructor(id: string | number, populateFollowers: bool
 }
 
 /**
+ * Get all instructors that are in collaboration groups with the current user
+ * This includes instructors from groups where the user is owner or member
+ */
+export async function getCollaboratingInstructors(userId: string | number): Promise<Instructor[]> {
+    try {
+        const { getUserInstructorGroups, getInstructorGroupsForInstructor } = await import('./instructor-group');
+        
+        // Get current user's instructor profile by user ID (not instructor ID)
+        const userInstructors = await getInstructors(typeof userId === 'string' ? userId : String(userId));
+        const userInstructor = userInstructors.length > 0 ? userInstructors[0] : null;
+        
+        // Get instructor groups where user is owner
+        const ownedGroups = await getUserInstructorGroups(userId);
+        
+        // Get instructor groups where user is a member (if they have an instructor profile)
+        let memberGroups: any[] = [];
+        if (userInstructor) {
+            memberGroups = await getInstructorGroupsForInstructor(userInstructor.id);
+        }
+        
+        // Collect all unique instructor IDs from all groups
+        const instructorIds = new Set<number>();
+        
+        // From owned groups
+        ownedGroups.forEach(group => {
+            if (Array.isArray(group.instructors)) {
+                group.instructors.forEach((inst: any) => {
+                    const instId = typeof inst === 'number' ? inst : (inst?.id ? Number(inst.id) : null);
+                    if (instId) instructorIds.add(instId);
+                });
+            }
+        });
+        
+        // From member groups
+        memberGroups.forEach(group => {
+            if (Array.isArray(group.instructors)) {
+                group.instructors.forEach((inst: any) => {
+                    const instId = typeof inst === 'number' ? inst : (inst?.id ? Number(inst.id) : null);
+                    if (instId) instructorIds.add(instId);
+                });
+            }
+        });
+        
+        // Also include the current user's own instructor profile if they have one
+        if (userInstructor) {
+            instructorIds.add(userInstructor.id);
+        }
+        
+        // Fetch all collaborating instructors with avatars
+        const instructorPromises = Array.from(instructorIds).map(id => getInstructor(id, false));
+        const instructors = await Promise.all(instructorPromises);
+        
+        return instructors.filter((inst): inst is Instructor => inst !== null);
+    } catch (error) {
+        console.error("Error fetching collaborating instructors:", error);
+        return [];
+    }
+}
+
+/**
  * Get follower count for an instructor
  */
 export async function getInstructorFollowerCount(instructorId: string | number): Promise<number> {
@@ -389,12 +449,50 @@ export async function isFollowingInstructor(instructorId: string | number, userI
     }
 }
 
+// Helper to resolve documentId from numeric ID or string ID
+async function resolveDocumentIdByNumericId(
+    collection: string,
+    idOrDocumentId: number | string,
+): Promise<string | null> {
+    // If it's already a documentId (non-numeric string), return it
+    if (typeof idOrDocumentId === 'string' && !/^\d+$/.test(idOrDocumentId)) {
+        return idOrDocumentId;
+    }
+    
+    const numericId = typeof idOrDocumentId === 'string' ? Number(idOrDocumentId) : idOrDocumentId;
+    const query = [`filters[id][$eq]=${numericId}`, "fields[0]=documentId"].join("&");
+    const url = `/api/${collection}?${query}`;
+    const clients = [strapi, strapiPublic];
+    for (const client of clients) {
+        try {
+            const response = await client.get(url);
+            const items = response.data?.data ?? [];
+            if (items.length > 0) {
+                return items[0].documentId;
+            }
+        } catch (error) {
+            console.warn(`Failed to resolve documentId for ${collection}`, error);
+        }
+    }
+    return null;
+}
+
 export async function createInstructor(data: Partial<Instructor> & { name: string; user: string }): Promise<Instructor | null> {
     try {
+        // Resolve documentId for the user relation to ensure Strapi Admin UI displays it
+        const userDocumentId = await resolveDocumentIdByNumericId("users", data.user);
+        if (!userDocumentId) {
+            console.error("Failed to resolve user documentId for instructor creation");
+            return null;
+        }
+
         // Only send allowed fields - security: prevents sending internal fields
         const payload = {
                 name: data.name,
-                user: data.user,
+                // Use connect with documentId for CREATE to ensure Strapi Admin UI displays the relation
+                user: {
+                    connect: [{ documentId: userDocumentId }],
+                },
                 bio: data.bio,
                 avatar: data.avatar,
                 cover: data.cover,

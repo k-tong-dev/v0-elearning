@@ -124,7 +124,7 @@ export default function AboutUsPage() {
                     className="text-center mb-12"
                 >
                     <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                        About CamEdu
+                        About Us
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                         We are a passionate team from Cambodia Mekong University (CMU) dedicated to revolutionizing online education.
@@ -226,7 +226,7 @@ export default function AboutUsPage() {
                             <CardTitle className="text-2xl">Cambodia Mekong University (CMU)</CardTitle>
                         </CardHeader>
                         <CardContent className="text-lg text-muted-foreground text-center leading-relaxed">
-                            CamEdu is a final year project developed by students from Cambodia Mekong University. Our aim is to apply our academic knowledge to create a practical and impactful e-learning platform for the community.
+                            NEXT4LEARN is a final year project developed by students from Cambodia Mekong University. Our aim is to apply our academic knowledge to create a practical and impactful e-learning platform for the community.
                             <div className="flex items-center justify-center gap-2 mt-4 text-sm">
                                 <MapPin className="w-4 h-4 text-muted-foreground" />
                                 <span>Phnom Penh, Cambodia</span>

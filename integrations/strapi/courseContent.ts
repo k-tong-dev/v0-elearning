@@ -1,5 +1,27 @@
 import { strapiPublic, strapi } from './client';
 
+// Helper to resolve documentId from numeric ID
+async function resolveDocumentIdByNumericId(
+    collection: string,
+    numericId: number,
+): Promise<string | null> {
+    const query = [`filters[id][$eq]=${numericId}`, "fields[0]=documentId"].join("&");
+    const url = `/api/${collection}?${query}`;
+    const clients = [strapi, strapiPublic];
+    for (const client of clients) {
+        try {
+            const response = await client.get(url);
+            const items = response.data?.data ?? [];
+            if (items.length > 0) {
+                return items[0].documentId;
+            }
+        } catch (error) {
+            console.warn(`Failed to resolve documentId for ${collection}`, error);
+        }
+    }
+    return null;
+}
+
 export interface CourseMaterial {
     id: number;
     documentId: string;
@@ -126,10 +148,20 @@ export async function getCourseContent(id: string | number): Promise<CourseConte
 
 export async function createCourseContent(data: Partial<CourseContent> & { name: string; course_course: number }): Promise<CourseContent | null> {
     try {
+        // Resolve documentId for the course to ensure Strapi Admin UI displays the relation
+        const courseDocumentId = await resolveDocumentIdByNumericId("course-courses", data.course_course);
+        if (!courseDocumentId) {
+            console.error("Failed to resolve course documentId for content creation");
+            return null;
+        }
+
         const response = await strapi.post('/api/course-contents', {
             data: {
                 name: data.name,
-                course_course: data.course_course,
+                // Use connect with documentId for CREATE to ensure Strapi Admin UI displays the relation
+                course_course: {
+                    connect: [{ documentId: courseDocumentId }],
+                },
                 is_paid: data.is_paid || false,
                 price: data.price || 0,
                 currency: data.currency,
@@ -162,8 +194,10 @@ export async function createCourseContent(data: Partial<CourseContent> & { name:
     }
 }
 
+// Note: In Strapi v5, PUT/DELETE operations require documentId (string), not numeric id
 export async function updateCourseContent(id: string, data: Partial<CourseContent>): Promise<CourseContent | null> {
     try {
+        // id should be documentId, not numeric id
         const response = await strapi.put(`/api/course-contents/${id}`, {
             data
         });
@@ -191,8 +225,10 @@ export async function updateCourseContent(id: string, data: Partial<CourseConten
     }
 }
 
+// Note: In Strapi v5, DELETE operations require documentId (string), not numeric id
 export async function deleteCourseContent(id: string): Promise<boolean> {
     try {
+        // id should be documentId, not numeric id
         await strapi.delete(`/api/course-contents/${id}`);
         return true;
     } catch (error) {

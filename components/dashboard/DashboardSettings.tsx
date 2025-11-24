@@ -179,9 +179,12 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
         }
     }, [activeSection])
 
+    // Store uploaded avatar file ID separately to prevent it from being overwritten
+    const [uploadedAvatarFileId, setUploadedAvatarFileId] = useState<number | null>(null);
+
     // Sync form data and avatar preview with currentUser
     useEffect(() => {
-        setFormData({
+        setFormData((prev) => ({
             username: currentUser.username || "",
             email: currentUser.email,
             bio: currentUser.bio || "",
@@ -196,15 +199,21 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                 facebook: currentUser.facebook || "",
                 instagram: currentUser.instagram || "",
             },
-            avatar: currentUser.avatar || null,
+            // Preserve uploaded avatar if it exists, otherwise use currentUser avatar
+            avatar: prev.avatar && typeof prev.avatar === 'object' && 'id' in prev.avatar 
+                ? prev.avatar 
+                : (currentUser.avatar || null),
             skills: currentUser.skills?.map(s => s.documentId || s.name) || [],
             selectedBadgeIds: currentUser.badges?.map(b => b.id.toString()) || [],
             selectedLearningGoalIds: currentUser.learning_goals?.map(g => g.id.toString()) || [],
             selectedInterestedIds: currentUser.interested?.map(i => i.id.toString()) || [],
             selectedPreferToLearnIds: currentUser.prefer_to_learns?.map(p => p.id.toString()) || [],
-        })
+        }))
+        // Only update preview if we don't have an uploaded avatar
+        if (!uploadedAvatarFileId) {
         setAvatarPreview(getAvatarUrl(currentUser.avatar));
-    }, [currentUser, strapiURL])
+        }
+    }, [currentUser, strapiURL, uploadedAvatarFileId])
 
     const limitEntries = useMemo(() => {
         const record = currentUser as any
@@ -350,6 +359,7 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
             const previewUrl = getAvatarUrl(uploadedFile) || uploadedFile?.url || null
             setAvatarPreview(previewUrl)
             setFormData((prev) => ({ ...prev, avatar: uploadedFile })) // Store the full StrapiMedia object
+            setUploadedAvatarFileId(uploadedFile.id) // Store the file ID separately
 
             // Update user with avatar ID
             const updatePayload = {
@@ -495,16 +505,24 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
                 notice_weekly_analysis: notificationSettings.weeklyAnalytics,
             }
 
-            // If avatar was changed, its ID is already updated via handleAvatarChange
-            // If not, ensure the existing avatar ID is sent if it's an object
-            if (formData.avatar && typeof formData.avatar === 'object' && 'id' in formData.avatar) {
+            // If avatar was changed, use the uploaded file ID
+            // Otherwise, use the existing avatar ID from formData or currentUser
+            if (uploadedAvatarFileId) {
+                // Use the newly uploaded avatar file ID
+                updatePayload.avatar = uploadedAvatarFileId;
+            } else if (formData.avatar && typeof formData.avatar === 'object' && 'id' in formData.avatar) {
+                // Use the avatar from formData (existing uploaded file)
                 updatePayload.avatar = formData.avatar.id;
+            } else if (currentUser.avatar && typeof currentUser.avatar === 'object' && 'id' in currentUser.avatar) {
+                // Use the current user's avatar ID
+                updatePayload.avatar = currentUser.avatar.id;
             } else if (typeof formData.avatar === 'string') {
                 // If avatar is a string (e.g., a template URL), Strapi might expect a different handling
                 // For now, we'll assume it's either an uploaded file ID or null.
                 // If it's a template URL, you might need a separate field in Strapi to store it.
             } else {
-                updatePayload.avatar = null; // No avatar selected
+                // No avatar - keep existing or set to null
+                updatePayload.avatar = currentUser.avatar?.id || null;
             }
 
             console.log("[DashboardSettings] Update payload:", JSON.stringify(updatePayload, null, 2))
@@ -527,6 +545,8 @@ export function DashboardSettings({ currentUser, stats }: DashboardSettingsProps
             }
 
             await refreshUser()
+            // Clear uploaded avatar file ID after successful save
+            setUploadedAvatarFileId(null)
             toast.success("Profile updated successfully!", {
                 position: "top-center",
                 action: { label: "Close", onClick: () => {} },

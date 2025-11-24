@@ -18,11 +18,13 @@ import { DashboardMyContacts } from "@/components/dashboard/DashboardMyContacts"
 import { DashboardInstructors } from "@/components/dashboard/DashboardInstructors"
 import { NotificationSidebar } from "@/components/dashboard/NotificationSidebar"
 import { DashboardFriends } from "@/components/dashboard/DashboardFriends"
+import { DashboardCertificates } from "@/components/dashboard/DashboardCertificates"
 import { User as StrapiUser } from "@/types/user"
 import { getUserSubscription } from "@/integrations/strapi/subscription"
 import {BookOpen, DollarSign, MessageCircle, Star, ThumbsUp, Users} from "lucide-react"
 import { FreePlanAgreementPopup } from "@/components/dashboard/FreePlanAgreementPopup"
 import { useFreePlanCheck } from "@/hooks/use-free-plan-check"
+import { useConfirmPageReload } from "@/hooks/use-confirm-page-reload"
 
 // Interfaces for mock data (keeping them here for context, but ideally they'd be in a types file)
 interface DashboardStats {
@@ -85,9 +87,19 @@ function DashboardContent() {
 
     const initialTab = searchParams?.get("tab") || "overview"
     const initialCreateCourse = searchParams?.get("create") === "true"
+    const editCourseId = searchParams?.get("edit")
     const [selectedTab, setSelectedTab] = useState(initialTab)
     const [showCreateCourseForm, setShowCreateCourseForm] = useState(initialCreateCourse && initialTab === 'my-courses')
+    const [editingCourseId, setEditingCourseId] = useState<number | string | undefined>(
+        editCourseId ? (isNaN(Number(editCourseId)) ? editCourseId : Number(editCourseId)) : undefined
+    )
     const [isNotificationSidebarOpen, setIsNotificationSidebarOpen] = useState(false)
+    const { requestReload, ReloadConfirmDialog } = useConfirmPageReload({
+        title: "Refresh dashboard to verify",
+        description: "Refreshing will reload the page and sync your Strapi session. Do you want to continue?",
+        confirmLabel: "Refresh & verify",
+        cancelLabel: "Keep working",
+    })
     
     // Free plan check - runs 5 seconds after dashboard load
     const { missingPlans, hasMissingPlans } = useFreePlanCheck({
@@ -342,13 +354,28 @@ function DashboardContent() {
         if (selectedTab !== "my-courses" || !showCreateCourseForm) {
             setSelectedTab("my-courses")
             setShowCreateCourseForm(true)
+            setEditingCourseId(undefined)
             router.push("/dashboard?tab=my-courses&create=true")
         }
+    }
+
+    const handleEditCourse = (courseId: number | string) => {
+        // Ensure we always use numeric id, not documentId
+        const numericId = typeof courseId === 'string' ? Number(courseId) : courseId;
+        if (isNaN(numericId)) {
+            console.error("Invalid course ID - must be numeric:", courseId);
+            return;
+        }
+        setSelectedTab("my-courses")
+        setShowCreateCourseForm(true)
+        setEditingCourseId(numericId)
+        router.push(`/dashboard?tab=my-courses&edit=${numericId}`)
     }
 
     const handleCancelCreateCourse = () => {
         if (showCreateCourseForm) {
             setShowCreateCourseForm(false)
+            setEditingCourseId(undefined)
             router.push("/dashboard?tab=my-courses")
         }
     }
@@ -356,9 +383,28 @@ function DashboardContent() {
     const handleCourseCreatedSuccess = () => {
         if (showCreateCourseForm) {
             setShowCreateCourseForm(false)
+            setEditingCourseId(undefined)
             router.push("/dashboard?tab=my-courses")
         }
     }
+
+    // Update editingCourseId when URL changes
+    useEffect(() => {
+        const editId = searchParams?.get("edit")
+        if (editId) {
+            // Only accept numeric IDs, reject documentId strings
+            const numericId = Number(editId)
+            if (isNaN(numericId)) {
+                console.error("Invalid course ID in URL - must be numeric:", editId)
+                setEditingCourseId(undefined)
+                return
+            }
+            setEditingCourseId(numericId)
+            setShowCreateCourseForm(true)
+        } else if (searchParams?.get("create") !== "true") {
+            setEditingCourseId(undefined)
+        }
+    }, [searchParams])
 
     if (authLoading || !user) {
         return (
@@ -419,14 +465,19 @@ function DashboardContent() {
                                     <CreateCourseForm
                                         onCancel={handleCancelCreateCourse}
                                         onSuccess={handleCourseCreatedSuccess}
+                                        courseId={editingCourseId}
                                     />
                                 ) : (
                                     <DashboardMyCourses
-                                        myCourses={myCourses}
                                         onCreateCourse={handleCreateCourseClick}
+                                        onEditCourse={handleEditCourse}
                                         showCreateButton={true}
                                     />
                                 )}
+                            </TabsContent>
+
+                            <TabsContent value="certificates" className="mt-0">
+                                <DashboardCertificates />
                             </TabsContent>
 
                             <TabsContent value="instructors" className="mt-0">
@@ -475,11 +526,10 @@ function DashboardContent() {
                 plans={missingPlans}
                 onClose={() => setShowFreePlanPopup(false)}
                 onSuccess={() => {
-                    setShowFreePlanPopup(false)
-                    // Refresh user data
-                    window.location.reload()
+                    requestReload(() => setShowFreePlanPopup(false))
                 }}
             />
+            {ReloadConfirmDialog}
         </div>
     )
 }

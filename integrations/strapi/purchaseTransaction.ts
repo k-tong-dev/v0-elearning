@@ -83,6 +83,34 @@ export async function getPurchaseTransaction(id: string | number): Promise<Purch
     }
 }
 
+// Helper to resolve documentId from numeric ID or string ID
+async function resolveDocumentIdByNumericId(
+    collection: string,
+    idOrDocumentId: number | string,
+): Promise<string | null> {
+    // If it's already a documentId (non-numeric string), return it
+    if (typeof idOrDocumentId === 'string' && !/^\d+$/.test(idOrDocumentId)) {
+        return idOrDocumentId;
+    }
+    
+    const numericId = typeof idOrDocumentId === 'string' ? Number(idOrDocumentId) : idOrDocumentId;
+    const query = [`filters[id][$eq]=${numericId}`, "fields[0]=documentId"].join("&");
+    const url = `/api/${collection}?${query}`;
+    const clients = [strapi, strapiPublic];
+    for (const client of clients) {
+        try {
+            const response = await client.get(url);
+            const items = response.data?.data ?? [];
+            if (items.length > 0) {
+                return items[0].documentId;
+            }
+        } catch (error) {
+            console.warn(`Failed to resolve documentId for ${collection}`, error);
+        }
+    }
+    return null;
+}
+
 export async function createPurchaseTransaction(
     data: Partial<PurchaseTransaction> & { 
         user: string; 
@@ -93,13 +121,50 @@ export async function createPurchaseTransaction(
     try {
         const now = new Date().toISOString();
         
+        // Resolve documentIds for relations to ensure Strapi Admin UI displays them
+        const userDocumentId = await resolveDocumentIdByNumericId("users", data.user);
+        if (!userDocumentId) {
+            console.error("Failed to resolve user documentId for purchase transaction creation");
+            return null;
+        }
+
+        const instructorDocumentId = await resolveDocumentIdByNumericId("instructors", data.instructor);
+        if (!instructorDocumentId) {
+            console.error("Failed to resolve instructor documentId for purchase transaction creation");
+            return null;
+        }
+
+        let courseConnect = undefined;
+        if (data.course_course) {
+            const courseDocId = await resolveDocumentIdByNumericId("course-courses", data.course_course);
+            if (courseDocId) {
+                courseConnect = { connect: [{ documentId: courseDocId }] };
+            }
+        }
+
+        let currencyConnect = undefined;
+        if (data.currency) {
+            const currencyId = typeof data.currency === 'number' ? data.currency : Number(data.currency);
+            if (!isNaN(currencyId)) {
+                const currencyDocId = await resolveDocumentIdByNumericId("currencies", currencyId);
+                if (currencyDocId) {
+                    currencyConnect = { connect: [{ documentId: currencyDocId }] };
+                }
+            }
+        }
+        
         const response = await strapi.post('/api/purchase-transactions', {
             data: {
-                user: data.user,
-                instructor: data.instructor,
-                course_course: data.course_course,
+                // Use connect with documentId for CREATE to ensure Strapi Admin UI displays the relation
+                user: {
+                    connect: [{ documentId: userDocumentId }],
+                },
+                instructor: {
+                    connect: [{ documentId: instructorDocumentId }],
+                },
+                course_course: courseConnect,
+                currency: currencyConnect,
                 amount_paid: data.amount_paid,
-                currency: data.currency,
                 state: data.state || 'pending',
                 stripe_payment_intent_id: data.stripe_payment_intent_id,
                 stripe_charge_id: data.stripe_charge_id,

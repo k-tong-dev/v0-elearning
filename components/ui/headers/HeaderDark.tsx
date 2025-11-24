@@ -19,7 +19,7 @@ import {
     Users,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
-import { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
+import {Image} from "@heroui/react";
 
 export function HeaderDark() {
     const router = useRouter()
@@ -115,8 +116,8 @@ export function HeaderDark() {
         try {
             if (navigator.share) {
                 await navigator.share({
-                    title: "CamEducation",
-                    text: "Check out CamEducation - the best online learning platform!",
+                    title: "NEXT4LEARN",
+                    text: "Check out NEXT4LEARN - the best online learning platform!",
                     url: window.location.origin,
                 })
                 toast.success("Shared successfully!")
@@ -242,7 +243,7 @@ export function HeaderDark() {
                     {/* ---- LEFT: LOGO + NAME ---- */}
                     <Link href="/" className="flex items-center space-x-2 group flex-shrink-0">
                         <motion.div
-                            className="w-10 h-10 rounded-2xl flex items-center justify-center relative overflow-hidden"
+                            className="w-10 h-10 rounded-2xl flex items-center justify-center relative"
                             style={{
                                 background: "linear-gradient(135deg, rgba(59,130,246,.9) 0%, rgba(147,51,234,.9) 100%)",
                                 boxShadow: "0 4px 16px rgba(59,130,246,.3), inset 0 1px 0 rgba(255,255,255,.3)",
@@ -250,19 +251,13 @@ export function HeaderDark() {
                             whileHover={{ scale: 1.05, rotate: 5 }}
                             transition={{ type: "spring", stiffness: 400, damping: 10 }}
                         >
-                            <BookOpen className="w-5 h-5 text-white relative z-10" />
-                            <motion.div
-                                className="absolute inset-0"
-                                style={{ background: "linear-gradient(135deg, rgba(255,255,255,.3) 0%, transparent 100%)" }}
-                                animate={{ opacity: [0.3, 0.6, 0.3] }}
-                                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-                            />
+                            <Image src="/logoNoBg.png" alt="Logo with text"/>
                         </motion.div>
                         <span
-                            className="text-xl font-bold text-slate-900 dark:bg-gradient-to-r dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 dark:bg-clip-text dark:text-transparent"
+                            className="text-md font-saira font-bold text-slate-900 dark:bg-gradient-to-r dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 dark:bg-clip-text dark:text-transparent"
                             style={{ backgroundSize: "200% auto", animation: "gradient-shift 3s ease infinite" }}
                         >
-                          CamEdu
+                          NEXT4LEARN
                         </span>
                     </Link>
 

@@ -290,6 +290,34 @@ export async function getAllUserSubscriptions(userId: string | number): Promise<
 }
 
 // Create user subscription
+// Helper to resolve documentId from numeric ID or string ID
+async function resolveDocumentIdByNumericId(
+    collection: string,
+    idOrDocumentId: number | string,
+): Promise<string | null> {
+    // If it's already a documentId (non-numeric string), return it
+    if (typeof idOrDocumentId === 'string' && !/^\d+$/.test(idOrDocumentId)) {
+        return idOrDocumentId;
+    }
+    
+    const numericId = typeof idOrDocumentId === 'string' ? Number(idOrDocumentId) : idOrDocumentId;
+    const query = [`filters[id][$eq]=${numericId}`, "fields[0]=documentId"].join("&");
+    const url = `/api/${collection}?${query}`;
+    const clients = [strapi, strapiPublic];
+    for (const client of clients) {
+        try {
+            const response = await client.get(url);
+            const items = response.data?.data ?? [];
+            if (items.length > 0) {
+                return items[0].documentId;
+            }
+        } catch (error) {
+            console.warn(`Failed to resolve documentId for ${collection}`, error);
+        }
+    }
+    return null;
+}
+
 export async function createUserSubscription(
     userId: string,
     subscriptionId: string | number,
@@ -300,36 +328,44 @@ export async function createUserSubscription(
         const nextBilling = new Date();
         nextBilling.setMonth(nextBilling.getMonth() + 1); // Default: 1 month from now
         
-        // Convert userId to number if it's a string (Strapi relations need numeric IDs)
+        // Resolve documentIds for relations to ensure Strapi Admin UI displays them
         const userIdNum = typeof userId === 'string' ? Number(userId) : userId;
-        
-        // Convert subscriptionId to number if it's a documentId string
-        // If it's already a number or numeric string, use it directly
-        let subscriptionIdNum: number;
-        if (typeof subscriptionId === 'string') {
-            // Check if it's a numeric string (ID) or documentId
-            if (/^\d+$/.test(subscriptionId)) {
-                subscriptionIdNum = Number(subscriptionId);
-            } else {
-                // It's a documentId, we need to get the numeric ID
-                // For now, try to use it as-is (Strapi v5 might accept documentId)
-                // But relations typically need numeric IDs
-                const plan = await getSubscriptionPlan(subscriptionId);
-                if (!plan) {
-                    throw new Error(`Subscription plan not found: ${subscriptionId}`);
-                }
-                subscriptionIdNum = plan.id;
-            }
+        const userDocumentId = await resolveDocumentIdByNumericId("users", userIdNum);
+        if (!userDocumentId) {
+            console.error("Failed to resolve user documentId for subscription creation");
+            return null;
+        }
+
+        // Resolve subscription plan documentId
+        let subscriptionDocumentId: string | null = null;
+        if (typeof subscriptionId === 'string' && !/^\d+$/.test(subscriptionId)) {
+            // It's already a documentId
+            subscriptionDocumentId = subscriptionId;
         } else {
-            subscriptionIdNum = subscriptionId;
+            const subscriptionIdNum = typeof subscriptionId === 'string' ? Number(subscriptionId) : subscriptionId;
+            subscriptionDocumentId = await resolveDocumentIdByNumericId("subscription-plans", subscriptionIdNum);
+            if (!subscriptionDocumentId) {
+                // Fallback: try to get the plan to find its documentId
+                const plan = await getSubscriptionPlan(subscriptionIdNum);
+                if (plan) {
+                    subscriptionDocumentId = plan.documentId;
+            } else {
+                    console.error("Failed to resolve subscription documentId for subscription creation");
+                    return null;
+            }
+            }
         }
         
         const response = await strapi.post('/api/user-subscriptions', {
             data: {
-                user: userIdNum,
-                subscription: subscriptionIdNum,
+                // Use connect with documentId for CREATE to ensure Strapi Admin UI displays the relation
+                user: {
+                    connect: [{ documentId: userDocumentId }],
+                },
+                subscription: {
+                    connect: [{ documentId: subscriptionDocumentId }],
+                },
                 state: data?.state || 'pending',
-                // Remove current_instructor_count - it's not in the schema
                 next_billing_date: data?.next_billing_date || nextBilling.toISOString().split('T')[0],
                 last_billing_date: data?.last_billing_date,
                 stripe_subscription_id: data?.stripe_subscription_id,
