@@ -666,7 +666,7 @@ export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onE
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-bold">My Courses</h2>
+                <h2 className="text-xl font-normal uppercase tracking-widest text-gray-700">My Courses</h2>
                 {showCreateButton && (
                     <Button
                         onClick={onCreateCourse}

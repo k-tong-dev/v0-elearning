@@ -164,6 +164,64 @@ async function analyzeVideoMetadata(file: File): Promise<{
 }
 
 /**
+ * Check audio metadata to detect potential copyright issues
+ */
+async function analyzeAudioMetadata(file: File): Promise<{
+  duration?: number;
+  hasMetadata: boolean;
+  suspiciousIndicators: string[];
+}> {
+  const suspiciousIndicators: string[] = [];
+  
+  try {
+    // Create audio element to extract metadata
+    const audio = document.createElement("audio");
+    const objectUrl = URL.createObjectURL(file);
+    
+    return new Promise((resolve) => {
+      audio.onloadedmetadata = () => {
+        const duration = audio.duration;
+        URL.revokeObjectURL(objectUrl);
+        
+        // Check for suspicious indicators
+        // Very long audio files (>3 hours) might be full albums or audiobooks
+        if (duration > 10800) {
+          suspiciousIndicators.push("Very long duration (>3 hours)");
+        }
+        
+        // Check for album-like structure (multiple long tracks)
+        if (duration > 3600 && duration < 10800) {
+          suspiciousIndicators.push("Long duration (1-3 hours) - may be copyrighted content");
+        }
+        
+        resolve({
+          duration,
+          hasMetadata: true,
+          suspiciousIndicators,
+        });
+      };
+      
+      audio.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve({
+          hasMetadata: false,
+          suspiciousIndicators: [],
+        });
+      };
+      
+      audio.src = objectUrl;
+      audio.load();
+    });
+  } catch (error) {
+    console.error("Error analyzing audio metadata:", error);
+    return {
+      hasMetadata: false,
+      suspiciousIndicators: [],
+    };
+  }
+}
+
+/**
  * Check file name for suspicious patterns
  */
 function analyzeFileName(fileName: string): {
@@ -336,19 +394,41 @@ export async function checkCopyright(
     fingerprint = await generateVideoFingerprint(file);
   }
 
-  // If URL is provided and it's YouTube, check Content ID
-  if (videoUrl && provider === "youtube_content_id") {
-    const youtubeResult = await checkYouTubeContentID(videoUrl);
+  // If URL is provided, check it (auto-detect YouTube)
+  if (videoUrl) {
+    // Auto-detect if it's a YouTube URL
+    const isYouTubeUrl = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/.test(videoUrl);
+    
+    if (isYouTubeUrl) {
+      const youtubeResult = await checkYouTubeContentID(videoUrl);
+      return {
+        status: youtubeResult.status || "passed", // Default to passed for YouTube URLs
+        result: youtubeResult.result,
+        violations: youtubeResult.violations,
+        warnings: youtubeResult.warnings,
+        fingerprint,
+        provider: youtubeResult.provider || "youtube_content_id",
+        metadata: {
+          checkedAt: new Date().toISOString(),
+          url: videoUrl,
+          ...youtubeResult.metadata,
+        },
+      };
+    }
+    
+    // For non-YouTube URLs, mark as passed with a warning to manually verify
     return {
-      status: youtubeResult.status || "pending",
-      result: youtubeResult.result,
-      violations: youtubeResult.violations,
-      warnings: youtubeResult.warnings,
-      fingerprint,
-      provider: youtubeResult.provider || provider,
+      status: "passed",
+      provider: "url_check",
+      warnings: [{
+        type: "external_url",
+        message: "External URL detected. Please ensure you have rights to embed this content.",
+        severity: "low",
+      }],
       metadata: {
         checkedAt: new Date().toISOString(),
-        ...youtubeResult.metadata,
+        url: videoUrl,
+        urlType: "external",
       },
     };
   }

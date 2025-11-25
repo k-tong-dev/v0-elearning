@@ -737,9 +737,146 @@ export async function createCourseCourse(data: CreateCourseCourseInput): Promise
     }
 }
 
+/**
+ * Check if course has any copyright issues in its content
+ */
+async function checkCourseCopyrightStatus(courseId: number): Promise<{
+    hasCopyrightIssues: boolean;
+    details: string;
+}> {
+    try {
+        // Import dynamically to avoid circular dependencies
+        const { getCourseMaterials, getCourseContentsForMaterial } = await import('./courseMaterial');
+        
+        // Get all materials for this course
+        const materials = await getCourseMaterials(courseId);
+        
+        if (!materials || materials.length === 0) {
+            return { hasCopyrightIssues: false, details: 'No materials found' };
+        }
+        
+        // Check each material's contents for copyright issues
+        for (const material of materials) {
+            const contents = await getCourseContentsForMaterial(material.id);
+            
+            for (const content of contents) {
+                // Check if copyright check has been performed and failed
+                if (content.copyright_check_status === 'failed') {
+                    return {
+                        hasCopyrightIssues: true,
+                        details: `Content "${content.name}" has copyright violations`,
+                    };
+                }
+                
+                // Check if copyright check has warnings for paid courses
+                if (content.copyright_check_status === 'warning') {
+                    return {
+                        hasCopyrightIssues: true,
+                        details: `Content "${content.name}" has copyright warnings`,
+                    };
+                }
+                
+                // Check if copyright check is still pending for media content
+                if (
+                    (content.type === 'video' || content.type === 'audio') &&
+                    (!content.copyright_check_status || content.copyright_check_status === 'pending')
+                ) {
+                    return {
+                        hasCopyrightIssues: true,
+                        details: `Content "${content.name}" has not completed copyright check`,
+                    };
+                }
+            }
+        }
+        
+        return { hasCopyrightIssues: false, details: 'All copyright checks passed' };
+    } catch (error) {
+        console.error('Error checking course copyright status:', error);
+        return {
+            hasCopyrightIssues: true,
+            details: 'Error checking copyright status',
+        };
+    }
+}
+
 // Note: In Strapi v5, PUT/DELETE operations require documentId (string), not numeric id
 export async function updateCourseCourse(id: string, data: any): Promise<CourseCourse | null> {
     try {
+        // Get the existing course to check current status
+        const numericId = typeof id === 'string' ? Number(id) : id;
+        let existingCourse: CourseCourse | null = null;
+        
+        if (!isNaN(numericId)) {
+            existingCourse = await getCourseCourse(numericId);
+        }
+        
+        // Security validation before update
+        if (existingCourse) {
+            // Security Rule 1: If course is published, only allow status changes to draft or cancel
+            if (existingCourse.course_status === 'published') {
+                // Check if they're trying to change the status
+                if (data.course_status && data.course_status !== 'published') {
+                    // Allow changing from published to draft or cancel
+                    console.log(`[Course Security] Allowing status change from published to ${data.course_status}`);
+                    
+                    // Only allow the course_status field to be updated, block all other changes
+                    const allowedFields = ['course_status', 'active'];
+                    const attemptedFields = Object.keys(data);
+                    const blockedFields = attemptedFields.filter(
+                        field => !allowedFields.includes(field)
+                    );
+                    
+                    if (blockedFields.length > 0) {
+                        throw new Error(
+                            `Cannot update fields [${blockedFields.join(', ')}] while course is published. ` +
+                            'Please change course status to "draft" or "cancel" first, then make your changes.'
+                        );
+                    }
+                } else {
+                    // They're trying to update other fields while status is still published
+                    throw new Error(
+                        'Cannot update a published course. Please change the course status to "draft" or "cancel" first before making any changes.'
+                    );
+                }
+            }
+            
+            // Security Rule 2: Check copyright before allowing status change to published
+            if (data.course_status === 'published' && existingCourse.course_status !== 'published') {
+                // Changing from draft/cancel to published
+                
+                // Check if course is paid
+                const isPaid = data.is_paid !== undefined ? data.is_paid : existingCourse.is_paid;
+                
+                if (isPaid) {
+                    // For paid courses, verify all copyright checks have passed
+                    const copyrightCheck = await checkCourseCopyrightStatus(existingCourse.id);
+                    
+                    if (copyrightCheck.hasCopyrightIssues) {
+                        throw new Error(
+                            `Cannot publish paid course with copyright issues: ${copyrightCheck.details}. ` +
+                            'Please resolve all copyright violations before publishing.'
+                        );
+                    }
+                }
+            }
+            
+            // Security Rule 3: If course is being changed to paid, check copyright
+            const wasPaid = existingCourse.is_paid;
+            const willBePaid = data.is_paid !== undefined ? data.is_paid : wasPaid;
+            
+            if (!wasPaid && willBePaid && existingCourse.course_status === 'published') {
+                // Course is already published and trying to change from free to paid
+                const copyrightCheck = await checkCourseCopyrightStatus(existingCourse.id);
+                
+                if (copyrightCheck.hasCopyrightIssues) {
+                    throw new Error(
+                        `Cannot change to paid course with copyright issues: ${copyrightCheck.details}. ` +
+                        'Please unpublish, resolve copyright issues, and then republish.'
+                    );
+                }
+            }
+        }
+        
         const normalizedData = await normalizeCourseUpdatePayload(data)
         // id should be documentId, not numeric id
         const response = await strapi.put(`/api/course-courses/${id}`, {
@@ -774,7 +911,8 @@ export async function updateCourseCourse(id: string, data: any): Promise<CourseC
         };
     } catch (error: any) {
         console.error("Error updating course course:", error.response?.data || error);
-        return null;
+        // Re-throw the error so the caller can handle it
+        throw error;
     }
 }
 

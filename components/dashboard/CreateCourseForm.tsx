@@ -1627,13 +1627,19 @@ export default function CreateCourseForm({
             course_status: courseData.course_status,
         };
             
-            const updated = await updateCourseCourse(course.documentId, updateData);
-            if (!updated) {
-                toast.error("Failed to update course in Strapi.");
-                return null;
+            try {
+                const updated = await updateCourseCourse(course.documentId, updateData);
+                if (!updated) {
+                    toast.error("Failed to update course in Strapi.");
+                    return null;
+                }
+                setCourse(updated);
+                return updated;
+            } catch (error: any) {
+                // Handle validation errors from the update function
+                toast.error(error.message || "Failed to update course");
+                throw error;
             }
-            setCourse(updated);
-            return updated;
         }
 
         // Otherwise, create new course
@@ -3520,14 +3526,20 @@ export default function CreateCourseForm({
             // Use documentId for Strapi v5 API calls (endpoint URL)
             // But relations should use numeric id, not documentId
             setSaveProgress(prev => ({ ...prev, course: 60 }));
-            await updateCourseCourse(baseCourse.documentId, updateData);
-            setSaveProgress(prev => ({ ...prev, course: 100 }));
-            
-            // Show appropriate success message based on status
-            if (basics.course_status === "published") {
-                toast.success("Course published successfully!");
-            } else {
-            toast.success("Course saved as draft.");
+            try {
+                await updateCourseCourse(baseCourse.documentId, updateData);
+                setSaveProgress(prev => ({ ...prev, course: 100 }));
+                
+                // Show appropriate success message based on status
+                if (basics.course_status === "published") {
+                    toast.success("Course published successfully!");
+                } else {
+                    toast.success("Course saved as draft.");
+                }
+            } catch (error: any) {
+                setSaveProgress(prev => ({ ...prev, course: 100 }));
+                toast.error(error.message || "Failed to save course");
+                throw error;
             }
             // Reset unsaved changes after successful save
             if (courseId) {
@@ -7123,6 +7135,22 @@ export default function CreateCourseForm({
                     <Breadcrumb items={breadcrumbItems} />
                 </div>
                 
+                {/* Published Course Warning */}
+                {course && basics.course_status === "published" && (
+                    <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 rounded-lg">
+                        <div className="flex items-start gap-3">
+                            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+                            <div>
+                                <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">Course is Published</h3>
+                                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                                    This course is currently published. To make changes, you must first change the status to <strong>"Draft"</strong> or <strong>"Cancel"</strong>.
+                                    This security measure prevents accidental modifications to live courses.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
                 <div
                     className="w-full min-h-[70vh] p-0 border border-border -shadow-lg bg-background/80 backdrop-blur-xl flex flex-col gap-0 border-0">
                     <div className="space-y-2 sm:space-y-3 md:space-y-4 py-3 sm:py-4">
@@ -7145,10 +7173,16 @@ export default function CreateCourseForm({
                                             size="sm"
                                             variant={basics.course_status === "draft" ? "default" : "outline"}
                                             onClick={async () => {
-                                                handleBasicsChange("course_status", "draft");
-                                                if (course) {
-                                                    await updateCourseCourse(course.documentId, {course_status: "draft"});
-                                                    toast.success("Course status updated to Draft");
+                                                try {
+                                                    handleBasicsChange("course_status", "draft");
+                                                    if (course) {
+                                                        await updateCourseCourse(course.documentId, {course_status: "draft"});
+                                                        toast.success("Course status updated to Draft");
+                                                    }
+                                                } catch (error: any) {
+                                                    toast.error(error.message || "Failed to update course status");
+                                                    // Revert the status change on error
+                                                    handleBasicsChange("course_status", course?.course_status || "draft");
                                                 }
                                             }}
                                             className={cn(
@@ -7170,32 +7204,38 @@ export default function CreateCourseForm({
                                             size="sm"
                                             variant={basics.course_status === "published" ? "default" : "outline"}
                                             onClick={async () => {
-                                                // Validation: Check ALL content for copyright issues BEFORE publishing
-                                                console.log("[Copyright Check] ========== BUTTON CLICK VALIDATION ==========");
-                                                console.log("[Copyright Check] Course is paid:", basics.is_paid);
-                                                
-                                                if (basics.is_paid) {
-                                                    const issues = checkAllContentCopyright();
-                                                    console.log("[Copyright Check] Button click - checking for copyright issues:", {
-                                                        isPaid: basics.is_paid,
-                                                        issuesFound: issues.length,
-                                                        willBlock: issues.length > 0
-                                                    });
+                                                try {
+                                                    // Validation: Check ALL content for copyright issues BEFORE publishing
+                                                    console.log("[Copyright Check] ========== BUTTON CLICK VALIDATION ==========");
+                                                    console.log("[Copyright Check] Course is paid:", basics.is_paid);
                                                     
-                                                    if (issues.length > 0) {
-                                                        console.warn("[Copyright Check] ❌ BLOCKING - Paid course has copyright issues!");
-                                                        setCopyrightIssues(issues);
-                                                        setShowCopyrightWarningDialog(true);
-                                                        toast.error(`Cannot publish paid course: ${issues.length} content item(s) have copyright issues`);
-                                                        return; // Prevent publishing paid course with copyright issues
+                                                    if (basics.is_paid) {
+                                                        const issues = checkAllContentCopyright();
+                                                        console.log("[Copyright Check] Button click - checking for copyright issues:", {
+                                                            isPaid: basics.is_paid,
+                                                            issuesFound: issues.length,
+                                                            willBlock: issues.length > 0
+                                                        });
+                                                        
+                                                        if (issues.length > 0) {
+                                                            console.warn("[Copyright Check] ❌ BLOCKING - Paid course has copyright issues!");
+                                                            setCopyrightIssues(issues);
+                                                            setShowCopyrightWarningDialog(true);
+                                                            toast.error(`Cannot publish paid course: ${issues.length} content item(s) have copyright issues`);
+                                                            return; // Prevent publishing paid course with copyright issues
+                                                        }
                                                     }
-                                                }
-                                                
-                                                console.log("[Copyright Check] ✅ ALLOWING - No copyright issues or course is free");
-                                                handleBasicsChange("course_status", "published");
-                                                if (course) {
-                                                    await updateCourseCourse(course.documentId, {course_status: "published"});
-                                                    toast.success("Course status updated to Published");
+                                                    
+                                                    console.log("[Copyright Check] ✅ ALLOWING - No copyright issues or course is free");
+                                                    handleBasicsChange("course_status", "published");
+                                                    if (course) {
+                                                        await updateCourseCourse(course.documentId, {course_status: "published"});
+                                                        toast.success("Course status updated to Published");
+                                                    }
+                                                } catch (error: any) {
+                                                    toast.error(error.message || "Failed to publish course");
+                                                    // Revert the status change on error
+                                                    handleBasicsChange("course_status", course?.course_status || "draft");
                                                 }
                                             }}
                                             className={cn(
@@ -7217,10 +7257,16 @@ export default function CreateCourseForm({
                                             size="sm"
                                             variant={basics.course_status === "cancel" ? "default" : "outline"}
                                             onClick={async () => {
-                                                handleBasicsChange("course_status", "cancel");
-                                                if (course) {
-                                                    await updateCourseCourse(course.documentId, {course_status: "cancel"});
-                                                    toast.success("Course status updated to Canceled");
+                                                try {
+                                                    handleBasicsChange("course_status", "cancel");
+                                                    if (course) {
+                                                        await updateCourseCourse(course.documentId, {course_status: "cancel"});
+                                                        toast.success("Course status updated to Canceled");
+                                                    }
+                                                } catch (error: any) {
+                                                    toast.error(error.message || "Failed to cancel course");
+                                                    // Revert the status change on error
+                                                    handleBasicsChange("course_status", course?.course_status || "draft");
                                                 }
                                             }}
                                             className={cn(
@@ -7246,11 +7292,18 @@ export default function CreateCourseForm({
                                         size="sm"
                                         variant={basics.active ? "default" : "outline"}
                                         onClick={async () => {
-                                            const newActive = !basics.active;
-                                            handleBasicsChange("active", newActive);
-                                            if (course) {
-                                                await updateCourseCourse(course.documentId, {active: newActive});
-                                                toast.success(`Course ${newActive ? "activated" : "deactivated"}`);
+                                            try {
+                                                const newActive = !basics.active;
+                                                const oldActive = basics.active;
+                                                handleBasicsChange("active", newActive);
+                                                if (course) {
+                                                    await updateCourseCourse(course.documentId, {active: newActive});
+                                                    toast.success(`Course ${newActive ? "activated" : "deactivated"}`);
+                                                }
+                                            } catch (error: any) {
+                                                toast.error(error.message || "Failed to update course status");
+                                                // Revert the active change on error
+                                                handleBasicsChange("active", course?.active ?? true);
                                             }
                                         }}
                                         className={cn(
