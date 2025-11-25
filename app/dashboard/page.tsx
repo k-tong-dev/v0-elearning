@@ -435,7 +435,7 @@ function DashboardContent() {
             </div>
 
             <main 
-                className="flex-1 min-h-screen transition-all duration-300 ease-in-out pt-10 sm:px-4 md:px-6 lg:px-8"
+                className="flex-1 min-h-screen transition-all duration-300 ease-in-out pt-10 sm:px-4 md:px-6 lg:px-8 scrollbar-hide"
                 style={{ minWidth: 0 }}
             >
                 <div className="container mx-auto max-w-7xl">

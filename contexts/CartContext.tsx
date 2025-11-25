@@ -1,122 +1,138 @@
 "use client"
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
-import { CourseCardData } from "@/types/courseCard"
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { toast } from "sonner"
 
 export interface CartItem {
     id: number
+    courseId: number
     title: string
-    price: number
-    priceLabel: string
+    description: string
     image: string
-    level: string
-    category: string
-    educator: string
-    preview?: CourseCardData["preview"]
+    price: number
+    priceFormatted: string
+    instructor: string
+    addedAt: Date
 }
 
-interface CartContextValue {
+interface CartContextType {
     items: CartItem[]
-    addItem: (course: CourseCardData) => void
-    removeItem: (courseId: number) => void
-    clear: () => void
+    itemCount: number
+    totalPrice: number
+    totalPriceFormatted: string
+    addToCart: (course: {
+        id: number
+        title: string
+        description: string
+        image: string
+        priceValue: number
+        price: string
+        educator: string
+    }) => void
+    removeFromCart: (courseId: number) => void
+    clearCart: () => void
     isInCart: (courseId: number) => boolean
-    total: number
 }
 
-const CartContext = createContext<CartContextValue | undefined>(undefined)
+const CartContext = createContext<CartContextType | undefined>(undefined)
 
-const STORAGE_KEY = "n4l-cart-items"
-
-const parsePriceValue = (course: CourseCardData): number => {
-    if (typeof course.priceValue === "number") return course.priceValue
-    const value = parseFloat(course.price.replace(/[^0-9.]/g, ""))
-    return Number.isFinite(value) ? value : 0
-}
-
-export const CartProvider = ({ children }: { children: React.ReactNode }) => {
+export function CartProvider({ children }: { children: ReactNode }) {
     const [items, setItems] = useState<CartItem[]>([])
-    const [isReady, setIsReady] = useState(false)
 
+    // Load cart from localStorage on mount
     useEffect(() => {
-        try {
-            const stored = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null
-            if (stored) {
-                setItems(JSON.parse(stored))
+        const savedCart = localStorage.getItem("cart")
+        if (savedCart) {
+            try {
+                const parsed = JSON.parse(savedCart)
+                setItems(parsed.map((item: any) => ({
+                    ...item,
+                    addedAt: new Date(item.addedAt)
+                })))
+            } catch (error) {
+                console.error("Failed to parse cart from localStorage:", error)
             }
-        } catch (error) {
-            console.warn("Failed to restore cart items:", error)
-        } finally {
-            setIsReady(true)
         }
     }, [])
 
+    // Save cart to localStorage whenever it changes
     useEffect(() => {
-        if (!isReady) return
-        try {
-            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-        } catch (error) {
-            console.warn("Failed to persist cart items:", error)
-        }
-    }, [items, isReady])
-
-    const addItem = useCallback((course: CourseCardData) => {
-        setItems(prev => {
-            if (prev.some(item => item.id === course.id)) return prev
-            const next: CartItem = {
-                id: course.id,
-                title: course.title,
-                price: parsePriceValue(course),
-                priceLabel: course.price,
-                image: course.image,
-                level: course.level,
-                category: course.category,
-                educator: course.educator,
-                preview: course.preview,
-            }
-            return [...prev, next]
-        })
-    }, [])
-
-    const removeItem = useCallback((courseId: number) => {
-        setItems(prev => prev.filter(item => item.id !== courseId))
-    }, [])
-
-    const clear = useCallback(() => {
-        setItems([])
-    }, [])
-
-    const isInCart = useCallback(
-        (courseId: number) => {
-            return items.some(item => item.id === courseId)
-        },
-        [items],
-    )
-
-    const total = useMemo(() => {
-        return items.reduce((sum, item) => sum + item.price, 0)
+        localStorage.setItem("cart", JSON.stringify(items))
     }, [items])
 
-    const value = useMemo(
-        () => ({
-            items,
-            addItem,
-            removeItem,
-            clear,
-            isInCart,
-            total,
-        }),
-        [items, addItem, removeItem, clear, isInCart, total],
-    )
+    const addToCart = (course: {
+        id: number
+        title: string
+        description: string
+        image: string
+        priceValue: number
+        price: string
+        educator: string
+    }) => {
+        // Check if already in cart
+        if (items.some(item => item.courseId === course.id)) {
+            toast.info("Course is already in cart")
+            return
+        }
 
-    return <CartContext.Provider value={value}>{children}</CartContext.Provider>
+        const newItem: CartItem = {
+            id: Date.now(),
+            courseId: course.id,
+            title: course.title,
+            description: course.description,
+            image: course.image,
+            price: course.priceValue,
+            priceFormatted: course.price,
+            instructor: course.educator,
+            addedAt: new Date()
+        }
+
+        setItems(prev => [...prev, newItem])
+        toast.success(`Added "${course.title}" to cart`)
+    }
+
+    const removeFromCart = (courseId: number) => {
+        setItems(prev => prev.filter(item => item.courseId !== courseId))
+        toast.success("Removed from cart")
+    }
+
+    const clearCart = () => {
+        setItems([])
+        toast.success("Cart cleared")
+    }
+
+    const isInCart = (courseId: number) => {
+        return items.some(item => item.courseId === courseId)
+    }
+
+    const itemCount = items.length
+
+    const totalPrice = items.reduce((sum, item) => sum + item.price, 0)
+
+    const totalPriceFormatted = `$${totalPrice.toFixed(2)}`
+
+    return (
+        <CartContext.Provider
+            value={{
+                items,
+                itemCount,
+                totalPrice,
+                totalPriceFormatted,
+                addToCart,
+                removeFromCart,
+                clearCart,
+                isInCart
+            }}
+        >
+            {children}
+        </CartContext.Provider>
+    )
 }
 
-export const useCart = (): CartContextValue => {
-    const ctx = useContext(CartContext)
-    if (!ctx) {
+export function useCart() {
+    const context = useContext(CartContext)
+    if (context === undefined) {
         throw new Error("useCart must be used within a CartProvider")
     }
-    return ctx
+    return context
 }
-

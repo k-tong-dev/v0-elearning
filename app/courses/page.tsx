@@ -45,10 +45,16 @@ import {
     UserWishlistEntry,
 } from "@/integrations/strapi/userWishlist"
 import { UserWishlistModal } from "@/components/courses/UserWishlistModal"
+import {getCoursePreview} from "@/integrations/strapi/coursePreview";
+import type { CoursePreview } from "@/integrations/strapi/coursePreview";
+import { enrichInstructorsWithAvatars } from "@/lib/helpers/instructorAvatarHelper";
+import { useCart } from "@/contexts/CartContext";
+import { getAvatarUrl } from "@/lib/getAvatarUrl"
 
 export default function CoursesPage() {
     const router = useRouter()
     const { user, isAuthenticated } = useAuth()
+    const { addToCart, isInCart } = useCart()
     const [isSearching, setIsSearching] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedCategories, setSelectedCategories] = useState<string[]>(["all"])
@@ -82,6 +88,112 @@ export default function CoursesPage() {
     const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false)
     const [isWishlistLoading, setIsWishlistLoading] = useState(false)
     const [isWishlistSyncing, setIsWishlistSyncing] = useState(false)
+    const userDisplayName = user?.fullName || user?.username || user?.email || "Learner"
+    const wishlistUserAvatar =
+        getAvatarUrl((user as any)?.avatar) ||
+        (typeof (user as any)?.avatarUrl === "string" ? (user as any)?.avatarUrl : null)
+    const [coursePreviewMap, setCoursePreviewMap] = useState<Record<string, CoursePreview | null>>({})
+    const [enrichedCoursesData, setEnrichedCoursesData] = useState<CourseCourse[]>([])
+    
+    // Enrich instructor data with avatars from instructor API
+    useEffect(() => {
+        if (!coursesData.length) {
+            setEnrichedCoursesData([])
+            return
+        }
+
+        let isCancelled = false
+        const enrichInstructors = async () => {
+            try {
+                const enrichedCourses = await Promise.all(
+                    coursesData.map(async (course) => {
+                        if (!course.instructors || course.instructors.length === 0) {
+                            return course
+                        }
+
+                        const enrichedInstructors = await enrichInstructorsWithAvatars(
+                            course.instructors.map((inst) => ({
+                                id: inst.id,
+                                name: inst.name,
+                                avatar: inst.avatar,
+                            }))
+                        )
+
+                        return {
+                            ...course,
+                            instructors: enrichedInstructors,
+                        }
+                    })
+                )
+
+                if (!isCancelled) {
+                    setEnrichedCoursesData(enrichedCourses)
+                }
+            } catch (error) {
+                console.error("Failed to enrich instructor avatars:", error)
+                if (!isCancelled) {
+                    setEnrichedCoursesData(coursesData)
+                }
+            }
+        }
+
+        enrichInstructors()
+
+        return () => {
+            isCancelled = true
+        }
+    }, [coursesData])
+    
+    useEffect(() => {
+        if (!enrichedCoursesData.length) return
+
+        const previewRefs = enrichedCoursesData
+            .map((course) => (course as any).course_preview)
+            .filter((preview): preview is { documentId: string } => Boolean(preview?.documentId))
+
+        if (!previewRefs.length) return
+
+        const uniqueDocumentIds = Array.from(new Set(previewRefs.map((preview) => preview.documentId)))
+        const missingDocumentIds = uniqueDocumentIds.filter((id) => !(id in coursePreviewMap))
+
+        if (!missingDocumentIds.length) return
+
+        let isCancelled = false
+        const fetchPreviews = async () => {
+            try {
+                const previews = await Promise.all(
+                    missingDocumentIds.map(async (documentId) => {
+                        try {
+                            const preview = await getCoursePreview(documentId)
+                            return { documentId, preview }
+                        } catch (error) {
+                            console.error("Failed to load course preview:", documentId, error)
+                            return { documentId, preview: null }
+                        }
+                    })
+                )
+
+                if (isCancelled) return
+
+                setCoursePreviewMap((prev) => {
+                    const next = { ...prev }
+                    previews.forEach(({ documentId, preview }) => {
+                        next[documentId] = preview
+                    })
+                    return next
+                })
+            } catch (error) {
+                console.error("Failed to batch load course previews:", error)
+            }
+        }
+
+        fetchPreviews()
+
+        return () => {
+            isCancelled = true
+        }
+    }, [enrichedCoursesData, coursePreviewMap])
+
 
     // Fetch categories from Strapi
     useEffect(() => {
@@ -171,7 +283,6 @@ export default function CoursesPage() {
             try {
                 setIsLoadingCourses(true)
                 const coursesData = await getPublicCourseCourses()
-                console.log(">>>>>>>>>>>>>>>>>> Get Courses:", JSON.stringify(coursesData))
                 // Filter only published courses
                 const publishedCourses = coursesData.filter(
                     course => course.course_status === "published" && course.active !== false
@@ -227,7 +338,7 @@ export default function CoursesPage() {
             return baseMediaUrl ? `${baseMediaUrl}${value}` : value
         }
 
-        return coursesData.map((course) => {
+        return enrichedCoursesData.map((course) => {
             const categoryName = course.course_categories?.[0]?.name || "Uncategorized"
             const levelName = course.course_level?.name || "Beginner"
             const primaryInstructor = course.instructors?.[0]
@@ -247,18 +358,18 @@ export default function CoursesPage() {
                 const matchingBadge = badges.find(b => b.name === badge.name)
                 return matchingBadge?.documentId || badge.id.toString()
             }) || []
-            
+
             const durationHours = Math.floor(course.duration_minutes / 60)
             const durationMinutes = course.duration_minutes % 60
-            const duration = durationHours > 0 
+            const duration = durationHours > 0
                 ? `${durationHours} hour${durationHours > 1 ? 's' : ''}${durationMinutes > 0 ? ` ${durationMinutes} min` : ''}`
                 : `${durationMinutes} min`
-            
+
             // Calculate price with currency
             const price = course.Price || 0
             const currencyCode = course.currency?.code || "USD"
             const formattedPrice = `$${price.toFixed(2)}`
-            
+
             // Get thumbnail from course preview - use preview_url which is already extracted by extractPreviewUrl
             // The preview_url field already contains the correct URL based on preview type (image/video/url)
             const thumbnail = resolveMediaUrl(course.preview_url)
@@ -270,12 +381,14 @@ export default function CoursesPage() {
             const companyData = (course as any)?.company
             const companyName = companyData?.name || null
             const companyLogoUrl = companyData?.logoUrl || null
-            
+
             // Get course preview data - preview_url is already extracted by extractPreviewUrl in courseCourse.ts
             // It handles image.url, video.url, or url field based on types
-            const previewUrl = course.preview_url
-            const previewAvailable = course.preview_available || false
-            
+            let coursePreviewData: CoursePreview | null = null
+            const previewRef = (course as any).course_preview
+            if (previewRef?.documentId) {
+                coursePreviewData = coursePreviewMap[previewRef.documentId] ?? null
+            }
             return {
                 id: course.id,
                 title: course.name,
@@ -313,9 +426,10 @@ export default function CoursesPage() {
                 projects: 0,
                 preview_available: course.preview_available || false,
                 preview_url: course.preview_url || null,
+                course_preview: coursePreviewData,
             }
         })
-    }, [coursesData, skills, badges])
+    }, [enrichedCoursesData, skills, badges, coursePreviewMap])
 
     // Use courses from database, fallback to empty array if loading
     const finalCourses = courses.length > 0 ? courses : []
@@ -818,7 +932,21 @@ export default function CoursesPage() {
                                     onEnrollClick={handleEnrollClick}
                                     onCourseClick={handleCourseClick}
                                     onToggleFavorite={toggleFavorite}
-                                    onOpenWishlist={() => setIsWishlistModalOpen(true)}
+                                    onAddToCart={(courseId) => {
+                                        const courseData = displayedCourses.find(c => c.id === courseId)
+                                        if (courseData) {
+                                            addToCart({
+                                                id: courseData.id,
+                                                title: courseData.title,
+                                                description: courseData.description,
+                                                image: courseData.image,
+                                                priceValue: courseData.priceValue || 0,
+                                                price: courseData.price,
+                                                educator: courseData.educator
+                                            })
+                                        }
+                                    }}
+                                    isInCart={isInCart(course.id)}
                                     isFavorite={favorites.includes(course.id)}
                                 />
                             </div>
@@ -859,6 +987,9 @@ export default function CoursesPage() {
                     isLoading={isWishlistLoading}
                     isSyncing={isWishlistSyncing}
                     isAuthenticated={isAuthenticated}
+                    userName={userDisplayName}
+                    userAvatar={wishlistUserAvatar}
+                    onGoToWishlist={() => router.push("/wishlist")}
                 />
             </div>
 

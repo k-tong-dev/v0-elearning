@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useState, useEffect, useRef, useCallback} from "react";
+import React, {useState, useEffect, useRef, useCallback, useMemo} from "react";
 import {useRouter} from "next/navigation";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
@@ -132,6 +132,11 @@ import { Breadcrumb, BreadcrumbItem } from "@/components/ui/breadcrumb";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import {
+    SaveProgressModal,
+    SaveProgressSection,
+    GlobalSaveProgressItem,
+} from "@/components/ui/save-progress-modal";
 import DraggableCopyrightModal from "@/components/dashboard/DraggableCopyrightModal";
 
 interface CreateCourseFormProps {
@@ -516,13 +521,7 @@ export default function CreateCourseForm({
     const [isCertificateActionLoading, setIsCertificateActionLoading] = useState(false);
     
     // Save progress tracking
-    interface SaveProgressItem {
-        id: string;
-        type: "material" | "content" | "course";
-        name: string;
-        status: "saving" | "success" | "error";
-        errorMessage?: string;
-    }
+    type SaveProgressItem = GlobalSaveProgressItem;
     const [saveProgressList, setSaveProgressList] = useState<SaveProgressItem[]>([]);
     
     // Track initial state for change detection
@@ -1216,6 +1215,48 @@ export default function CreateCourseForm({
         course?: number;
         materials?: number;
     }>({});
+    const [isSaveProgressModalOpen, setIsSaveProgressModalOpen] = useState(false);
+    const hasActiveSaveJobs = useMemo(
+        () => isSubmitting || saveProgressList.some((item) => item.status === "saving"),
+        [isSubmitting, saveProgressList]
+    );
+    const progressSections = useMemo<SaveProgressSection[]>(() => {
+        const determineStatus = (value?: number): SaveProgressSection["status"] => {
+            if (value !== undefined && value >= 100) return "success";
+            if (value !== undefined && value > 0) return "running";
+            return hasActiveSaveJobs ? "running" : "idle";
+        };
+        return [
+            {
+                id: "preview",
+                label: "Preview Upload",
+                progress: saveProgress.preview ?? 0,
+                status: determineStatus(saveProgress.preview),
+                accent: "purple",
+            },
+            {
+                id: "course",
+                label: "Course Update",
+                progress: saveProgress.course ?? 0,
+                status: determineStatus(saveProgress.course),
+                accent: "blue",
+            },
+            {
+                id: "materials",
+                label: "Materials",
+                progress: saveProgress.materials ?? 0,
+                status: determineStatus(saveProgress.materials),
+                accent: "emerald",
+            },
+        ];
+    }, [hasActiveSaveJobs, saveProgress.course, saveProgress.materials, saveProgress.preview]);
+    useEffect(() => {
+        if (hasActiveSaveJobs || saveProgressList.length > 0) {
+            setIsSaveProgressModalOpen(true);
+        } else {
+            setIsSaveProgressModalOpen(false);
+        }
+    }, [hasActiveSaveJobs, saveProgressList.length]);
 
     // Ensure preview mode and URL are synced when preview entity changes
     useEffect(() => {
@@ -1524,11 +1565,16 @@ export default function CreateCourseForm({
         
         // Get current user ID for owner field
         let currentUserId: number | undefined = undefined;
+        const ownerAccessToken = getAccessToken();
+        if (!ownerAccessToken) {
+            console.warn("Cannot fetch current user for owner field - no access token found.");
+        } else {
         try {
             const userResponse = await strapi.get('/api/users/me');
             currentUserId = userResponse.data?.id ? Number(userResponse.data.id) : undefined;
         } catch (userError) {
             console.warn("Could not fetch current user for owner field:", userError);
+            }
         }
 
         const courseData: CreateCourseCourseInput = {
@@ -3359,7 +3405,7 @@ export default function CreateCourseForm({
                 if (hasNewData || typeChanged) {
                     if (previewMode === "url") {
                         // For URL type
-                        if (previewId && previewEntity) {
+                    if (previewId && previewEntity) {
                             const updatePayload: any = {
                                 types: previewType,
                             };
@@ -3370,21 +3416,21 @@ export default function CreateCourseForm({
                             // Don't set image/video to null - keep old files when switching types
                             
                             const updated = await updateCoursePreview(previewEntity.documentId || previewId, updatePayload);
-                            if (updated) {
-                                setPreviewEntity(updated);
-                                previewId = updated.id;
-                            }
+                        if (updated) {
+                            setPreviewEntity(updated);
+                            previewId = updated.id;
+                        }
                         } else if (previewUrl) {
                             // Only create if URL is provided
-                            const created = await createCoursePreview({
+                        const created = await createCoursePreview({
                                 types: previewType,
                                 url: previewUrl,
-                            });
-                            if (created) {
-                                setPreviewEntity(created);
-                                previewId = created.id;
-                            }
+                        });
+                        if (created) {
+                            setPreviewEntity(created);
+                            previewId = created.id;
                         }
+                    }
                     } else if (previewMode === "image" || previewMode === "video") {
                         // For image/video type
                         if (previewId && previewEntity) {
@@ -4451,38 +4497,6 @@ export default function CreateCourseForm({
 
                         {/* Save/Cancel Buttons - Sticky at Bottom for Better UX */}
                         <div className="sticky bottom-0 mt-4 sm:mt-6 pt-3 sm:pt-4 bg-background/95 backdrop-blur-sm -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 pb-3 sm:pb-4 z-10">
-                            {/* Progress Indicators */}
-                            {isSubmitting && (
-                                <div className="mb-3 space-y-2">
-                                    {saveProgress.preview !== undefined && saveProgress.preview > 0 && (
-                                        <div className="space-y-1">
-                                            <div className="flex justify-between text-xs text-muted-foreground">
-                                                <span>Preview Upload</span>
-                                                <span>{saveProgress.preview}%</span>
-                                            </div>
-                                            <Progress value={saveProgress.preview} className="h-1.5" />
-                                        </div>
-                                    )}
-                                    {saveProgress.course !== undefined && saveProgress.course > 0 && (
-                                        <div className="space-y-1">
-                                            <div className="flex justify-between text-xs text-muted-foreground">
-                                                <span>Course Update</span>
-                                                <span>{saveProgress.course}%</span>
-                                            </div>
-                                            <Progress value={saveProgress.course} className="h-1.5" />
-                                        </div>
-                                    )}
-                                    {saveProgress.materials !== undefined && saveProgress.materials > 0 && (
-                                        <div className="space-y-1">
-                                            <div className="flex justify-between text-xs text-muted-foreground">
-                                                <span>Materials</span>
-                                                <span>{saveProgress.materials}%</span>
-                                            </div>
-                                            <Progress value={saveProgress.materials} className="h-1.5" />
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                             <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 sm:items-center sm:justify-between">
                                 <Button
                                     variant="outline"
@@ -7333,227 +7347,25 @@ export default function CreateCourseForm({
                     </div>
                 </div>
             </div>
-            {/* Ultra-Modern Save Progress List */}
-            {saveProgressList.length > 0 && (
-                <motion.div
-                    initial={{ opacity: 0, y: 100, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 100, scale: 0.9 }}
-                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                    className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 z-50 w-auto sm:w-full sm:max-w-md md:max-w-lg"
-                >
-                    <Card className="border-2 border-primary/20 shadow-2xl shadow-primary/10 bg-gradient-to-br from-background via-background to-primary/5 backdrop-blur-xl overflow-hidden">
-                        {/* Animated Header with Gradient */}
-                        <CardHeader className="pb-3 px-5 pt-5 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-b border-primary/10">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="relative">
-                                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg animate-pulse" />
-                                        <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center border-2 border-primary/30">
-                                            <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <CardTitle className="text-base font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                                            Save Progress
-                                        </CardTitle>
-                                        <p className="text-xs text-muted-foreground mt-0.5">
-                                            {saveProgressList.filter(i => i.status === "saving").length} saving, {saveProgressList.filter(i => i.status === "success").length} completed
-                                        </p>
-                                    </div>
-                                </div>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 rounded-full hover:bg-destructive/10 hover:text-destructive transition-all"
-                                    onClick={() => setSaveProgressList([])}
-                                >
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3 max-h-[400px] sm:max-h-[500px] overflow-y-auto px-5 pb-5 pt-4 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
-                            <AnimatePresence>
-                                {saveProgressList.map((item, index) => {
-                                    const getTypeIcon = () => {
-                                        switch (item.type) {
-                                            case "material": return BookOpen;
-                                            case "content": return FileText;
-                                            case "course": return Award;
-                                            default: return BookOpen;
-                                        }
-                                    };
-                                    const getTypeColor = () => {
-                                        switch (item.type) {
-                                            case "material": return "from-blue-500/20 to-cyan-500/20 border-blue-400/30";
-                                            case "content": return "from-purple-500/20 to-pink-500/20 border-purple-400/30";
-                                            case "course": return "from-emerald-500/20 to-teal-500/20 border-emerald-400/30";
-                                            default: return "from-gray-500/20 to-slate-500/20 border-gray-400/30";
-                                        }
-                                    };
-                                    const TypeIcon = getTypeIcon();
-                                    const typeColor = getTypeColor();
-                                    
-                                    return (
-                                        <motion.div
-                                            key={item.id}
-                                            initial={{ opacity: 0, x: -20, scale: 0.95 }}
-                                            animate={{ opacity: 1, x: 0, scale: 1 }}
-                                            exit={{ opacity: 0, x: 20, scale: 0.95 }}
-                                            transition={{ 
-                                                delay: index * 0.05,
-                                                type: "spring",
-                                                stiffness: 300,
-                                                damping: 25
-                                            }}
-                                            className={cn(
-                                                "group relative overflow-hidden rounded-xl border-2 transition-all duration-300",
-                                                item.status === "saving" && "border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-lg shadow-primary/10",
-                                                item.status === "success" && "border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent shadow-lg shadow-emerald-500/10",
-                                                item.status === "error" && "border-red-500/30 bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent shadow-lg shadow-red-500/10"
-                                            )}
-                                        >
-                                            {/* Animated Background Gradient */}
-                                            <div className={cn(
-                                                "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500",
-                                                item.status === "saving" && "bg-gradient-to-r from-primary/5 to-transparent",
-                                                item.status === "success" && "bg-gradient-to-r from-emerald-500/5 to-transparent",
-                                                item.status === "error" && "bg-gradient-to-r from-red-500/5 to-transparent"
-                                            )} />
-                                            
-                                            <div className="relative flex items-center gap-4 p-4">
-                                                {/* Status Icon with Animation */}
-                                                <div className="flex-shrink-0 relative">
-                                                    {item.status === "saving" && (
-                                                        <>
-                                                            <div className="absolute inset-0 bg-primary/20 rounded-full blur-md animate-pulse" />
-                                                            <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-primary/40 flex items-center justify-center">
-                                                                <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                    {item.status === "success" && (
-                                                        <motion.div
-                                                            initial={{ scale: 0 }}
-                                                            animate={{ scale: 1 }}
-                                                            transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                                                            className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 border-2 border-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/30"
-                                                        >
-                                                            <CheckCircle className="h-6 w-6 text-white" />
-                                                        </motion.div>
-                                                    )}
-                                                    {item.status === "error" && (
-                                                        <motion.div
-                                                            initial={{ scale: 0, rotate: -180 }}
-                                                            animate={{ scale: 1, rotate: 0 }}
-                                                            transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                                                            className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-red-600 border-2 border-red-400 flex items-center justify-center shadow-lg shadow-red-500/30"
-                                                        >
-                                                            <AlertCircle className="h-6 w-6 text-white" />
-                                                        </motion.div>
-                                                    )}
-                                </div>
-                                                
-                                                {/* Content */}
-                                                <div className="flex-1 min-w-0 space-y-1.5">
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <p className={cn(
-                                                            "text-sm font-semibold truncate",
-                                                            item.status === "saving" && "text-primary",
-                                                            item.status === "success" && "text-emerald-600 dark:text-emerald-400",
-                                                            item.status === "error" && "text-red-600 dark:text-red-400"
-                                                        )}>
-                                                            {item.name}
-                                                        </p>
-                                                        <Badge 
-                                                            variant="outline" 
-                                                            className={cn(
-                                                                "text-xs capitalize border-2",
-                                                                `bg-gradient-to-br ${typeColor}`
-                                                            )}
-                                                        >
-                                                            <TypeIcon className="w-3 h-3 mr-1" />
-                                                            {item.type}
-                                                        </Badge>
-                            </div>
-                                                    
-                                                    {/* Status Text */}
-                                                    <div className="flex items-center gap-2">
-                                                        {item.status === "saving" && (
-                                                            <motion.div
-                                                                animate={{ opacity: [1, 0.5, 1] }}
-                                                                transition={{ duration: 1.5, repeat: Infinity }}
-                                                                className="flex items-center gap-1.5 text-xs text-primary"
-                                                            >
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                                                                <span>Saving...</span>
-                                                            </motion.div>
-                                                        )}
-                                                        {item.status === "success" && (
-                                                            <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                                                                <CheckCircle className="w-3 h-3" />
-                                                                <span>Saved successfully</span>
-                        </div>
-                                                        )}
-                                                        {item.status === "error" && (
-                                                            <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400">
-                                                                <AlertCircle className="w-3 h-3" />
-                                                                <span>Failed to save</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    
-                                                    {/* Error Message */}
-                                                    {item.status === "error" && item.errorMessage && (
-                                                        <motion.div
-                                                            initial={{ height: 0, opacity: 0 }}
-                                                            animate={{ height: "auto", opacity: 1 }}
-                                                            transition={{ duration: 0.3 }}
-                                                            className="mt-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20"
-                                                        >
-                                                            <p className="text-xs text-red-600 dark:text-red-400 break-words">
-                                                                {item.errorMessage}
-                                                            </p>
-                                                        </motion.div>
-                                                    )}
-                                                </div>
-                                                
-                                                {/* Progress Indicator for Saving */}
-                                                {item.status === "saving" && (
-                                                    <div className="flex-shrink-0">
-                                                        <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary flex items-center justify-center">
-                                                            <motion.div
-                                                                animate={{ rotate: 360 }}
-                                                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                                                className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            
-                                            {/* Success/Error Progress Bar */}
-                                            {(item.status === "success" || item.status === "error") && (
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: "100%" }}
-                                                    transition={{ duration: 0.5, delay: 0.2 }}
-                                                    className={cn(
-                                                        "h-1",
-                                                        item.status === "success" && "bg-gradient-to-r from-emerald-500 to-emerald-400",
-                                                        item.status === "error" && "bg-gradient-to-r from-red-500 to-red-400"
-                                                    )}
-                                                />
-                                            )}
-                                        </motion.div>
-                                    );
-                                })}
-                            </AnimatePresence>
-                    </CardContent>
-                </Card>
-                </motion.div>
-            )}
-            
+            <SaveProgressModal
+                open={isSaveProgressModalOpen}
+                onClose={() => {
+                    setIsSaveProgressModalOpen(false)
+                    if (!hasActiveSaveJobs) {
+                        setSaveProgressList([])
+                    }
+                }}
+                sections={progressSections}
+                items={saveProgressList}
+                summary={{
+                    saving: saveProgressList.filter((i) => i.status === "saving").length,
+                    success: saveProgressList.filter((i) => i.status === "success").length,
+                    error: saveProgressList.filter((i) => i.status === "error").length,
+                }}
+                disableClose={hasActiveSaveJobs}
+                onClearHistory={() => setSaveProgressList([])}
+            />
+
             {showCopyrightWarningDialog && typeof window !== 'undefined' && createPortal(
                 <DraggableCopyrightModal
                     isOpen={showCopyrightWarningDialog}

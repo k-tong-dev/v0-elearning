@@ -19,6 +19,7 @@ import { CoursePreview, getCoursePreview, getCoursePreviewUrl } from "@/integrat
 import { getCourseCategories, CourseCategory } from "@/integrations/strapi/courseCategory"
 import { getBadges, Badge as BadgeType } from "@/integrations/strapi/badge"
 import { getSkills, Skill } from "@/integrations/strapi/skill"
+import { strapi } from "@/integrations/strapi/client"
 import {
     Popover,
     PopoverContent,
@@ -35,7 +36,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface CourseWithPreview extends CourseCourse {
-    course_preview?: CoursePreview | null;
+    course_preview?: (CoursePreview | { id: number }) | null;
 }
 
 interface DashboardMyCoursesProps {
@@ -51,7 +52,7 @@ export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onE
     const [courses, setCourses] = useState<CourseWithPreview[]>(propCourses || [])
     const [filteredCourses, setFilteredCourses] = useState<CourseWithPreview[]>([])
     const [loading, setLoading] = useState(!propCourses)
-    const strapiURL = process.env.NEXT_PUBLIC_STRAPI_URL
+    const [error, setError] = useState<string | null>(null)
 
     // Search and filter states
     const [searchQuery, setSearchQuery] = useState("")
@@ -82,17 +83,12 @@ export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onE
 
                 // Fetch course tags
                 try {
-                    const access_token = getAccessToken()
-                    const tagsResponse = await fetch(
-                        `${strapiURL}/api/course-tages?populate=*`,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${access_token}`,
-                            },
-                        }
-                    )
-                    if (tagsResponse.ok) {
-                        const tagsData = await tagsResponse.json()
+                    const accessToken = getAccessToken()
+                    if (!accessToken) {
+                        console.warn("[Dashboard] Skipping tag fetch - user is not authenticated")
+                    } else {
+                        const tagsResponse = await strapi.get(`/api/course-tages?populate=*`)
+                        const tagsData = tagsResponse.data
                         setTags((tagsData.data || []).map((item: any) => ({
                             id: item.id,
                             name: item.name,
@@ -106,7 +102,7 @@ export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onE
             }
         }
         fetchFilterOptions()
-    }, [strapiURL])
+    }, [])
 
     // Fetch courses dynamically if not provided
     useEffect(() => {
@@ -122,139 +118,109 @@ export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onE
                 return
             }
 
+            const ownerIdNumeric = Number(user.id)
+            const ownerDocumentId = typeof user.documentId === "string" ? user.documentId : undefined
+            if (!Number.isFinite(ownerIdNumeric) && !ownerDocumentId) {
+                console.warn("[Dashboard] Invalid user id, cannot load courses")
+                setError("Unable to determine your account id. Please sign in again.")
+                setLoading(false)
+                return
+            }
+
             try {
                 setLoading(true)
-                const access_token = getAccessToken()
-                
-                // Fetch courses created by the current user with preview data
-                // Use proper Strapi v5 populate syntax - use populate=* for all relations
-                const response = await fetch(
-                    `${strapiURL}/api/course-courses?filters[owner][id][$eq]=${user.id}&populate=*&sort=createdAt:desc`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${access_token}`,
-                        },
-                    }
-                )
-
-                if (response.ok) {
-                    const data = await response.json()
-                    console.log("Fetched courses data:", data);
-                    const coursesData = data.data || [];
-                    console.log("Number of courses found:", coursesData.length);
-                    
-                    if (coursesData.length === 0) {
-                        console.log("No courses found, trying fallback...");
-                        // Try fallback to get all courses for dashboard
-                        const allCourses = await getDashboardCourseCourses(user.id)
-                        const coursesWithPreviews = await Promise.all(allCourses.map(async (course) => {
-                            const courseWithPreview: CourseWithPreview = { ...course };
-                            if (course.course_preview?.id) {
-                                try {
-                                    const preview = await getCoursePreview(course.course_preview.id);
-                                    courseWithPreview.course_preview = preview;
-                                } catch (e) {
-                                    console.error("Failed to fetch preview for course", course.id, e);
-                                }
-                            }
-                            return courseWithPreview;
-                        }));
-                        setCourses(coursesWithPreviews)
-                        setLoading(false)
-                        return;
-                    }
-                    
-                    const fetchedCourses = await Promise.all(coursesData.map(async (item: any) => {
-                        const course: CourseWithPreview = {
-                            id: item.id,
-                            documentId: item.documentId,
-                            name: item.name,
-                            description: item.description,
-                            Price: item.Price || 0,
-                            is_paid: item.is_paid || false,
-                            course_status: item.course_status || "draft",
-                            active: item.active ?? true,
-                            enrollment_count: item.enrollment_count || 0,
-                            preview_available: item.preview_available || false,
-                            preview_url: item.preview_url,
-                            discount_type: item.discount_type || null,
-                            discount_percentage: item.discount_percentage || 0,
-                            discount_fix_price: item.discount_fix_price || 0,
-                            duration_minutes: item.duration_minutes || 0,
-                            purchase_count: item.purchase_count || 0,
-                            revenue_generated: item.revenue_generated || 0,
-                            course_categories: item.course_categories?.data || item.course_categories || [],
-                            course_tages: item.course_tages?.data || item.course_tages || [],
-                            course_badges: item.course_badges?.data || item.course_badges || [],
-                            relevant_skills: item.relevant_skills?.data || item.relevant_skills || [],
-                            createdAt: item.createdAt,
-                            updatedAt: item.updatedAt,
-                        };
-                        
-                        // Use course_preview from populated data if available
-                        // Handle both Strapi v5 data structures: { data: {...} } or direct object
-                        const previewData = item.course_preview?.data || item.course_preview;
-                        console.log("Course", item.id, "preview data:", previewData);
-                        if (previewData && previewData.id) {
-                            course.course_preview = {
-                                id: previewData.id,
-                                documentId: previewData.documentId,
-                                types: previewData.types,
-                                url: previewData.url,
-                                video: previewData.video,
-                                image: previewData.image,
-                            };
-                            console.log("Set course preview for", item.id, ":", course.course_preview);
-                        } else if (item.course_preview?.id) {
-                            // Fallback: fetch preview separately if not populated
-                            try {
-                                const preview = await getCoursePreview(item.course_preview.id);
-                                course.course_preview = preview;
-                                console.log("Fetched preview separately for", item.id, ":", preview);
-                            } catch (e) {
-                                console.error("Failed to fetch preview for course", item.id, e);
-                            }
-                        } else {
-                            console.log("No preview found for course", item.id);
-                        }
-                        
-                        return course;
-                    }));
-                    console.log("Successfully processed", fetchedCourses.length, "courses");
-                    setCourses(fetchedCourses)
-                    // Initialize filtered courses
-                    setFilteredCourses(fetchedCourses)
-                } else {
-                    const errorText = await response.text();
-                    console.error("API response not OK:", response.status, errorText);
-                    // Try fallback to get all courses for dashboard
-                    try {
-                        const allCourses = await getDashboardCourseCourses(user.id)
-                        console.log("Fallback: Found", allCourses.length, "courses");
-                        const coursesWithPreviews = await Promise.all(allCourses.map(async (course) => {
-                            const courseWithPreview: CourseWithPreview = { ...course };
-                            if (course.course_preview?.id) {
-                                try {
-                                    const preview = await getCoursePreview(course.course_preview.id);
-                                    courseWithPreview.course_preview = preview;
-                                } catch (e) {
-                                    console.error("Failed to fetch preview for course", course.id, e);
-                                }
-                            }
-                            return courseWithPreview;
-                        }));
-                        setCourses(coursesWithPreviews)
-                        setFilteredCourses(coursesWithPreviews)
-                    } catch (fallbackError) {
-                        console.error("Fallback also failed:", fallbackError);
-                        setCourses([])
-                        setFilteredCourses([])
-                    }
+                const accessToken = getAccessToken()
+                if (!accessToken) {
+                    console.warn("[Dashboard] Cannot load courses - user is not authenticated")
+                    setError("Please sign in again to load your courses.")
+                    setLoading(false)
+                    return
                 }
+                
+                const params = new URLSearchParams()
+                if (Number.isFinite(ownerIdNumeric)) {
+                    params.append("filters[owner][id][$eq]", ownerIdNumeric.toString())
+                } else if (ownerDocumentId) {
+                    params.append("filters[owner][documentId][$eq]", ownerDocumentId)
+                }
+                params.append("populate", "*")
+                params.append("sort", "createdAt:desc")
+
+                const response = await strapi.get(`/api/course-courses?${params.toString()}`)
+                const data = response.data || {}
+                const coursesData = data.data || []
+
+                if (coursesData.length === 0) {
+                    console.log("No courses found, trying fallback...");
+                    const allCourses = await getDashboardCourseCourses({
+                        ownerId: Number.isFinite(ownerIdNumeric) ? ownerIdNumeric : undefined,
+                        ownerDocumentId: !Number.isFinite(ownerIdNumeric) ? ownerDocumentId : undefined,
+                    })
+                    const coursesWithPreviews = await Promise.all(allCourses.map(async (course) => {
+                        const courseWithPreview: CourseWithPreview = { ...course };
+                        if (course.course_preview?.id) {
+                            try {
+                                const preview = await getCoursePreview(course.course_preview.id);
+                                courseWithPreview.course_preview = preview;
+                            } catch (e) {
+                                console.error("Failed to fetch preview for course", course.id, e);
+                            }
+                        }
+                        return courseWithPreview;
+                    }));
+                    setCourses(coursesWithPreviews)
+                    setLoading(false)
+                    return;
+                }
+                
+                const fetchedCourses = await Promise.all(coursesData.map(async (item: any) => {
+                    const course: CourseWithPreview = {
+                        id: item.id,
+                        documentId: item.documentId,
+                        name: item.name,
+                        description: item.description,
+                        Price: item.Price || 0,
+                        is_paid: item.is_paid || false,
+                        course_status: item.course_status || "draft",
+                        active: item.active ?? true,
+                        enrollment_count: item.enrollment_count || 0,
+                        preview_available: item.preview_available || false,
+                        preview_url: item.preview_url,
+                        discount_type: item.discount_type || null,
+                        discount_percentage: item.discount_percentage || 0,
+                        discount_fix_price: item.discount_fix_price || 0,
+                        duration_minutes: item.duration_minutes || 0,
+                        purchase_count: item.purchase_count || 0,
+                        revenue_generated: item.revenue_generated || 0,
+                        course_categories: item.course_categories?.data || item.course_categories || [],
+                        course_tages: item.course_tages?.data || item.course_tages || [],
+                        course_badges: item.course_badges?.data || item.course_badges || [],
+                        relevant_skills: item.relevant_skills?.data || item.relevant_skills || [],
+                        createdAt: item.createdAt,
+                        updatedAt: item.updatedAt,
+                    };
+                    const previewData = item.course_preview?.data || item.course_preview;
+                    if (previewData && previewData.id) {
+                        try {
+                            const preview = await getCoursePreview(item.course_preview.id)
+                            course.course_preview = preview;
+                        } catch (e) {
+                            console.error("Failed to fetch preview for course", item.id, e);
+                        }
+                    }
+                    
+                    return course;
+                }));
+                setCourses(fetchedCourses)
+                setFilteredCourses(fetchedCourses)
             } catch (error) {
                 console.error("Failed to fetch courses:", error)
+                setError("Failed to load courses. Please try again later.")
                 try {
-                    const allCourses = await getDashboardCourseCourses(user?.id)
+                    const allCourses = await getDashboardCourseCourses({
+                        ownerId: Number.isFinite(ownerIdNumeric) ? ownerIdNumeric : undefined,
+                        ownerDocumentId: !Number.isFinite(ownerIdNumeric) ? ownerDocumentId : undefined,
+                    })
                     const coursesWithPreviews = await Promise.all(allCourses.map(async (course) => {
                         const courseWithPreview: CourseWithPreview = { ...course };
                         if (course.course_preview?.id) {
@@ -280,7 +246,7 @@ export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onE
         }
 
         fetchCourses()
-    }, [user?.id, propCourses, strapiURL])
+    }, [user?.id, propCourses])
 
     // Filter courses based on search and filters
     useEffect(() => {
@@ -376,32 +342,25 @@ export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onE
 
     // Component to render course preview
     const CoursePreviewDisplay = ({ course }: { course: CourseWithPreview }) => {
-        const playerRef = useRef<any>(null); // ReactPlayer ref type
+        const playerRef = useRef<any>(null);
+        const videoElementRef = useRef<HTMLVideoElement | null>(null);
         const [hasError, setHasError] = useState(false);
         const [isPlaying, setIsPlaying] = useState(false);
         const [isMounted, setIsMounted] = useState(false);
-        const preview = course.course_preview;
+        const previewEntity = (course.course_preview && "types" in course.course_preview)
+            ? (course.course_preview as CoursePreview)
+            : null;
+
         // Use getCoursePreviewUrl helper to extract URL from nested structure
-        const previewUrl = getCoursePreviewUrl(preview) || course.preview_url;
-        const previewType = preview?.types;
-        
-        // Debug logging
-        // useEffect(() => {
-        //     console.log("CoursePreviewDisplay for course", course.id, {
-        //         preview,
-        //         previewUrl,
-        //         previewType,
-        //         hasPreview: !!preview,
-        //         hasUrl: !!previewUrl
-        //     });
-        // }, [course.id, preview, previewUrl, previewType]);
+        // This handles: type=image -> image.url, type=video -> video.url, type=url -> url
+        const previewUrl = getCoursePreviewUrl(previewEntity) || course.preview_url;
+        const previewType = previewEntity?.types;
 
         // Handle mount and cleanup
         useEffect(() => {
             let isActive = true;
             setIsMounted(true);
-            
-            // Start playing after component is fully mounted
+
             const timer = setTimeout(() => {
                 if (isActive) {
                     setIsPlaying(true);
@@ -413,35 +372,20 @@ export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onE
                 clearTimeout(timer);
                 setIsMounted(false);
                 setIsPlaying(false);
-                
-                // Cleanup player - prevent AbortError
+
                 if (playerRef.current) {
                     try {
-                        // Stop playing before unmount
                         const player = playerRef.current as any;
-                        // Set playing to false first
                         if (player.setPlaying) {
                             player.setPlaying(false);
                         }
-                        
                         if (player.getInternalPlayer) {
                             const internalPlayer = player.getInternalPlayer();
-                            if (internalPlayer) {
-                                // Pause first
-                                if (typeof internalPlayer.pause === 'function') {
-                                    try {
-                                        internalPlayer.pause();
-                                    } catch (e) {
-                                        // Ignore pause errors
-                                    }
-                                }
-                                // Then stop if available
-                                if (typeof internalPlayer.stop === 'function') {
-                                    try {
-                                        internalPlayer.stop();
-                                    } catch (e) {
-                                        // Ignore stop errors
-                                    }
+                            if (internalPlayer && typeof internalPlayer.pause === 'function') {
+                                try {
+                                    internalPlayer.pause();
+                                } catch (e) {
+                                    // Ignore pause errors
                                 }
                             }
                         }
@@ -449,160 +393,189 @@ export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onE
                         // Ignore cleanup errors
                     }
                 }
+
+                if (videoElementRef.current) {
+                    try {
+                        videoElementRef.current.pause();
+                        videoElementRef.current.currentTime = 0;
+                    } catch (error) {
+                        // ignore cleanup errors
+                    }
+                }
             };
         }, []);
 
         // If no preview available, show placeholder
-        if (!preview && !previewUrl) {
+        if (!previewUrl) {
             return (
-                <div className="relative aspect-[16/9] w-full bg-gradient-to-br from-purple-100 via-purple-50 to-blue-50 flex items-center justify-center">
-                    <BookOpen className="w-20 h-20 text-purple-300" />
+                <div className="relative aspect-[16/9] w-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                    <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
                 </div>
             );
         }
 
-        // Image preview
+        // Image preview - getCoursePreviewUrl already extracts from image.url when type=image
         if (previewType === "image") {
-            // Use getCoursePreviewUrl helper to extract URL from nested structure
-            const imageUrl = getCoursePreviewUrl(preview) || previewUrl;
-            
-            if (imageUrl) {
-                return (
-                    <div className="relative aspect-[16/9] w-full overflow-hidden">
-                        <img
-                            src={imageUrl}
-                            alt={course.name || "Course preview"}
-                            className="w-full h-full object-cover"
-                            onError={() => setHasError(true)}
-                        />
-                        {hasError && (
-                            <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-purple-50 to-blue-50 flex items-center justify-center">
-                                <BookOpen className="w-20 h-20 text-purple-300" />
-                            </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
-                    </div>
-                );
-            }
+            return (
+                <div className="relative aspect-[16/9] w-full overflow-hidden">
+                    <img
+                        src={previewUrl}
+                        alt={course.name || "Course preview"}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        onError={() => setHasError(true)}
+                    />
+                    {hasError && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                            <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+                        </div>
+                    )}
+                    {/* Minimal overlay - only at bottom for text readability */}
+                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                </div>
+            );
         }
 
-        // Video or URL preview with ReactPlayer
-        // Always try to display if previewUrl exists and type is url or video
-        // Check if we have a URL preview (either from preview object or direct preview_url)
-        const hasUrlPreview = previewUrl && (previewType === "video" || previewType === "url" || !previewType);
-        
-        if (hasUrlPreview) {
-            // Determine if URL is a video (for 30s limit) vs image (no limit)
-            const isVideoUrl = previewUrl.includes('youtube.com') || 
-                              previewUrl.includes('youtu.be') || 
-                              previewUrl.includes('vimeo.com') ||
-                              previewUrl.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i);
-            
-            // Check if it's an image URL (no 30s limit needed)
-            const isImageUrl = previewUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i) ||
-                              previewType === "image";
-            
-            // Only apply 30s limit for videos, not images
-            // For URL type, check if it's actually a video URL
-            const shouldLimitTo30s = (isVideoUrl || previewType === "video") && !isImageUrl && previewType !== "image";
+        // Video or URL preview - getCoursePreviewUrl already extracts from video.url when type=video
+        const isStreamingVideo = previewUrl.includes('youtube.com') ||
+                          previewUrl.includes('youtu.be') ||
+                          previewUrl.includes('vimeo.com');
+        const isDirectVideoFile = previewUrl.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i) !== null || (previewType === "video" && !isStreamingVideo);
+        const isImageUrl = previewUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
+        const shouldLimitTo30s = (isStreamingVideo || isDirectVideoFile || previewType === "video") && !isImageUrl;
 
-            // For URL type or any URL that looks like video, use ReactPlayer
-            // For images, use img tag instead
-            if (isImageUrl && previewType === "image") {
-                // Image URL - use img tag
-                return (
-                    <div className="relative aspect-[16/9] w-full overflow-hidden">
-                        <img
+        if (isImageUrl && previewType !== "video" && previewType !== "url") {
+            // Image URL - use img tag
+            return (
+                <div className="relative aspect-[16/9] w-full overflow-hidden">
+                    <img
+                        src={previewUrl}
+                        alt={course.name || "Course preview"}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        onError={() => setHasError(true)}
+                    />
+                    {hasError && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                            <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+                        </div>
+                    )}
+                    {/* Minimal overlay - only at bottom for text readability */}
+                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                </div>
+            );
+        } else if (isDirectVideoFile) {
+            return (
+                <div className="relative aspect-[16/9] w-full bg-black overflow-hidden">
+                    <video
+                        ref={videoElementRef}
+                        src={previewUrl}
+                        className="w-full h-full object-cover"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        controls={false}
+                        onCanPlay={() => setHasError(false)}
+                        onTimeUpdate={(event) => {
+                            if (!shouldLimitTo30s) return;
+                            const video = event.currentTarget;
+                            if (video.currentTime >= 30) {
+                                video.currentTime = 0;
+                            }
+                        }}
+                        onError={(event) => {
+                            console.error("HTML5 video error:", event);
+                            setHasError(true);
+                            try {
+                                event?.currentTarget?.pause?.();
+                            } catch (err) {
+                                // ignore
+                            }
+                        }}
+                    />
+                    {hasError && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                            <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+                        </div>
+                    )}
+                    {/* Minimal overlay - only at bottom for text readability */}
+                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                </div>
+            );
+        } else if (isStreamingVideo || previewType === "video" || previewType === "url") {
+            // Video URL - use ReactPlayer
+            return (
+                <div className="relative aspect-[16/9] w-full bg-black overflow-hidden">
+                    {isMounted && (
+                        <ReactPlayer
+                            ref={playerRef}
                             src={previewUrl}
-                            alt={course.name || "Course preview"}
-                            className="w-full h-full object-cover"
-                            onError={() => setHasError(true)}
-                        />
-                        {hasError && (
-                            <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-purple-50 to-blue-50 flex items-center justify-center">
-                                <BookOpen className="w-20 h-20 text-purple-300" />
-                            </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
-                    </div>
-                );
-            } else if (isVideoUrl || previewType === "video" || (previewType === "url" && !isImageUrl)) {
-                // console.log("Rendering ReactPlayer for course", course.id, "with URL:", previewUrl, "type:", previewType);
-                return (
-                    <div className="relative aspect-[16/9] w-full bg-black overflow-hidden group">
-                        {isMounted && (
-                            <ReactPlayer
-                                ref={playerRef}
-                                src={previewUrl} // Note: ReactPlayer v3.0+ uses 'src' prop instead of 'url'
-                                playing={isPlaying && isMounted}
-                                loop={true}
-                                muted={true}
-                                controls={false}
-                                width="100%"
-                                height="100%"
-                                style={{ position: 'absolute', top: 0, left: 0 }}
-                                config={{
-                                    youtube: {
-                                        playerVars: {
-                                            autoplay: 0, // Don't use autoplay to prevent AbortError
-                                            controls: 0,
-                                            loop: 1,
-                                            start: 0,
-                                            end: shouldLimitTo30s ? 30 : undefined, // Only limit to 30s for videos
-                                            modestbranding: 1,
-                                            rel: 0,
-                                            playsinline: 1,
-                                        },
+                            playing={isPlaying && isMounted}
+                            loop={true}
+                            muted={true}
+                            controls={false}
+                            width="100%"
+                            height="100%"
+                            style={{ position: 'absolute', top: 0, left: 0 }}
+                            config={{
+                                youtube: {
+                                    playerVars: {
+                                        autoplay: 0,
+                                        controls: 0,
+                                        loop: 1,
+                                        start: 0,
+                                        end: shouldLimitTo30s ? 30 : undefined,
+                                        modestbranding: 1,
+                                        rel: 0,
+                                        playsinline: 1,
                                     },
-                                    vimeo: {
-                                        playerOptions: {
-                                            autoplay: false, // Don't use autoplay to prevent AbortError
-                                            loop: true,
-                                            muted: true,
-                                            controls: false,
-                                            responsive: true,
-                                        },
+                                },
+                                vimeo: {
+                                    playerOptions: {
+                                        autoplay: false,
+                                        loop: true,
+                                        muted: true,
+                                        controls: false,
+                                        responsive: true,
                                     },
-                                } as any}
-                                onProgress={(state: any) => {
-                                    if (!isMounted) return;
-                                    // Only apply 30s limit for videos, not images
-                                    if (shouldLimitTo30s && state?.playedSeconds >= 30 && playerRef.current) {
-                                        playerRef.current.seekTo(0, 'seconds');
+                                },
+                            } as any}
+                            onProgress={(state: any) => {
+                                if (!isMounted) return;
+                                if (shouldLimitTo30s && state?.playedSeconds >= 30 && playerRef.current) {
+                                    playerRef.current.seekTo(0, 'seconds');
+                                }
+                            }}
+                            onError={(error) => {
+                                console.error("ReactPlayer error:", error);
+                                setHasError(true);
+                                setIsPlaying(false);
+                            }}
+                            onReady={() => {
+                                if (!isMounted) return;
+                                setHasError(false);
+                                setTimeout(() => {
+                                    if (isMounted) {
+                                        setIsPlaying(true);
                                     }
-                                }}
-                                onError={(error) => {
-                                    console.error("ReactPlayer error:", error);
-                                    setHasError(true);
-                                    setIsPlaying(false);
-                                }}
-                                onReady={() => {
-                                    if (!isMounted) return;
-                                    setHasError(false);
-                                    // Only start playing if component is still mounted
-                                    setTimeout(() => {
-                                        if (isMounted) {
-                                            setIsPlaying(true);
-                                        }
-                                    }, 100);
-                                }}
-                            />
-                        )}
-                        {hasError && (
-                            <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-purple-50 to-blue-50 flex items-center justify-center">
-                                <Video className="w-20 h-20 text-purple-300" />
-                            </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
-                    </div>
-                );
-            }
+                                }, 100);
+                            }}
+                        />
+                    )}
+                    {hasError && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                            <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+                        </div>
+                    )}
+                    {/* Minimal overlay - only at bottom for text readability */}
+                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                </div>
+            );
         }
 
         // Fallback to placeholder
         return (
-            <div className="relative aspect-[16/9] w-full bg-gradient-to-br from-purple-100 via-purple-50 to-blue-50 flex items-center justify-center">
-                <BookOpen className="w-20 h-20 text-purple-300" />
+            <div className="relative aspect-[16/9] w-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
             </div>
         );
     };
@@ -649,7 +622,7 @@ export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onE
                         <ChevronDown className="w-4 h-4 ml-2" />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-0" align="start">
+                <PopoverContent className="w-64 p-0 border-0" align="start">
                     <Command>
                         <CommandInput placeholder={`Search ${label.toLowerCase()}...`} />
                         <CommandList>
@@ -797,7 +770,14 @@ export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onE
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ delay: 0.05 * index }}
                             >
-                                <Card className="group relative overflow-visible border border-slate-200 dark:border-white/20 bg-gradient-to-br from-white/20 via-white/10 to-white/5 dark:from-white/10 dark:via-white/5 dark:to-white/[0.03] backdrop-blur-2xl shadow-lg dark:shadow-[0_8px_32px_0_rgba(255,255,255,0.1)] hover:shadow-xl dark:hover:shadow-[0_16px_48px_0_rgba(255,255,255,0.2)] hover:border-blue-400 dark:hover:border-white/40 transition-all duration-700 hover:-translate-y-2 rounded-2xl h-full flex flex-col p-0">
+                                <Card className="group relative overflow-visible border
+                                border-slate-200 dark:border-white/20 bg-gradient-to-br
+                                from-white/20 via-white/10 to-white/5
+                                dark:from-white/10 dark:via-white/5 dark:to-white/[0.03]
+                                 shadow-lg dark:shadow-[0_8px_32px_0_rgba(255,255,255,0.1)]
+                                 hover:shadow-xl dark:hover:shadow-[0_16px_48px_0_rgba(255,255,255,0.2)]
+                                 hover:border-blue-400 dark:hover:border-white/40 transition-all
+                                 duration-700 hover:-translate-y-2 rounded-2xl h-full flex flex-col p-0">
                                     {/* Multiple layered glass effects */}
                                     <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-2xl" />
                                     <div className="absolute inset-0 bg-gradient-to-tl from-pink-400/10 via-transparent to-purple-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-2xl" />
@@ -819,10 +799,10 @@ export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onE
                                                     <Badge variant="outline" className="bg-gradient-to-r from-white/25 to-white/15 backdrop-blur-xl border border-white/40 text-white text-xs shadow-lg">
                                                         <Eye className="w-3 h-3 mr-1" />
                                                         Preview
-                                        </Badge>
+                                                    </Badge>
                                                 )}
                                             </div>
-                                    </div>
+                                        </div>
                                     </div>
 
                                     {/* Course Content */}

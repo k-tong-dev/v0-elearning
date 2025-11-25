@@ -140,7 +140,7 @@ const ModalContent = React.memo(function ModalContent(props: {
 
     const getPillClasses = useCallback((isSelected: boolean, gradient: string) => {
         const base = "px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-250 ease-in-out border flex items-center gap-1.5"
-        const inactive = "bg-white/80 dark:bg-slate-900/10 text-slate-900 dark:text-white border-slate-200 dark:border-white/20 hover:border-blue-400/50"
+        const inactive = "bg-transparent dark:bg-slate-900/10 text-slate-900 dark:text-white border-slate-200 dark:border-white/20 hover:border-blue-400/50"
         const active = `text-white border-transparent shadow-lg bg-gradient-to-r ${gradient}`
         return `${base} ${isSelected ? active : inactive}`
     }, [])

@@ -33,6 +33,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from "sonner"
 import {Modal, ModalBody, ModalContent, ModalFooter, ModalTrigger} from "@/components/ui/aceternity/animated-modal";
 import {motion} from "motion/react";
+import { AdvancedSearchModal } from "@/components/ui/search/AdvancedSearchModal"
 
 export function Header() {
     const router = useRouter()
@@ -41,6 +42,7 @@ export function Header() {
     const [isScrolled, setIsScrolled] = useState(false)
     const [isExploreOpen, setIsExploreOpen] = useState(false)
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+    const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
 
     useEffect(() => {
         const handleScroll = () => {
@@ -168,8 +170,7 @@ export function Header() {
     }
 
     const handleSearch = () => {
-        console.log("[v0] Search button clicked from header")
-        // Add search modal or redirect to search page
+        setIsSearchModalOpen(true)
     }
 
     const exploreItems = [
@@ -489,6 +490,12 @@ export function Header() {
                     )}
                 </div>
             </header>
+            
+            {/* Advanced Search Modal */}
+            <AdvancedSearchModal 
+                isOpen={isSearchModalOpen}
+                onClose={() => setIsSearchModalOpen(false)}
+            />
         </>
     )
 }

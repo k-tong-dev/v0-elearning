@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { createPortal } from "react-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import {
     Search,
@@ -85,7 +86,14 @@ export function AdvancedSearchModal({
     const [checkingPro, setCheckingPro] = useState(false)
     const [allFeatures, setAllFeatures] = useState<SearchFeature[]>([])
     const [loadingMenu, setLoadingMenu] = useState(true)
+    const [mounted, setMounted] = useState(false)
     const searchInputRef = React.useRef<HTMLInputElement>(null)
+
+    // Handle client-side mounting for portal
+    useEffect(() => {
+        setMounted(true)
+        return () => setMounted(false)
+    }, [])
 
     // Fetch menu items from Strapi
     useEffect(() => {
@@ -588,7 +596,10 @@ export function AdvancedSearchModal({
         forum: "Forum",
     }
 
-    return (
+    // Don't render on server or if not mounted
+    if (!mounted) return null
+
+    const modalContent = (
         <AnimatePresence>
             {isOpen && (
                 <>
@@ -597,7 +608,7 @@ export function AdvancedSearchModal({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.15 }}
-                        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
+                        className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm"
                         onClick={onClose}
                     />
                     <motion.div
@@ -606,7 +617,7 @@ export function AdvancedSearchModal({
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="fixed inset-0 z-[101] flex items-start justify-center pt-20 px-4 pointer-events-none"
+                        className="fixed inset-0 z-[9999] flex items-start justify-center pt-20 px-4 pointer-events-none"
                     >
                         <div className="w-full max-w-3xl bg-background/95 backdrop-blur-2xl rounded-2xl border border-border shadow-2xl pointer-events-auto max-h-[80vh] flex flex-col overflow-hidden">
                             {/* Header */}
@@ -764,5 +775,8 @@ export function AdvancedSearchModal({
             )}
         </AnimatePresence>
     )
+
+    // Render modal at document body level using portal
+    return createPortal(modalContent, document.body)
 }
 

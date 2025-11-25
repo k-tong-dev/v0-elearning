@@ -1,5 +1,6 @@
 import { strapiPublic, strapi } from './client';
 import { strapiResponseCache } from '@/lib/cache';
+import {CoursePreview, getCoursePreview} from './coursePreview';
 
 // Helper to resolve documentId from numeric ID
 async function resolveDocumentIdByNumericId(
@@ -77,7 +78,7 @@ export interface CourseCourse {
     active?: boolean;
     enrollment_count?: number;
     can_edit_after_publish?: boolean;
-    course_preview?: { id: number } | null;
+    course_preview?: CoursePreview | null;
     createdAt?: string;
     updatedAt?: string;
     publishedAt?: string | null;
@@ -322,6 +323,28 @@ export async function getPublicCourseCourses(options: CourseFetchOptions = {}): 
             // Extract preview URL from course_preview relation based on type
             const coursePreview = item.course_preview?.data || item.course_preview;
             const previewUrl = extractPreviewUrl(coursePreview, item.preview_url);
+            const normalizedPreview = coursePreview
+                ? {
+                    id: coursePreview.id,
+                    documentId: coursePreview.documentId,
+                    types: coursePreview.types,
+                    url: coursePreview.url ?? null,
+                    image: coursePreview.image ?? null,
+                    video: coursePreview.video ?? null,
+                }
+                : null;
+
+            if (process.env.NODE_ENV !== "production") {
+                try {
+                    console.debug("[courseCourse:getPublic] preview normalization", {
+                        courseId: item.id,
+                        previewType: normalizedPreview?.types || coursePreview?.types,
+                        previewUrl: previewUrl || item.preview_url || null,
+                    });
+                } catch (logError) {
+                    // Ignore logging issues
+                }
+            }
 
             return {
                 id: item.id,
@@ -360,7 +383,7 @@ export async function getPublicCourseCourses(options: CourseFetchOptions = {}): 
                 active: item.active,
                 enrollment_count: item.enrollment_count,
                 can_edit_after_publish: item.can_edit_after_publish,
-                course_preview: item.course_preview ?? null,
+                course_preview: normalizedPreview,
                 createdAt: item.createdAt,
                 updatedAt: item.updatedAt,
                 publishedAt: item.publishedAt,
@@ -385,7 +408,13 @@ export function invalidatePublicCourseCoursesCache(): void {
 }
 
 // Dashboard courses - all courses for the logged-in user (no status filter)
-export async function getDashboardCourseCourses(userId?: number): Promise<CourseCourse[]> {
+interface DashboardCourseOptions {
+    ownerId?: number;
+    ownerDocumentId?: string;
+}
+
+export async function getDashboardCourseCourses(options: DashboardCourseOptions = {}): Promise<CourseCourse[]> {
+    const { ownerId, ownerDocumentId } = options;
     try {
         // Strapi v5 - use populate=* for all relations
         const params = new URLSearchParams()
@@ -394,12 +423,13 @@ export async function getDashboardCourseCourses(userId?: number): Promise<Course
         // If userId provided, filter by instructors (check if user is in instructors array)
         // Note: We'll filter in code since Strapi v5 doesn't easily support filtering by array contains
         // Alternative: filter by owner if that's what we want
-        if (userId) {
-            // Filter by owner instead, or we can filter in code after fetching
-            params.append('filters[owner][id][$eq]', userId.toString())
+        if (ownerId !== undefined && Number.isFinite(ownerId)) {
+            params.append('filters[owner][id][$eq]', ownerId.toString())
+        } else if (ownerDocumentId) {
+            params.append('filters[owner][documentId][$eq]', ownerDocumentId)
         }
 
-        const response = await strapiPublic.get(`/api/course-courses?${params.toString()}`);
+        const response = await strapi.get(`/api/course-courses?${params.toString()}`);
         return (response.data.data || []).map((item: any) => {
             const courseLevel = normalizeSingleRelation(item.course_level);
             const categories = normalizeRelationArray(item.course_categories);
@@ -412,6 +442,17 @@ export async function getDashboardCourseCourses(userId?: number): Promise<Course
             // Extract preview URL from course_preview relation
             const coursePreview = item.course_preview?.data || item.course_preview;
             const previewUrl = extractPreviewUrl(coursePreview, item.preview_url);
+
+            const normalizedPreview = coursePreview
+                ? {
+                    id: coursePreview.id,
+                    documentId: coursePreview.documentId,
+                    types: coursePreview.types,
+                    url: coursePreview.url ?? null,
+                    image: coursePreview.image ?? null,
+                    video: coursePreview.video ?? null,
+                }
+                : null;
 
             // Get first instructor for backward compatibility
             const firstInstructor = instructorsData.length > 0 ? instructorsData[0] : undefined;
@@ -453,7 +494,7 @@ export async function getDashboardCourseCourses(userId?: number): Promise<Course
             active: item.active,
             enrollment_count: item.enrollment_count,
             can_edit_after_publish: item.can_edit_after_publish,
-            course_preview: item.course_preview ?? null,
+            course_preview: normalizedPreview ?? null,
             createdAt: item.createdAt,
             updatedAt: item.updatedAt,
             publishedAt: item.publishedAt,
@@ -466,7 +507,6 @@ export async function getDashboardCourseCourses(userId?: number): Promise<Course
     }
 }
 
-// Legacy function - kept for backward compatibility, redirects to public courses
 export async function getCourseCourses(): Promise<CourseCourse[]> {
     return getPublicCourseCourses();
 }
@@ -494,9 +534,11 @@ export async function getCourseCourse(id: string | number): Promise<CourseCourse
         
         // Extract course_preview - handle both direct object and nested data structure
         const coursePreview = item.course_preview?.data || item.course_preview;
-        
-        // Extract preview URL from course_preview relation
-        const previewUrl = extractPreviewUrl(coursePreview, item.preview_url);
+        const coursePreviewData   = await getCoursePreview(coursePreview.documentId || coursePreview.id);
+        if (!coursePreviewData) {
+            return null;
+        }
+        const previewUrl = extractPreviewUrl(coursePreviewData, item.preview_url);
         
         // Normalize relations using the same helper functions
         const courseLevel = normalizeSingleRelation(item.course_level);
@@ -510,7 +552,7 @@ export async function getCourseCourse(id: string | number): Promise<CourseCourse
         
         // Get first instructor for backward compatibility
         const firstInstructor = instructorsData.length > 0 ? instructorsData[0] : undefined;
-        
+
         return {
             id: item.id,
             documentId: item.documentId,
@@ -549,12 +591,14 @@ export async function getCourseCourse(id: string | number): Promise<CourseCourse
                 name: inst.name,
                 avatar: inst.avatar,
             })),
-            course_preview: coursePreview ? { id: coursePreview.id } : null,
+            //@ts-ignore
+            course_preview: coursePreviewData ? { id: coursePreviewData.id } : null,
             createdAt: item.createdAt,
             updatedAt: item.updatedAt,
             publishedAt: item.publishedAt,
             locale: item.locale,
         };
+
     } catch (error) {
         console.error("Error fetching course course:", error);
         return null;

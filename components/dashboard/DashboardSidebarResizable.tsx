@@ -22,6 +22,7 @@ import {
     GripVertical,
     UserPlus,
     Award,
+    Search,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -37,6 +38,7 @@ import { getPendingFriendRequests } from "@/integrations/strapi/friend-request"
 import { getGroupInvitationsForUser } from "@/integrations/strapi/group-invitation"
 import { getInstructors } from "@/integrations/strapi/instructor"
 import {Image} from "@heroui/react"
+import { AdvancedSearchModal } from "@/components/ui/search/AdvancedSearchModal"
 
 interface DashboardSidebarResizableProps {
     currentUser: any
@@ -81,10 +83,26 @@ export function DashboardSidebarResizable({
     const [notificationCount, setNotificationCount] = useState(0)
     const [activeIndicator, setActiveIndicator] = useState<string | null>(null)
     const indicatorRef = useRef<HTMLDivElement>(null)
+    const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
 
     // Responsive: On sm/md, show icon only; on lg+, show icon + label
     const [isMobile, setIsMobile] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+    // Keyboard shortcut for search (Cmd+K or Ctrl+K)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+                e.preventDefault()
+                setIsSearchModalOpen(true)
+            }
+            if (e.key === "Escape" && isSearchModalOpen) {
+                setIsSearchModalOpen(false)
+            }
+        }
+        window.addEventListener("keydown", handleKeyDown)
+        return () => window.removeEventListener("keydown", handleKeyDown)
+    }, [isSearchModalOpen])
 
     useEffect(() => {
         const checkMobile = () => {
@@ -317,6 +335,31 @@ export function DashboardSidebarResizable({
                                 )}
                             </div>
 
+                            {/* Search Button */}
+                            <Button
+                                variant="ghost"
+                                onClick={() => setIsSearchModalOpen(true)}
+                                className={cn(
+                                    "w-full rounded-xl py-3 h-auto transition-all duration-200 group relative overflow-hidden",
+                                    "bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10",
+                                    "hover:from-primary/20 hover:via-purple-500/20 hover:to-pink-500/20",
+                                    "border border-primary/20 hover:border-primary/30",
+                                    showLabels ? "px-4 justify-between flex-wrap" : "px-2 justify-center"
+                                )}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Search className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+                                    {showLabels && (
+                                        <span className="text-sm font-medium text-foreground">Search Everything</span>
+                                    )}
+                                </div>
+                                {showLabels && (
+                                    <kbd className="hidden sm:inline-flex h-6 items-center gap-1 rounded-lg border border-border bg-background/50 px-2 text-[10px] font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                                        ⌘K
+                                    </kbd>
+                                )}
+                            </Button>
+
                             {/* Navigation */}
                             <nav className="space-y-1 relative">
                                 <p className={cn(
@@ -450,6 +493,12 @@ export function DashboardSidebarResizable({
                     </div>
                 </div>
             </motion.aside>
+
+            {/* Advanced Search Modal */}
+            <AdvancedSearchModal 
+                isOpen={isSearchModalOpen}
+                onClose={() => setIsSearchModalOpen(false)}
+            />
         </>
     )
 
@@ -482,6 +531,24 @@ export function DashboardSidebarResizable({
                         <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
                     </div>
                 </div>
+
+                {/* Search Button */}
+                <Button
+                    variant="ghost"
+                    onClick={() => {
+                        setIsSearchModalOpen(true)
+                        setIsMobileMenuOpen(false)
+                    }}
+                    className="w-full rounded-xl py-3 h-auto transition-all duration-200 group relative overflow-hidden bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10 hover:from-primary/20 hover:via-purple-500/20 hover:to-pink-500/20 border border-primary/20 hover:border-primary/30 px-4 justify-between mb-4"
+                >
+                    <div className="flex items-center gap-3">
+                        <Search className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+                        <span className="text-sm font-medium text-foreground">Search Everything</span>
+                    </div>
+                    <kbd className="hidden sm:inline-flex h-6 items-center gap-1 rounded-lg border border-border bg-background/50 px-2 text-[10px] font-medium text-muted-foreground">
+                        ⌘K
+                    </kbd>
+                </Button>
 
                 {/* Navigation */}
                 <nav className="space-y-1 mb-4">

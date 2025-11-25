@@ -30,6 +30,9 @@ import {
     Phone,
     Info,
     Briefcase,
+    Heart,
+    ShoppingCart,
+    ShoppingBag,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -45,16 +48,28 @@ import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { AdvancedSearchModal } from "@/components/ui/search/AdvancedSearchModal"
 import {Image} from "@heroui/react";
+import { UserWishlistModal } from "@/components/courses/UserWishlistModal"
+import { getAvatarUrl } from "@/lib/getAvatarUrl"
+import { getUserWishlists, mapWishlistToCourseIds, UserWishlistEntry, createUserWishlist, deleteUserWishlist } from "@/integrations/strapi/userWishlist"
+import { getPublicCourseCourses } from "@/integrations/strapi/courseCourse"
+import { useCart } from "@/contexts/CartContext"
+import { CartModal } from "@/components/cart/CartModal"
 
 export function HeaderUltra() {
     const router = useRouter()
     const { user, isAuthenticated, isLoading, logout } = useAuth()
+    const { itemCount } = useCart()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
     const [isScrolled, setIsScrolled] = useState(false)
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
     const [activeHover, setActiveHover] = useState<string | null>(null)
+    const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false)
+    const [isCartModalOpen, setIsCartModalOpen] = useState(false)
+    const [wishlistEntries, setWishlistEntries] = useState<UserWishlistEntry[]>([])
+    const [isWishlistLoading, setIsWishlistLoading] = useState(false)
+    const [isWishlistSyncing, setIsWishlistSyncing] = useState(false)
     const headerRef = useRef<HTMLDivElement>(null)
 
     // Mouse tracking for interactive effects
@@ -94,6 +109,43 @@ export function HeaderUltra() {
         return () => window.removeEventListener("keydown", handleKeyDown)
     }, [])
 
+    // Load wishlist data when user is authenticated
+    useEffect(() => {
+        if (!user?.id || !isAuthenticated) {
+            setWishlistEntries([])
+            return
+        }
+
+        let isMounted = true
+        const loadWishlist = async () => {
+            try {
+                setIsWishlistLoading(true)
+                const entries = await getUserWishlists(user.id)
+                if (!isMounted) return
+                
+                // Fetch course data for each wishlist entry
+                const coursesData = await getPublicCourseCourses()
+                const enrichedEntries = entries.map(entry => ({
+                    ...entry,
+                    course: coursesData.find(c => c.id === entry.courseId)
+                }))
+                
+                setWishlistEntries(enrichedEntries as any)
+            } catch (error) {
+                console.error("Failed to fetch wishlist:", error)
+            } finally {
+                if (isMounted) {
+                    setIsWishlistLoading(false)
+                }
+            }
+        }
+
+        loadWishlist()
+
+        return () => {
+            isMounted = false
+        }
+    }, [user?.id, isAuthenticated])
 
     const handleGetStartedClick = () => {
         router.push("/auth/start")
@@ -457,18 +509,13 @@ export function HeaderUltra() {
                                 <ThemeToggle />
                             </motion.div>
 
-                            {/* Notifications */}
+                            {/* Shopping Cart Button */}
                             <motion.button
-                                onClick={() => {
-                                    if (typeof window !== "undefined" && window.location.pathname.includes("/dashboard")) {
-                                        window.dispatchEvent(new CustomEvent("openNotificationSidebar"))
-                                    }
-                                }}
+                                onClick={() => setIsCartModalOpen(true)}
                                 className="relative p-2.5 rounded-xl border border-border/50 bg-background/50 backdrop-blur-xl group"
                                 whileHover={{ 
                                     scale: 1.1, 
                                     rotate: 5,
-                                    // backgroundColor: "rgba(var(--background), 0.8)"
                                 }}
                                 whileTap={{ scale: 0.9 }}
                                 transition={{ 
@@ -476,20 +523,39 @@ export function HeaderUltra() {
                                     ease: [0.4, 0, 0.2, 1]
                                 }}
                             >
-                                <Bell className="w-5 h-5 text-foreground group-hover:text-blue-500 transition-colors" />
-                                <motion.span
-                                    className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-xs font-bold text-white shadow-lg"
-                                    animate={{
-                                        scale: [1, 1.2, 1],
-                                    }}
-                                    transition={{
-                                        duration: 2,
-                                        repeat: Infinity,
-                                        ease: "easeInOut",
-                                    }}
-                                >
-                                    3
-                                </motion.span>
+                                <ShoppingCart className="w-5 h-5 text-foreground group-hover:text-blue-500 transition-colors" />
+                                {itemCount > 0 && (
+                                    <motion.span
+                                        className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-xs font-bold text-white shadow-lg"
+                                        animate={{
+                                            scale: [1, 1.2, 1],
+                                        }}
+                                        transition={{
+                                            duration: 2,
+                                            repeat: Infinity,
+                                            ease: "easeInOut",
+                                        }}
+                                    >
+                                        {itemCount}
+                                    </motion.span>
+                                )}
+                            </motion.button>
+
+                            {/* Shop Button */}
+                            <motion.button
+                                onClick={() => toast.info("🚀 Shop feature coming soon! Stay tuned for amazing deals.")}
+                                className="relative p-2.5 rounded-xl border border-border/50 bg-background/50 backdrop-blur-xl group"
+                                whileHover={{ 
+                                    scale: 1.1, 
+                                    rotate: -5,
+                                }}
+                                whileTap={{ scale: 0.9 }}
+                                transition={{ 
+                                    duration: 0.3,
+                                    ease: [0.4, 0, 0.2, 1]
+                                }}
+                            >
+                                <ShoppingBag className="w-5 h-5 text-foreground group-hover:text-purple-500 transition-colors" />
                             </motion.button>
 
                             {/* User Menu / Get Started */}
@@ -556,6 +622,17 @@ export function HeaderUltra() {
                                         >
                                             <Settings className="mr-2 h-4 w-4" />
                                             Settings
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            onClick={() => {
+                                                setIsWishlistModalOpen(true)
+                                                setIsUserMenuOpen(false)
+                                            }}
+                                            className="rounded-lg"
+                                        >
+                                            <Heart className="mr-2 h-4 w-4" />
+                                            Wishlist
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem onClick={handleShare} className="rounded-lg">
@@ -705,6 +782,50 @@ export function HeaderUltra() {
             <AdvancedSearchModal
                 isOpen={isSearchOpen}
                 onClose={() => setIsSearchOpen(false)}
+            />
+            
+            {/* Wishlist Modal */}
+            {isAuthenticated && user && (
+                <UserWishlistModal
+                    isOpen={isWishlistModalOpen}
+                    onClose={() => setIsWishlistModalOpen(false)}
+                    wishlists={wishlistEntries}
+                    onRemove={async (courseId) => {
+                        try {
+                            setIsWishlistSyncing(true)
+                            const entry = wishlistEntries.find(e => e.courseId === courseId)
+                            if (entry?.id) {
+                                await deleteUserWishlist(entry.id)
+                                setWishlistEntries(prev => prev.filter(e => e.courseId !== courseId))
+                                toast.success("Removed from wishlist")
+                            }
+                        } catch (error) {
+                            console.error("Failed to remove from wishlist:", error)
+                            toast.error("Failed to remove from wishlist")
+                        } finally {
+                            setIsWishlistSyncing(false)
+                        }
+                    }}
+                    onNavigate={(courseId) => {
+                        router.push(`/courses/${courseId}`)
+                        setIsWishlistModalOpen(false)
+                    }}
+                    isLoading={isWishlistLoading}
+                    isSyncing={isWishlistSyncing}
+                    isAuthenticated={isAuthenticated}
+                    userName={user?.fullName || user?.username || user?.email || "Learner"}
+                    userAvatar={getAvatarUrl((user as any)?.avatar) || (typeof (user as any)?.avatarUrl === "string" ? (user as any)?.avatarUrl : null)}
+                    onGoToWishlist={() => {
+                        router.push("/wishlist")
+                        setIsWishlistModalOpen(false)
+                    }}
+                />
+            )}
+            
+            {/* Cart Modal */}
+            <CartModal
+                isOpen={isCartModalOpen}
+                onClose={() => setIsCartModalOpen(false)}
             />
         </>
     )
