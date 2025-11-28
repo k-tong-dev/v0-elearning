@@ -87,7 +87,7 @@ export default function ShopPage() {
         return filtered
     }, [courses, searchQuery, selectedCategory, selectedLevel, sortBy])
 
-    const handleAddToCart = (course: any) => {
+    const handleAddToCard = (course: any) => {
         addToCart({
             id: course.id,
             title: course.name,

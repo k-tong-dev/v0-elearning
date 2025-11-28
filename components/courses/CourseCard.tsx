@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@heroui/react"
@@ -333,6 +334,7 @@ export function CourseCard({
                            }: CourseCardProps) {
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
     const cardRef = useRef<HTMLDivElement>(null)
+    const router = useRouter()
 
     const handleCardClick = () => {
         onCourseClick?.(course.id)
@@ -340,7 +342,29 @@ export function CourseCard({
 
     const handleEnrollButtonClick = (e: React.MouseEvent) => {
         e.stopPropagation()
+        
+        // For paid courses, navigate to checkout page
+        if (course.is_paid && course.priceValue) {
+            // Prepare checkout data
+            const checkoutData = {
+                courseId: course.id,
+                title: course.title,
+                description: course.description,
+                image: course.image,
+                previewType: course.course_preview?.types || "image",
+                price: course.priceValue,
+                instructor: course.educator,
+            }
+            
+            // Store in sessionStorage
+            sessionStorage.setItem('checkoutCourse', JSON.stringify(checkoutData))
+            
+            // Navigate to checkout
+            router.push('/checkout')
+        } else {
+            // For free courses or if no checkout flow, use original callback
         onEnrollClick?.(course.id)
+    }
     }
 
     const handleFavoriteClick = (e: React.MouseEvent) => {
@@ -419,12 +443,12 @@ export function CourseCard({
                                 alt={course.title}
                                 fill
                                     className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                />
+                            />
                                 {/* Minimal overlay - only at bottom */}
                                 <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/50 to-transparent" />
                             </>
                         )}
-                        
+                            
                         {/* Badges container */}
                         <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2 z-10">
                             <div className="flex flex-wrap gap-1.5">
@@ -678,13 +702,13 @@ export function CourseCard({
                                             {isInCart ? "In Cart" : "Add to Cart"}
                                         </Button>
                                     ) : null}
-                                    <Button 
+                            <Button 
                                         className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white h-9 px-4 text-xs font-bold rounded-xl shadow-lg hover:shadow-xl flex-1 transition-all duration-300 hover:scale-105"
-                                        onClick={handleEnrollButtonClick}
-                                    >
+                                onClick={handleEnrollButtonClick}
+                            >
                                         <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                                         {course.is_paid ? "Buy Now" : "Enroll Now"}
-                                    </Button>
+                            </Button>
                                 </>
                             )}
                         </div>

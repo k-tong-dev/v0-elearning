@@ -96,58 +96,89 @@ export function ContentItem({
     };
 
     const getCopyrightBadge = () => {
-        const status = content.copyright_check_status;
-        
-        // Only show for video, audio, and url content
-        if (!['video', 'audio', 'url'].includes(content.type)) {
+        // Only show for video, url, and image content
+        if (!['video', 'url', 'image'].includes(content.type)) {
             return null;
         }
         
-        switch (status) {
-            case 'passed':
-                return (
-                    <Badge variant="outline" className="gap-1 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700">
-                        <CheckCircle className="w-3 h-3" />
-                        <span className="text-xs">Copyright OK</span>
-                    </Badge>
-                );
-            case 'failed':
-                return (
-                    <Badge variant="outline" className="gap-1 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700">
-                        <AlertCircle className="w-3 h-3" />
-                        <span className="text-xs">Failed</span>
-                    </Badge>
-                );
-            case 'warning':
+        const copyrightInfo = content.copyright_information;
+        
+        // If no copyright info, show pending
+        if (!copyrightInfo) {
+            return (
+                <Badge variant="outline" className="gap-1 bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-400 border-gray-300 dark:border-gray-700">
+                    <Clock className="w-3 h-3" />
+                    <span className="text-xs">Pending Check</span>
+                </Badge>
+            );
+        }
+        
+        // Check if currently checking
+        if (copyrightInfo.copy_right_status === 'checking') {
+            return (
+                <Badge variant="outline" className="gap-1 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span className="text-xs">Checking...</span>
+                </Badge>
+            );
+        }
+        
+        // Check if pending
+        if (copyrightInfo.copy_right_status === 'pending') {
+            return (
+                <Badge variant="outline" className="gap-1 bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-400 border-gray-300 dark:border-gray-700">
+                    <Clock className="w-3 h-3" />
+                    <span className="text-xs">Pending Check</span>
+                </Badge>
+            );
+        }
+        
+        // Main check: Is content copyrighted?
+        if (copyrightInfo.copyrighted === true) {
+            // RED: Content HAS copyright issues
+            return (
+                <Badge variant="outline" className="gap-1 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700">
+                    <AlertCircle className="w-3 h-3" />
+                    <span className="text-xs">Copyrighted</span>
+                </Badge>
+            );
+        } else if (copyrightInfo.copyrighted === false) {
+            // Has warnings but not copyrighted?
+            if (copyrightInfo.copyright_warnings && copyrightInfo.copyright_warnings.length > 0) {
                 return (
                     <Badge variant="outline" className="gap-1 bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700">
                         <AlertTriangle className="w-3 h-3" />
-                        <span className="text-xs">Warning</span>
+                        <span className="text-xs">Check Warnings</span>
                     </Badge>
                 );
-            case 'checking':
-                return (
-                    <Badge variant="outline" className="gap-1 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700">
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        <span className="text-xs">Checking...</span>
-                    </Badge>
-                );
-            case 'manual_review':
-                return (
-                    <Badge variant="outline" className="gap-1 bg-orange-50 dark:bg-orange-950 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700">
-                        <ShieldAlert className="w-3 h-3" />
-                        <span className="text-xs">Manual Review</span>
-                    </Badge>
-                );
-            case 'pending':
-            default:
-                return (
-                    <Badge variant="outline" className="gap-1 bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-400 border-gray-300 dark:border-gray-700">
-                        <Clock className="w-3 h-3" />
-                        <span className="text-xs">Pending Check</span>
-                    </Badge>
-                );
+            }
+            
+            // GREEN: Content is SAFE/Original
+            return (
+                <Badge variant="outline" className="gap-1 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700">
+                    <CheckCircle className="w-3 h-3" />
+                    <span className="text-xs">Original Content</span>
+                </Badge>
+            );
         }
+        
+        // Manual review needed
+        if (copyrightInfo.copy_right_status === 'manual_review') {
+            return (
+                <Badge variant="outline" className="gap-1 bg-orange-50 dark:bg-orange-950 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700">
+                    <ShieldAlert className="w-3 h-3" />
+                    <span className="text-xs">Manual Review</span>
+                </Badge>
+            );
+        }
+        
+        // Default
+        return (
+            <Badge variant="outline" className="gap-1 bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-400 border-gray-300 dark:border-gray-700">
+                <Clock className="w-3 h-3" />
+                <span className="text-xs">Unknown</span>
+            </Badge>
+        );
     };
 
     const Icon = getIcon();

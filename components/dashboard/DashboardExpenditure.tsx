@@ -86,7 +86,7 @@ export function DashboardExpenditure() {
         <div className="space-y-6">
             <h2 className="text-2xl font-bold">My Expenditure</h2>
 
-            {/* Overview Cards */}
+            {/* OverView Carts */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

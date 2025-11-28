@@ -27,6 +27,7 @@ import {
     Plus,
     BookOpen,
     CheckCircle,
+    XCircle,
     Loader2,
     ListOrdered,
     Image as ImageIcon,
@@ -3227,42 +3228,67 @@ export default function CreateCourseForm({
             console.log(`[Copyright Check] Checking material "${material.name}" - ${contents.length} contents`);
 
             contents.forEach((content) => {
-                // Check ALL content types that have copyright_check_status field
-                // The copyright field exists for video and audio, but we check all to be safe
-                const copyrightStatus = content.copyright_check_status;
+                // Only check video, url, and image content types
+                const needsCopyrightCheck = ['video', 'url', 'image'].includes(content.type);
                 
-                // Rule: Only "passed" means NO copyright issues
-                // Everything else (pending, checking, null, undefined) = HAS copyright issues
-                const hasCopyrightIssue = copyrightStatus !== "passed";
+                if (!needsCopyrightCheck) {
+                    return; // Skip other content types
+                }
                 
-                // Also check if there are violations or warnings (even if status is "passed")
-                const hasViolations = content.copyright_violations && Array.isArray(content.copyright_violations) && content.copyright_violations.length > 0;
-                const hasWarnings = content.copyright_warnings && Array.isArray(content.copyright_warnings) && content.copyright_warnings.length > 0;
-                
-                // If status is not "passed" OR has violations/warnings, it's an issue
-                if (hasCopyrightIssue || hasViolations || hasWarnings) {
-                    console.log("[Copyright Check] ❌ Found copyright issue:", {
-                        contentName: content.name,
-                        contentType: content.type,
-                        copyrightStatus: copyrightStatus,
-                        hasViolations: hasViolations,
-                        hasWarnings: hasWarnings,
-                        materialName: material.name
-                    });
+                // Check the NEW component structure first
+                if (content.copyright_information) {
+                    const copyrightInfo = content.copyright_information;
                     
-                    issues.push({
-                        content,
-                        material,
-                        status: copyrightStatus || "pending" as CopyrightCheckStatus,
-                        violations: content.copyright_violations || undefined,
-                        warnings: content.copyright_warnings || undefined,
-                    });
+                    // ONLY CHECK: If copyrighted = TRUE, it means content HAS copyright issues
+                    if (copyrightInfo.copyrighted === true) {
+                        console.log("[Copyright Check] ❌ Found copyrighted content:", {
+                            contentName: content.name,
+                            contentType: content.type,
+                            copyrighted: copyrightInfo.copyrighted,
+                            materialName: material.name
+                        });
+                        
+                        issues.push({
+                            content,
+                            material,
+                            status: copyrightInfo.copy_right_status,
+                            violations: copyrightInfo.copyright_violations || undefined,
+                            warnings: copyrightInfo.copyright_warnings || undefined,
+                        });
                     } else {
-                    console.log("[Copyright Check] ✅ No copyright issue:", {
-                        contentName: content.name,
-                        contentType: content.type,
-                        copyrightStatus: copyrightStatus
-                    });
+                        console.log("[Copyright Check] ✅ Content is safe (not copyrighted):", {
+                            contentName: content.name,
+                            contentType: content.type,
+                            copyrighted: copyrightInfo.copyrighted
+                        });
+                    }
+                } else {
+                    // Fallback to OLD fields for backward compatibility during migration
+                    const copyrightStatus = content.copyright_check_status;
+                    const hasCopyrightIssue = copyrightStatus !== "passed";
+                    
+                    if (hasCopyrightIssue) {
+                        console.log("[Copyright Check] ❌ Found copyright issue (old field):", {
+                            contentName: content.name,
+                            contentType: content.type,
+                            copyrightStatus: copyrightStatus,
+                            materialName: material.name
+                        });
+                        
+                        issues.push({
+                            content,
+                            material,
+                            status: copyrightStatus || "pending" as CopyrightCheckStatus,
+                            violations: content.copyright_violations || undefined,
+                            warnings: content.copyright_warnings || undefined,
+                        });
+                    } else {
+                        console.log("[Copyright Check] ✅ No copyright issue (old field):", {
+                            contentName: content.name,
+                            contentType: content.type,
+                            copyrightStatus: copyrightStatus
+                        });
+                    }
                 }
             });
         });
@@ -4334,11 +4360,11 @@ export default function CreateCourseForm({
                                 </div>
                             )}
 
-                            {/* Course Preview Card - Same layout as Preview Source */}
+                            {/* Course Preview Cart - Same layout as Preview Source */}
                             <div
                                 className="rounded-xl bg-background/30 backdrop-blur-xl border border-border/30 p-4 space-y-3">
                                 <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                    Course preview card
+                                    Course preview cart
                                 </Label>
                                 <div
                                     className="aspect-video rounded-lg bg-muted/20 backdrop-blur-sm flex items-center justify-center overflow-hidden border border-border/30">
@@ -6267,6 +6293,96 @@ export default function CreateCourseForm({
                                 </div>
                             </div>
                         )}
+                            
+                            {/* Copyright Information */}
+                            {content.copyright_information && (
+                                <div className="rounded-2xl border border-border/40 bg-card/50 p-5 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-semibold">Copyright Information</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                Checked{" "}
+                                                {content.copyright_information.copyright_check_date
+                                                    ? new Date(content.copyright_information.copyright_check_date).toLocaleString()
+                                                    : "Not checked yet"}
+                                            </p>
+                                        </div>
+                                        {content.copyright_information.copyrighted === true ? (
+                                            <Badge variant="destructive" className="bg-red-500 text-white">
+                                                <XCircle className="w-3 h-3 mr-1" /> Copyrighted
+                                            </Badge>
+                                        ) : content.copyright_information.copyrighted === false ? (
+                                            <Badge variant="default" className="bg-green-500 text-white">
+                                                <CheckCircle className="w-3 h-3 mr-1" /> Original
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline">
+                                                <Clock className="w-3 h-3 mr-1" /> Pending
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <div className="grid gap-3 text-sm">
+                                        <div className="grid gap-3 sm:grid-cols-2">
+                                            <div>
+                                                <p className="text-xs uppercase text-muted-foreground">Status</p>
+                                                <p className="font-medium capitalize">
+                                                    {content.copyright_information.copy_right_status || "—"}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs uppercase text-muted-foreground">Provider</p>
+                                                <p className="font-medium capitalize">
+                                                    {content.copyright_information.copyright_check_provider || "—"}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {content.copyright_information.copyright_violations && 
+                                         content.copyright_information.copyright_violations.length > 0 && (
+                                            <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 p-3">
+                                                <p className="text-xs uppercase text-red-600 dark:text-red-400 font-semibold mb-2">
+                                                    Violations Found
+                                                </p>
+                                                <ul className="space-y-1 text-xs text-red-700 dark:text-red-300">
+                                                    {content.copyright_information.copyright_violations.map((violation: any, idx: number) => (
+                                                        <li key={idx} className="flex items-start gap-2">
+                                                            <XCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                                            <span>
+                                                                {violation.type}: {violation.description}
+                                                                {violation.match_confidence && 
+                                                                    ` (Confidence: ${Math.round(violation.match_confidence * 100)}%)`}
+                                                            </span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {content.copyright_information.copyright_warnings && 
+                                         content.copyright_information.copyright_warnings.length > 0 && (
+                                            <div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 p-3">
+                                                <p className="text-xs uppercase text-yellow-600 dark:text-yellow-400 font-semibold mb-2">
+                                                    Warnings
+                                                </p>
+                                                <ul className="space-y-1 text-xs text-yellow-700 dark:text-yellow-300">
+                                                    {content.copyright_information.copyright_warnings.map((warning: any, idx: number) => (
+                                                        <li key={idx} className="flex items-start gap-2">
+                                                            <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                                            <span>{warning.message}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {content.copyright_information.video_fingerprint && (
+                                            <div>
+                                                <p className="text-xs uppercase text-muted-foreground">Video Fingerprint</p>
+                                                <p className="font-mono text-xs text-muted-foreground break-all">
+                                                    {content.copyright_information.video_fingerprint}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                     
                     {/* Learner Progress */}
                         {content.can_track_progress && (

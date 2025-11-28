@@ -88,7 +88,7 @@ export default function CoursesPage() {
     const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false)
     const [isWishlistLoading, setIsWishlistLoading] = useState(false)
     const [isWishlistSyncing, setIsWishlistSyncing] = useState(false)
-    const userDisplayName = user?.fullName || user?.username || user?.email || "Learner"
+    const userDisplayName = user?.username || user?.username || user?.email || "Learner"
     const wishlistUserAvatar =
         getAvatarUrl((user as any)?.avatar) ||
         (typeof (user as any)?.avatarUrl === "string" ? (user as any)?.avatarUrl : null)
@@ -358,18 +358,18 @@ export default function CoursesPage() {
                 const matchingBadge = badges.find(b => b.name === badge.name)
                 return matchingBadge?.documentId || badge.id.toString()
             }) || []
-
+            
             const durationHours = Math.floor(course.duration_minutes / 60)
             const durationMinutes = course.duration_minutes % 60
-            const duration = durationHours > 0
+            const duration = durationHours > 0 
                 ? `${durationHours} hour${durationHours > 1 ? 's' : ''}${durationMinutes > 0 ? ` ${durationMinutes} min` : ''}`
                 : `${durationMinutes} min`
-
+            
             // Calculate price with currency
             const price = course.Price || 0
             const currencyCode = course.currency?.code || "USD"
             const formattedPrice = `$${price.toFixed(2)}`
-
+            
             // Get thumbnail from course preview - use preview_url which is already extracted by extractPreviewUrl
             // The preview_url field already contains the correct URL based on preview type (image/video/url)
             const thumbnail = resolveMediaUrl(course.preview_url)
@@ -558,7 +558,7 @@ export default function CoursesPage() {
         observer.observe(currentRef)
         return () => {
             observer.unobserve(currentRef)
-        }
+            }
     }, [hasMore, isSearching])
 
     useEffect(() => {
@@ -576,7 +576,7 @@ export default function CoursesPage() {
 
     const toggleFavorite = async (courseId: number) => {
         if (!user?.id) {
-            setFavorites((prev) => (prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]))
+        setFavorites((prev) => (prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]))
             return
         }
 

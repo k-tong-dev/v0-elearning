@@ -17,6 +17,7 @@ import "@/styles/ultra-liquid-toast.css"
 import { UltraLiquidToaster } from "@/components/ui/ultra-liquid-toast"
 import { ChatWidget } from "@/components/chat-widget"
 import { ActivityTracker } from "@/components/ActivityTracker"
+import { NetworkStatusMonitor } from "@/components/NetworkStatusMonitor"
 
 
 export const metadata: Metadata = {
@@ -61,6 +62,7 @@ export default function RootLayout({
             <AuthProvider>
                 <CartProvider>
                     <ActivityTracker />
+                    <NetworkStatusMonitor />
                     <UltraLiquidToaster />
                     <AuthRedirector>
                         <CookieConsent/>

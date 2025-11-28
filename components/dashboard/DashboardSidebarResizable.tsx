@@ -23,6 +23,11 @@ import {
     UserPlus,
     Award,
     Search,
+    ShoppingCart,
+    Package,
+    Heart,
+    ChevronDown,
+    ChevronRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -54,6 +59,38 @@ const navItems = [
     { label: "Certificates", icon: Award, value: "certificates" },
     { label: "Instructors", icon: Users, value: "instructors" },
     { label: "Enrollments", icon: GraduationCap, value: "enrollments" },
+    { 
+        label: "Shopping Cart",
+        icon: ShoppingCart,
+        value: "Cart",
+        hasSubmenu: true,
+        submenu: [
+            { label: "View Cart", value: "cart-view" },
+            { label: "Cart History", value: "cart-history" },
+        ]
+    },
+    { 
+        label: "Orders", 
+        icon: Package, 
+        value: "orders",
+        hasSubmenu: true,
+        submenu: [
+            { label: "My Orders", value: "orders-my" },
+            { label: "Course Sales", value: "orders-sales" },
+        ]
+    },
+    { 
+        label: "Wishlist", 
+        icon: Heart, 
+        value: "wishlist",
+        hasSubmenu: true,
+        submenu: [
+            { label: "Courses", value: "wishlist-courses" },
+            { label: "Forums", value: "wishlist-forums" },
+            { label: "Blogs", value: "wishlist-blogs" },
+            { label: "Career", value: "wishlist-career" },
+        ]
+    },
     { label: "Expenditure", icon: DollarSign, value: "expenditure" },
     { label: "Analytics", icon: BarChart3, value: "analytics" },
     { label: "My Reports", icon: Bug, value: "reports" },
@@ -88,6 +125,11 @@ export function DashboardSidebarResizable({
     // Responsive: On sm/md, show icon only; on lg+, show icon + label
     const [isMobile, setIsMobile] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+    const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
+        Cart: false,
+        orders: false,
+        wishlist: false,
+    })
 
     // Keyboard shortcut for search (Cmd+K or Ctrl+K)
     useEffect(() => {
@@ -369,10 +411,11 @@ export function DashboardSidebarResizable({
                                     {showLabels ? "Navigation" : "Nav"}
                                 </p>
                                 
-                                {navItems.map((item, idx) => {
+                                {navItems.map((item: any, idx) => {
                                     const IconComponent = item.icon
                                     const isActive = selectedTab === item.value
-                                    // Removed Pro plan restriction - all users can access Instructors
+                                    const isExpanded = expandedMenus[item.value]
+                                    const hasSubmenu = item.hasSubmenu && item.submenu
 
                                     return (
                                         <motion.div
@@ -383,7 +426,7 @@ export function DashboardSidebarResizable({
                                             className="relative"
                                         >
                                             {/* Active Indicator */}
-                                            {isActive && (
+                                            {isActive && !hasSubmenu && (
                                                 <motion.div
                                                     layoutId="activeIndicator"
                                                     className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-purple-500 rounded-r-full z-10"
@@ -398,10 +441,19 @@ export function DashboardSidebarResizable({
                                             
                                             <Button
                                                 variant="ghost"
-                                                onClick={() => handleTabChange(item.value)}
+                                                onClick={() => {
+                                                    if (hasSubmenu) {
+                                                        setExpandedMenus(prev => ({
+                                                            ...prev,
+                                                            [item.value]: !prev[item.value]
+                                                        }))
+                                                    } else {
+                                                        handleTabChange(item.value)
+                                                    }
+                                                }}
                                                 className={cn(
                                                     "w-full rounded-lg py-2.5 h-auto transition-all duration-200 relative",
-                                                    isActive
+                                                    isActive && !hasSubmenu
                                                         ? "bg-primary/10 text-primary border border-primary/20"
                                                         : "text-muted-foreground hover:bg-accent hover:text-foreground",
                                                     showLabels ? "px-3 justify-start" : "px-2 justify-center"
@@ -409,9 +461,53 @@ export function DashboardSidebarResizable({
                                             >
                                                 <IconComponent className={cn("w-5 h-5", showLabels && "mr-3")} />
                                                 {showLabels && (
-                                                    <span className="flex-1 text-left">{item.label}</span>
+                                                    <>
+                                                        <span className="flex-1 text-left">{item.label}</span>
+                                                        {hasSubmenu && (
+                                                            <ChevronRight className={cn(
+                                                                "w-4 h-4 transition-transform",
+                                                                isExpanded && "rotate-90"
+                                                            )} />
+                                                        )}
+                                                    </>
                                                 )}
                                             </Button>
+
+                                            {/* Submenu */}
+                                            {hasSubmenu && showLabels && (
+                                                <AnimatePresence>
+                                                    {isExpanded && (
+                                                        <motion.div
+                                                            initial={{ height: 0, opacity: 0 }}
+                                                            animate={{ height: "auto", opacity: 1 }}
+                                                            exit={{ height: 0, opacity: 0 }}
+                                                            transition={{ duration: 0.2 }}
+                                                            className="overflow-hidden"
+                                                        >
+                                                            <div className="pl-8 pr-2 py-1 space-y-1">
+                                                                {item.submenu.map((subItem: any) => {
+                                                                    const isSubActive = selectedTab === subItem.value
+                                                                    return (
+                                                                        <Button
+                                                                            key={subItem.value}
+                                                                            variant="ghost"
+                                                                            onClick={() => handleTabChange(subItem.value)}
+                                                                            className={cn(
+                                                                                "w-full rounded-md py-2 text-sm h-auto",
+                                                                                isSubActive
+                                                                                    ? "bg-primary/10 text-primary"
+                                                                                    : "text-muted-foreground hover:bg-accent"
+                                                                            )}
+                                                                        >
+                                                                            <span className="w-full text-left">{subItem.label}</span>
+                                                                        </Button>
+                                                                    )
+                                                                })}
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            )}
                                         </motion.div>
                                     )
                                 })}
@@ -555,30 +651,84 @@ export function DashboardSidebarResizable({
                     <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider px-2 mb-2">
                         Navigation
                     </p>
-                    {navItems.map((item, idx) => {
+                    {navItems.map((item: any, idx) => {
                         const IconComponent = item.icon
                         const isActive = selectedTab === item.value
-                        // Removed Pro plan restriction - all users can access Instructors
+                        const isExpanded = expandedMenus[item.value]
+                        const hasSubmenu = item.hasSubmenu && item.submenu
 
                         return (
-                            <Button
-                                key={item.value}
-                                variant="ghost"
-                                onClick={() => {
-                                    handleTabChange(item.value)
-                                    setIsMobileMenuOpen(false)
-                                }}
-                                className={cn(
-                                    "w-full rounded-lg py-2.5 h-auto transition-all duration-200",
-                                    isActive
-                                        ? "bg-primary/10 text-primary border border-primary/20"
-                                        : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                                    "px-3 justify-start"
+                            <div key={item.value} className="relative">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => {
+                                        if (hasSubmenu) {
+                                            setExpandedMenus(prev => ({
+                                                ...prev,
+                                                [item.value]: !prev[item.value]
+                                            }))
+                                        } else {
+                                            handleTabChange(item.value)
+                                            setIsMobileMenuOpen(false)
+                                        }
+                                    }}
+                                    className={cn(
+                                        "w-full rounded-lg py-2.5 h-auto transition-all duration-200",
+                                        isActive && !hasSubmenu
+                                            ? "bg-primary/10 text-primary border border-primary/20"
+                                            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                                        "px-3 justify-start"
+                                    )}
+                                >
+                                    <IconComponent className="w-5 h-5 mr-3" />
+                                    <span className="flex-1 text-left">{item.label}</span>
+                                    {hasSubmenu && (
+                                        <ChevronRight className={cn(
+                                            "w-4 h-4 transition-transform",
+                                            isExpanded && "rotate-90"
+                                        )} />
+                                    )}
+                                </Button>
+
+                                {/* Mobile Submenu */}
+                                {hasSubmenu && (
+                                    <AnimatePresence>
+                                        {isExpanded && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="pl-8 pr-2 py-1 space-y-1">
+                                                    {item.submenu.map((subItem: any) => {
+                                                        const isSubActive = selectedTab === subItem.value
+                                                        return (
+                                                            <Button
+                                                                key={subItem.value}
+                                                                variant="ghost"
+                                                                onClick={() => {
+                                                                    handleTabChange(subItem.value)
+                                                                    setIsMobileMenuOpen(false)
+                                                                }}
+                                                                className={cn(
+                                                                    "w-full rounded-md py-2 text-sm h-auto",
+                                                                    isSubActive
+                                                                        ? "bg-primary/10 text-primary"
+                                                                        : "text-muted-foreground hover:bg-accent"
+                                                                )}
+                                                            >
+                                                                <span className="w-full text-left">{subItem.label}</span>
+                                                            </Button>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 )}
-                            >
-                                <IconComponent className="w-5 h-5 mr-3" />
-                                <span className="flex-1 text-left">{item.label}</span>
-                            </Button>
+                            </div>
                         )
                     })}
                 </nav>

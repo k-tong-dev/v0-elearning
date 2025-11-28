@@ -760,31 +760,43 @@ async function checkCourseCopyrightStatus(courseId: number): Promise<{
             const contents = await getCourseContentsForMaterial(material.id);
             
             for (const content of contents) {
-                // Check if copyright check has been performed and failed
-                if (content.copyright_check_status === 'failed') {
-                    return {
-                        hasCopyrightIssues: true,
-                        details: `Content "${content.name}" has copyright violations`,
-                    };
+                // Only check video, url, and image content types
+                const needsCopyrightCheck = ['video', 'url', 'image'].includes(content.type);
+                
+                if (!needsCopyrightCheck) {
+                    continue; // Skip other content types
                 }
                 
-                // Check if copyright check has warnings for paid courses
-                if (content.copyright_check_status === 'warning') {
-                    return {
-                        hasCopyrightIssues: true,
-                        details: `Content "${content.name}" has copyright warnings`,
-                    };
-                }
-                
-                // Check if copyright check is still pending for media content
-                if (
-                    (content.type === 'video' || content.type === 'audio') &&
-                    (!content.copyright_check_status || content.copyright_check_status === 'pending')
-                ) {
-                    return {
-                        hasCopyrightIssues: true,
-                        details: `Content "${content.name}" has not completed copyright check`,
-                    };
+                // Check the NEW component structure first
+                if (content.copyright_information) {
+                    const copyrightInfo = content.copyright_information;
+                    
+                    // ONLY CHECK: If copyrighted = TRUE, it means content HAS copyright issues
+                    if (copyrightInfo.copyrighted === true) {
+                        return {
+                            hasCopyrightIssues: true,
+                            details: `Content "${content.name}" contains copyrighted material`,
+                        };
+                    }
+                    
+                    // If copyrighted = false OR undefined/null, content is SAFE
+                    // Do NOT check copy_right_status - it's only for UI display
+                    
+                } else {
+                    // Fallback to OLD fields for backward compatibility during migration
+                    if (content.copyright_check_status === 'failed') {
+                        return {
+                            hasCopyrightIssues: true,
+                            details: `Content "${content.name}" has copyright violations`,
+                        };
+                    }
+                    
+                    if (!content.copyright_check_status || content.copyright_check_status === 'pending') {
+                        return {
+                            hasCopyrightIssues: true,
+                            details: `Content "${content.name}" has not completed copyright check`,
+                        };
+                    }
                 }
             }
         }

@@ -12,7 +12,7 @@ import Image from "next/image"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/use-auth"
 
-export default function CartPage() {
+export default function CardPage() {
     const router = useRouter()
     const { items, removeFromCart, clearCart, totalPrice, totalPriceFormatted, itemCount } = useCart()
     const { isAuthenticated } = useAuth()
@@ -65,7 +65,7 @@ export default function CartPage() {
                                 Shopping Cart
                             </h1>
                             <p className="text-slate-600 dark:text-slate-400">
-                                {itemCount} {itemCount === 1 ? "course" : "courses"} in your cart
+                                {itemCount} {itemCount === 1 ? "course" : "courses"} in your Card
                             </p>
                         </div>
                     </div>

@@ -509,7 +509,6 @@ export function HeaderUltra() {
                                 <ThemeToggle />
                             </motion.div>
 
-                            {/* Shopping Cart Button */}
                             <motion.button
                                 onClick={() => setIsCartModalOpen(true)}
                                 className="relative p-2.5 rounded-xl border border-border/50 bg-background/50 backdrop-blur-xl group"
@@ -822,7 +821,7 @@ export function HeaderUltra() {
                 />
             )}
             
-            {/* Cart Modal */}
+            {/* Card Modal */}
             <CartModal
                 isOpen={isCartModalOpen}
                 onClose={() => setIsCartModalOpen(false)}

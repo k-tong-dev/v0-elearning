@@ -42,6 +42,18 @@ export interface CopyrightWarning {
   severity?: "low" | "medium" | "high";
 }
 
+export interface CopyrightInformation {
+  copyrighted: boolean; // TRUE = has copyright issues, FALSE = safe/original
+  copy_right_status: CopyrightCheckStatus;
+  copyright_check_result?: Record<string, unknown> | null;
+  copyright_check_date?: string | null;
+  copyright_check_provider?: string | null;
+  copyright_violations?: CopyrightViolation[] | null;
+  copyright_warnings?: CopyrightWarning[] | null;
+  video_fingerprint?: string | null;
+  copyright_check_metadata?: Record<string, unknown> | null;
+}
+
 export interface CourseContentEntity {
   id: number;
   documentId: string;
@@ -63,7 +75,9 @@ export interface CourseContentEntity {
   document?: any | null; // StrapiMedia object
   audio?: any | null; // StrapiMedia object
   images?: any[] | null; // Array of StrapiMedia objects
-  // Copyright checking fields
+  // NEW: Copyright information component
+  copyright_information?: CopyrightInformation | null;
+  // OLD: Individual fields (kept for backward compatibility during migration)
   copyright_check_status?: CopyrightCheckStatus | null;
   copyright_check_result?: Record<string, unknown> | null;
   copyright_check_date?: string | null;
@@ -404,15 +418,8 @@ export async function getCourseContentsForMaterial(
         document: item.document?.data || item.document || null,
         audio: item.audio?.data || item.audio || null,
         images: item.images?.data || item.images || null,
-        // Copyright fields
-        copyright_check_status: item.copyright_check_status ?? null,
-        copyright_check_result: item.copyright_check_result ?? null,
-        copyright_check_date: item.copyright_check_date ?? null,
-        copyright_check_provider: item.copyright_check_provider ?? null,
-        copyright_violations: item.copyright_violations ?? null,
-        copyright_warnings: item.copyright_warnings ?? null,
-        video_fingerprint: item.video_fingerprint ?? null,
-        copyright_check_metadata: item.copyright_check_metadata ?? null,
+        // Copyright information component
+        copyright_information: item.copyright_information ?? null,
       };
     });
   } catch (error) {
@@ -515,15 +522,18 @@ export async function createCourseContentForMaterial(data: {
         instructor: instructorConnect,
         // Attach media file to appropriate field
         ...mediaFieldData,
-        // Copyright fields
-        copyright_check_status: data.copyright_check_status ?? null,
-        copyright_check_result: data.copyright_check_result ?? null,
-        copyright_check_date: data.copyright_check_date ?? null,
-        copyright_check_provider: data.copyright_check_provider ?? null,
-        copyright_violations: data.copyright_violations ?? null,
-        copyright_warnings: data.copyright_warnings ?? null,
-        video_fingerprint: data.video_fingerprint ?? null,
-        copyright_check_metadata: data.copyright_check_metadata ?? null,
+        // Copyright information component
+        copyright_information: {
+          copyrighted: false, // Will be updated by copyright check
+          copy_right_status: data.copyright_check_status ?? "pending",
+          copyright_check_result: data.copyright_check_result ?? null,
+          copyright_check_date: data.copyright_check_date ?? null,
+          copyright_check_provider: data.copyright_check_provider ?? null,
+          copyright_violations: data.copyright_violations ?? null,
+          copyright_warnings: data.copyright_warnings ?? null,
+          video_fingerprint: data.video_fingerprint ?? null,
+          copyright_check_metadata: data.copyright_check_metadata ?? null,
+        },
       },
     });
 
@@ -555,15 +565,8 @@ export async function createCourseContentForMaterial(data: {
       url_metadata: item.url_metadata ?? null,
       url_checked_at: item.url_checked_at ?? null,
       instructor: instructorId,
-      // Copyright fields
-      copyright_check_status: item.copyright_check_status ?? null,
-      copyright_check_result: item.copyright_check_result ?? null,
-      copyright_check_date: item.copyright_check_date ?? null,
-      copyright_check_provider: item.copyright_check_provider ?? null,
-      copyright_violations: item.copyright_violations ?? null,
-      copyright_warnings: item.copyright_warnings ?? null,
-      video_fingerprint: item.video_fingerprint ?? null,
-      copyright_check_metadata: item.copyright_check_metadata ?? null,
+      // Copyright information component
+      copyright_information: item.copyright_information ?? null,
     };
   } catch (error) {
     console.error("Error creating course content:", error);
@@ -705,30 +708,43 @@ export async function updateCourseContentForMaterial(
         updateData.instructor = null;
       }
     }
-    // Copyright fields
-    if (data.copyright_check_status !== undefined) {
-      updateData.copyright_check_status = data.copyright_check_status;
-    }
-    if (data.copyright_check_result !== undefined) {
-      updateData.copyright_check_result = data.copyright_check_result;
-    }
-    if (data.copyright_check_date !== undefined) {
-      updateData.copyright_check_date = data.copyright_check_date;
-    }
-    if (data.copyright_check_provider !== undefined) {
-      updateData.copyright_check_provider = data.copyright_check_provider;
-    }
-    if (data.copyright_violations !== undefined) {
-      updateData.copyright_violations = data.copyright_violations;
-    }
-    if (data.copyright_warnings !== undefined) {
-      updateData.copyright_warnings = data.copyright_warnings;
-    }
-    if (data.video_fingerprint !== undefined) {
-      updateData.video_fingerprint = data.video_fingerprint;
-    }
-    if (data.copyright_check_metadata !== undefined) {
-      updateData.copyright_check_metadata = data.copyright_check_metadata;
+    // Copyright information component
+    const hasCopyrightData = 
+      data.copyright_check_status !== undefined ||
+      data.copyright_check_result !== undefined ||
+      data.copyright_check_date !== undefined ||
+      data.copyright_check_provider !== undefined ||
+      data.copyright_violations !== undefined ||
+      data.copyright_warnings !== undefined ||
+      data.video_fingerprint !== undefined ||
+      data.copyright_check_metadata !== undefined;
+    
+    if (hasCopyrightData) {
+      updateData.copyright_information = {};
+      if (data.copyright_check_status !== undefined) {
+        updateData.copyright_information.copy_right_status = data.copyright_check_status;
+      }
+      if (data.copyright_check_result !== undefined) {
+        updateData.copyright_information.copyright_check_result = data.copyright_check_result;
+      }
+      if (data.copyright_check_date !== undefined) {
+        updateData.copyright_information.copyright_check_date = data.copyright_check_date;
+      }
+      if (data.copyright_check_provider !== undefined) {
+        updateData.copyright_information.copyright_check_provider = data.copyright_check_provider;
+      }
+      if (data.copyright_violations !== undefined) {
+        updateData.copyright_information.copyright_violations = data.copyright_violations;
+      }
+      if (data.copyright_warnings !== undefined) {
+        updateData.copyright_information.copyright_warnings = data.copyright_warnings;
+      }
+      if (data.video_fingerprint !== undefined) {
+        updateData.copyright_information.video_fingerprint = data.video_fingerprint;
+      }
+      if (data.copyright_check_metadata !== undefined) {
+        updateData.copyright_information.copyright_check_metadata = data.copyright_check_metadata;
+      }
     }
     if (data.article !== undefined) {
       updateData.article = data.article;
@@ -767,15 +783,8 @@ export async function updateCourseContentForMaterial(
       url_checked_at: item.url_checked_at ?? null,
       article: item.article ?? null,
       instructor: instructorId,
-      // Copyright fields
-      copyright_check_status: item.copyright_check_status ?? null,
-      copyright_check_result: item.copyright_check_result ?? null,
-      copyright_check_date: item.copyright_check_date ?? null,
-      copyright_check_provider: item.copyright_check_provider ?? null,
-      copyright_violations: item.copyright_violations ?? null,
-      copyright_warnings: item.copyright_warnings ?? null,
-      video_fingerprint: item.video_fingerprint ?? null,
-      copyright_check_metadata: item.copyright_check_metadata ?? null,
+      // Copyright information component
+      copyright_information: item.copyright_information ?? null,
     };
   } catch (error) {
     console.error("Error updating course content:", error);

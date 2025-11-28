@@ -19,6 +19,8 @@ import { DashboardInstructors } from "@/components/dashboard/DashboardInstructor
 import { NotificationSidebar } from "@/components/dashboard/NotificationSidebar"
 import { DashboardFriends } from "@/components/dashboard/DashboardFriends"
 import { DashboardCertificates } from "@/components/dashboard/DashboardCertificates"
+import { DashboardViewCard } from "@/components/dashboard/DashboardViewCard"
+import { DashboardFavorites } from "@/components/dashboard/DashboardFavorites"
 import { User as StrapiUser } from "@/types/user"
 import { getUserSubscription } from "@/integrations/strapi/subscription"
 import {BookOpen, DollarSign, MessageCircle, Star, ThumbsUp, Users} from "lucide-react"
@@ -502,6 +504,59 @@ function DashboardContent() {
 
                             <TabsContent value="friends" className="mt-0">
                                 <DashboardFriends />
+                            </TabsContent>
+
+                            {/* Shopping Cart Tabs */}
+                            <TabsContent value="cart-view" className="mt-0">
+                                <DashboardViewCard />
+                            </TabsContent>
+
+                            <TabsContent value="card-history" className="mt-0">
+                                <div className="rounded-xl border border-border/50 bg-card/50 p-8">
+                                    <h2 className="text-2xl font-bold mb-4">Card History</h2>
+                                    <p className="text-muted-foreground">Your past card activities will appear here</p>
+                                </div>
+                            </TabsContent>
+
+                            {/* Orders Tabs */}
+                            <TabsContent value="orders-my" className="mt-0">
+                                <div className="rounded-xl border border-border/50 bg-card/50 p-8">
+                                    <h2 className="text-2xl font-bold mb-4">My Orders</h2>
+                                    <p className="text-muted-foreground">Your purchase orders will appear here</p>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="orders-sales" className="mt-0">
+                                <div className="rounded-xl border border-border/50 bg-card/50 p-8">
+                                    <h2 className="text-2xl font-bold mb-4">Course Sales</h2>
+                                    <p className="text-muted-foreground">Sales from your courses will appear here</p>
+                                </div>
+                            </TabsContent>
+
+                            {/* Wishlist Tabs */}
+                            <TabsContent value="wishlist-courses" className="mt-0">
+                                <DashboardFavorites />
+                            </TabsContent>
+
+                            <TabsContent value="wishlist-forums" className="mt-0">
+                                <div className="rounded-xl border border-border/50 bg-card/50 p-8">
+                                    <h2 className="text-2xl font-bold mb-4">Bookmarked Forums</h2>
+                                    <p className="text-muted-foreground">Your bookmarked forum discussions will appear here</p>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="wishlist-blogs" className="mt-0">
+                                <div className="rounded-xl border border-border/50 bg-card/50 p-8">
+                                    <h2 className="text-2xl font-bold mb-4">Saved Blogs</h2>
+                                    <p className="text-muted-foreground">Your saved blog articles will appear here</p>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="wishlist-career" className="mt-0">
+                                <div className="rounded-xl border border-border/50 bg-card/50 p-8">
+                                    <h2 className="text-2xl font-bold mb-4">Career Opportunities</h2>
+                                    <p className="text-muted-foreground">Your saved job opportunities will appear here</p>
+                                </div>
                             </TabsContent>
 
                             <TabsContent value="settings" className="mt-0">
