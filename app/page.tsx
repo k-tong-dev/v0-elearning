@@ -5,7 +5,7 @@ import { HeaderDark } from "@/components/ui/headers/HeaderDark"
 import { HeroSection } from "@/components/hero-section"
 import { CoursesSection } from "@/components/courses/courses-section"
 import { TestimonialsSection } from "@/components/testimonials-section"
-import { FAQSection } from "@/components/faq-section"
+import { FAQSection } from "@/components/faq/faq-section-full"
 import { CTASection } from "@/components/cta-section"
 import { Footer } from "@/components/ui/footers/footer"
 import {HeroCompany} from "@/components/hero-company";
