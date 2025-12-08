@@ -66,7 +66,7 @@ const navItems = [
         hasSubmenu: true,
         submenu: [
             { label: "View Cart", value: "cart-view" },
-            { label: "Cart History", value: "cart-history" },
+            // { label: "Cart History", value: "cart-history" },
         ]
     },
     { 

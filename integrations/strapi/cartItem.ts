@@ -50,12 +50,15 @@ export interface CartItem {
 export async function getUserCartItems(): Promise<CartItem[]> {
   try {
     const token = getAccessToken()
+    console.log("[Cart API] getUserCartItems called", { hasToken: !!token, tokenLength: token?.length })
     if (!token) {
       console.warn("[Cart API] No auth token found")
       return []
     }
 
-    const response = await fetch(`${API_URL}/api/card-items/me`, {
+    const url = `${API_URL}/api/card-items/me`
+    console.log("[Cart API] Fetching from URL:", url)
+    const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -63,12 +66,17 @@ export async function getUserCartItems(): Promise<CartItem[]> {
       cache: "no-store",
     })
 
+    console.log("[Cart API] Response status:", response.status, response.statusText)
     if (!response.ok) {
-      console.error(`[Cart API] Failed to fetch cart items: ${response.status}`)
+      const errorText = await response.text()
+      console.error(`[Cart API] Failed to fetch cart items: ${response.status}`, errorText)
       return []
     }
 
     const json = await response.json()
+    console.log("[Cart API] Response JSON:", json)
+    console.log("[Cart API] Response data:", json.data)
+    console.log("[Cart API] Number of items in response:", json.data?.length || 0)
     return json.data || []
   } catch (error) {
     console.error("[Cart API] Error fetching cart items:", error)

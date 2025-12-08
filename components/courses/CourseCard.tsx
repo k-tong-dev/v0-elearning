@@ -5,24 +5,19 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@heroui/react"
-import { Star, Clock, Users, BookOpen, Flame, Heart, Building2, Award, Tag as TagIcon, Play, Edit, Eye, Sparkles, ShoppingCart } from "lucide-react"
+import { Star, Clock, Users, BookOpen, Flame, Heart, Award, Tag as TagIcon, Play, Edit, Eye, ShoppingCart, CheckCircle } from "lucide-react"
 import Image from "next/image"
 import { getAvatarUrl } from "@/lib/getAvatarUrl"
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip"
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { Avatar, AvatarGroup } from "@heroui/react"
 import ReactPlayer from "react-player"
 import { CoursePreview, getCoursePreviewUrl } from "@/integrations/strapi/coursePreview"
 import { motion } from "framer-motion"
+import { cn } from "@/utils/utils"
+import {FaRegMoneyBillAlt} from "react-icons/fa";
 
 interface InstructorSummary {
     id: string | number
@@ -33,6 +28,7 @@ interface InstructorSummary {
 interface CourseCardProps {
     course: {
         id: number
+        documentId?: string
         title: string
         description: string
         image: string
@@ -62,7 +58,7 @@ interface CourseCardProps {
         is_paid?: boolean
     }
     onCourseClick?: (courseId: number) => void
-    onToggleFavorite?: (courseId: number) => void
+    onToggleFavorite?: (courseId: number, courseDocumentId?: string) => void
     onEnrollClick?: (courseId: number) => void
     onOpenWishlist?: () => void
     onAddToCart?: (courseId: number) => void
@@ -335,6 +331,7 @@ export function CourseCard({
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
     const cardRef = useRef<HTMLDivElement>(null)
     const router = useRouter()
+    
 
     const handleCardClick = () => {
         onCourseClick?.(course.id)
@@ -369,7 +366,7 @@ export function CourseCard({
 
     const handleFavoriteClick = (e: React.MouseEvent) => {
         e.stopPropagation()
-        onToggleFavorite?.(course.id)
+        onToggleFavorite?.(course.id, course.documentId)
     }
 
     const handlePreviewClick = (e: React.MouseEvent) => {
@@ -688,25 +685,40 @@ export function CourseCard({
                                 </>
                             ) : (
                                 <>
-                                    {course.is_paid && onAddToCart ? (
+                                    {/* Show "Add to Cart" button if course is paid, has onAddToCart handler, and is NOT already in cart */}
+                                    {course.is_paid && onAddToCart && !isInCart ? (
                                         <Button 
                                             variant="bordered"
-                                            className="flex-1 h-9 px-3 text-xs font-semibold border-2 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 transition-all duration-300"
+                                            className="rounded-sm flex-1 h-9 px-3 text-xs font-semibold border-2 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 transition-all duration-300"
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 onAddToCart(course.id)
                                             }}
-                                            isDisabled={isInCart}
                                         >
                                             <ShoppingCart className="w-3.5 h-3.5 mr-1" />
-                                            {isInCart ? "In Cart" : "Add to Cart"}
+                                            Add to Cart
                                         </Button>
                                     ) : null}
+                                    {course.is_paid && isInCart && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="flex-1 flex items-center justify-center h-9 px-3 rounded-sm bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-700 shadow-sm"
+                                        >
+                                            <CheckCircle className="w-4 h-4 mr-1.5 text-green-600 dark:text-green-400 fill-green-100 dark:fill-green-900/40" />
+                                            <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+                                                In Cart
+                                            </span>
+                                        </motion.div>
+                                    )}
                             <Button 
-                                        className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white h-9 px-4 text-xs font-bold rounded-xl shadow-lg hover:shadow-xl flex-1 transition-all duration-300 hover:scale-105"
+                                className={cn(
+                                    "bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white h-9 px-4 text-xs font-bold rounded-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105",
+                                    course.is_paid && onAddToCart && !isInCart ? "flex-1" : "w-full"
+                                )}
                                 onClick={handleEnrollButtonClick}
                             >
-                                        <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                                        <FaRegMoneyBillAlt className="w-3.5 h-3.5 mr-1.5" />
                                         {course.is_paid ? "Buy Now" : "Enroll Now"}
                             </Button>
                                 </>

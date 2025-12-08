@@ -57,7 +57,12 @@ import {
 } from "@/components/ui/dialog"
 import { User as ForumUser, Reply as ForumReply } from "@/types/forum"
 import ShareForm from "@/components/ui/share-form";
-import ReportForm from "@/components/ui/report-form"; // Import User and Reply from types/forum
+import ReportForm from "@/components/ui/report-form";
+import { getBlogPostById, getBlogPostBySlug, getBlogPostByDocumentId, getRelatedBlogPosts, isBlogPostAuthor, getBlogComments, createBlogComment, BlogComment, deleteBlogPost, incrementBlogPostViews } from "@/integrations/strapi/blog";
+import { getAvatarUrl } from "@/lib/getAvatarUrl";
+import { Edit, Trash2, Loader2 } from "lucide-react";
+import { BlogContentRenderer } from "@/components/blog/BlogContentRenderer";
+import { useUser } from "@/contexts/UserContext";
 
 interface BlogPost {
   id: string
@@ -112,317 +117,184 @@ export default function BlogDetailPage() {
   const [showReportDialog, setShowReportDialog] = useState(false)
   const [reportReason, setReportReason] = useState("")
   const [isLoading, setIsLoading] = useState(true)
+  const [canEdit, setCanEdit] = useState(false)
+  const [relatedPosts, setRelatedPosts] = useState<any[]>([])
+  const [postNumericId, setPostNumericId] = useState<string | number | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  // Mock data - in real app this would come from API
+  // Fetch blog post from Strapi
   useEffect(() => {
-    const mockAuthor: ForumUser = {
-      id: "author-1",
-      name: "Emma Rodriguez",
-      avatar: "/placeholder-user.jpg",
-      role: "Expert",
-      joinDate: "Jan 2022",
-      postCount: 47,
-      reputation: 12500,
-      isOnline: true,
-    };
-
-    const mockCommentAuthor1: ForumUser = {
-      id: "user-2",
-      name: "Mike Chen",
-      avatar: "/placeholder-user.jpg",
-      role: "Student",
-      joinDate: "Feb 2023",
-      postCount: 12,
-      reputation: 120,
-      isOnline: true,
-    };
-
-    const mockCommentAuthor2: ForumUser = {
-      id: "user-3",
-      name: "Sarah Johnson",
-      avatar: "/placeholder-user.jpg",
-      role: "Student",
-      joinDate: "Mar 2024",
-      postCount: 8,
-      reputation: 80,
-      isOnline: false,
-    };
-
-    const mockPost: BlogPost = {
-      id: postId,
-      title: "Building Modern React Applications with TypeScript",
-      excerpt: "Learn how to leverage TypeScript's powerful type system to build more reliable and maintainable React applications.",
-      content: `
-# Introduction
-
-React and TypeScript have become the gold standard for building modern web applications. In this comprehensive guide, we'll explore how to combine these powerful tools to create robust, maintainable, and scalable applications.
-
-## Why TypeScript with React?
-
-TypeScript brings static typing to JavaScript, which offers several key benefits when building React applications:
-
-### 1. Enhanced Developer Experience
-- **IntelliSense**: Get better autocomplete and code suggestions
-- **Refactoring**: Safely rename variables and functions across your codebase
-- **Error Detection**: Catch errors at compile time rather than runtime
-
-### 2. Better Code Documentation
-TypeScript interfaces and types serve as living documentation for your components and functions.
-
-### 3. Improved Collaboration
-When working in teams, TypeScript makes it easier to understand what props components expect and what functions return.
-
-## Setting Up Your Project
-
-Let's start by creating a new React application with TypeScript:
-
-\`\`\`bash
-npx create-react-app my-app --template typescript
-cd my-app
-npm start
-\`\`\`
-
-## Component Props with TypeScript
-
-One of the first things you'll encounter is typing your component props:
-
-\`\`\`tsx
-interface ButtonProps {
-  children: React.ReactNode;
-  onClick: () => void;
-  variant?: 'primary' | 'secondary';
-  disabled?: boolean;
-}
-
-const Button: React.FC<ButtonProps> = ({ 
-  children, 
-  onClick, 
-  variant = 'primary', 
-  disabled = false 
-}) => {
-  return (
-    <button 
-      className={\`btn btn-\${variant}\`}
-      onClick={onClick}
-      disabled={disabled}
-    >
-      {children}
-    </button>
-  );
-};
-\`\`\`
-
-## State Management with TypeScript
-
-TypeScript shines when it comes to state management. Here's how to use useState with proper typing:
-
-\`\`\`tsx
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
-
-const UserProfile: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  
-  // TypeScript will now provide proper autocomplete and type checking
-  useEffect(() => {
-    fetchUser().then(userData => {
-      setUser(userData);
-      setLoading(false);
-    });
-  }, []);
-  
-  if (loading) return <div>Loading...</div>;
-  if (!user) return <div>No user found</div>;
-  
-  return (
-    <div>
-      <h1>{user.name}</h1>
-      <p>{user.email}</p>
-    </div>
-  );
-};
-\`\`\`
-
-## Advanced Patterns
-
-### Generic Components
-Sometimes you need components that work with different data types:
-
-\`\`\`tsx
-interface ListProps<T> {
-  items: T[];
-  renderItem: (item: T) => React.ReactNode;
-}
-
-function List<T>({ items, renderItem }: ListProps<T>) {
-  return (
-    <ul>
-      {items.map((item, index) => (
-        <li key={index}>{renderItem(item)}</li>
-      ))}
-    </ul>
-  );
-}
-\`\`\`
-
-### Custom Hooks with TypeScript
-Custom hooks are even more powerful with TypeScript:
-
-\`\`\`tsx
-interface UseApiResult<T> {
-  data: T | null;
-  loading: boolean;
-  error: string | null;
-}
-
-function useApi<T>(url: string): UseApiResult<T> {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  useEffect(() => {
-    fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        setData(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, [url]);
-  
-  return { data, loading, error };
-}
-\`\`\`
-
-## Best Practices
-
-### 1. Use Strict Mode
-Enable strict mode in your TypeScript configuration:
-
-\`\`\`json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
-  }
-}
-\`\`\`
-
-### 2. Prefer Interfaces for Props
-Use interfaces instead of type aliases for component props as they're more extensible.
-
-### 3. Use Enum for Constants
-Instead of string literals, use enums for better type safety:
-
-\`\`\`tsx
-enum Theme {
-  Light = 'light',
-  Dark = 'dark',
-  Auto = 'auto'
-}
-\`\`\`
-
-## Conclusion
-
-TypeScript and React make a powerful combination for building modern web applications. The initial learning curve is worth the long-term benefits of better code quality, improved developer experience, and reduced bugs in production.
-
-Start small by adding TypeScript to existing components, then gradually expand your usage as you become more comfortable with the patterns and best practices.
-
-Happy coding!
-    `,
-      author: mockAuthor,
-      category: "web-development",
-      tags: ["React", "TypeScript", "JavaScript", "Frontend", "Web Development"],
-      publishedAt: "2024-01-15",
-      updatedAt: "2024-01-16",
-      readTime: 8,
-      views: 1240,
-      likes: 89,
-      bookmarks: 34,
-      comments: 23,
-      coverImage: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=1200&h=600&fit=crop",
-      tableOfContents: [
-        { title: "Introduction", anchor: "introduction", level: 1 },
-        { title: "Why TypeScript with React?", anchor: "why-typescript-with-react", level: 2 },
-        { title: "Enhanced Developer Experience", anchor: "enhanced-developer-experience", level: 3 },
-        { title: "Better Code Documentation", anchor: "better-code-documentation", level: 3 },
-        { title: "Setting Up Your Project", anchor: "setting-up-your-project", level: 2 },
-        { title: "Component Props with TypeScript", anchor: "component-props-with-typescript", level: 2 },
-        { title: "State Management with TypeScript", anchor: "state-management-with-typescript", level: 2 },
-        { title: "Advanced Patterns", anchor: "advanced-patterns", level: 2 },
-        { title: "Best Practices", anchor: "best-practices", level: 2 },
-        { title: "Conclusion", anchor: "conclusion", level: 2 },
-      ],
-      isLiked: false,
-      isBookmarked: false,
-    }
-
-    const mockComments: Comment[] = [
-      {
-        id: "1",
-        content: "Great article! The examples are really clear and practical. I especially liked the custom hooks section.",
-        author: mockCommentAuthor1,
-        publishedAt: "2024-01-16",
-        likes: 12,
-        isLiked: false,
-        replies: [
-          {
-            id: "1-1",
-            content: "Thanks Mike! I'm glad you found it helpful. Custom hooks with TypeScript are really powerful once you get the hang of them.",
-            author: mockAuthor,
-            createdAt: "2024-01-16",
-            likes: 5,
-            isLiked: false,
-          }
-        ]
-      },
-      {
-        id: "2",
-        content: "Could you do a follow-up article about testing TypeScript React components? That would be amazing!",
-        author: mockCommentAuthor2,
-        publishedAt: "2024-01-16",
-        likes: 8,
-        isLiked: true,
-        replies: []
+    async function fetchBlogPost() {
+      if (!postId) {
+        setIsLoading(false);
+        return;
       }
-    ]
 
-    setPost(mockPost)
-    setComments(mockComments)
-    setIsLiked(mockPost.isLiked)
-    setIsBookmarked(mockPost.isBookmarked)
-    setIsLoading(false)
-  }, [postId])
-
-  const relatedPosts = [
-    {
-      id: "2",
-      title: "Advanced TypeScript Patterns for React",
-      excerpt: "Dive deeper into advanced TypeScript patterns that will make your React code even more robust.",
-      coverImage: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=400&h=200&fit=crop",
-      author: "Emma Rodriguez",
-      readTime: 12,
-      publishedAt: "2024-01-10"
-    },
-    {
-      id: "3",
-      title: "Testing React Components with Jest and TypeScript",
-      excerpt: "Learn how to write comprehensive tests for your TypeScript React components.",
-      coverImage: "https://images.unsplash.com/photo-1551650975-87deedd944c3?w=400&h=200&fit-crop",
-      author: "Mike Chen",
-      readTime: 10,
-      publishedAt: "2024-01-08"
+      setIsLoading(true);
+      try {
+        // Try to fetch by documentId first (most reliable and prevents duplicates)
+        // If postId looks like a documentId (UUID-like), use it directly
+        // Otherwise, try documentId first, then slug, then numeric ID as fallback
+        let post = null;
+        
+        // Check if postId looks like a documentId (contains hyphens, typical UUID format)
+        if (postId.includes('-') && postId.length > 20) {
+          post = await getBlogPostByDocumentId(postId);
+        }
+        
+        // If not found or not a documentId format, try other methods
+        if (!post) {
+          post = await getBlogPostByDocumentId(postId) || await getBlogPostBySlug(postId) || await getBlogPostById(postId);
+        }
+        
+        if (post) {
+          // Use documentId for URL routing (prevents duplicates)
+          const documentId = post.documentId || postId;
+          
+          // Redirect to documentId URL if we're not already using it
+          if (post.documentId && post.documentId !== postId) {
+            router.replace(`/blog/${post.documentId}`);
+            return;
+          }
+          
+          // Store the numeric ID for API calls
+          const numericId = post.id;
+          setPostNumericId(numericId);
+          
+          // Map Strapi post to BlogPost format - use documentId for the ID
+          const mappedPost: BlogPost = {
+            id: documentId || post.slug || String(post.id),
+            title: post.title,
+            excerpt: post.excerpt,
+            content: post.content,
+            author: {
+              id: String(post.author.id),
+              name: post.author.name,
+              avatar: getAvatarUrl(post.author.avatar) || "/images/Avatar.jpg",
+              role: post.author.role || "Author",
+              bio: post.author.bio,
+              reputation: post.author.reputation || 0,
+              postCount: post.author.postCount || 0,
+            },
+            category: post.category.slug || String(post.category.id),
+            tags: post.tags || [],
+            publishedAt: post.publishedAt,
+            updatedAt: post.updatedAt,
+            readTime: post.readTime,
+            views: post.views,
+            likes: post.likes,
+            bookmarks: 0, // Not in Strapi schema yet
+            comments: post.commentsCount,
+            coverImage: post.coverImage || null,
+            tableOfContents: [], // Can be generated from content if needed
+            isLiked: false,
+            isBookmarked: false,
+          };
+          
+          setPost(mappedPost);
+          
+          // Check if current user can edit this post - pass author ID directly to avoid refetching
+          try {
+            const userCanEdit = await isBlogPostAuthor(numericId, post.author.id);
+            setCanEdit(userCanEdit);
+      } catch (error) {
+            console.error("Error checking edit permission:", error);
+            setCanEdit(false);
+          }
+          
+          // Fetch comments for this post - use numeric ID
+          try {
+            const blogComments = await getBlogComments(numericId);
+            const mappedComments: Comment[] = blogComments.map((comment: BlogComment) => ({
+              id: String(comment.id),
+              content: comment.content,
+              author: {
+                id: String(comment.author.id),
+                name: comment.author.name,
+                avatar: comment.author.avatar || "/images/Avatar.jpg",
+      role: "Student",
+                joinDate: "Recently",
+                postCount: 0,
+                reputation: 0,
+                isOnline: false,
+              },
+              publishedAt: comment.publishedAt || comment.createdAt,
+              replies: (comment.replies || []).map((reply: BlogComment) => ({
+                id: String(reply.id),
+                content: reply.content,
+                author: {
+                  id: String(reply.author.id),
+                  name: reply.author.name,
+                  avatar: reply.author.avatar || "/images/Avatar.jpg",
+      role: "Student",
+                  joinDate: "Recently",
+                  postCount: 0,
+                  reputation: 0,
+      isOnline: false,
+                },
+                createdAt: reply.createdAt || reply.publishedAt || new Date().toISOString(),
+                likes: 0,
+                isLiked: false,
+              })),
+              isLiked: false,
+            }));
+            setComments(mappedComments);
+          } catch (error) {
+            console.error("Error fetching comments:", error);
+            setComments([]);
+          }
+          
+          // Fetch related posts dynamically - use numeric ID
+          if (post.category?.slug) {
+            try {
+            const related = await getRelatedBlogPosts(numericId, post.category.slug, 3);
+              if (related && related.length > 0) {
+                const mappedRelated = related.map((rp: any) => ({
+                  id: rp.slug || String(rp.id),
+                  title: rp.title,
+                  excerpt: rp.excerpt,
+                  coverImage: rp.coverImage || "/images/default-blog-cover.jpg",
+                  author: rp.author?.name || "Unknown",
+                  readTime: rp.readTime || 0,
+                }));
+                setRelatedPosts(mappedRelated);
+              }
+            } catch (error) {
+              console.warn("Error fetching related posts:", error);
+              setRelatedPosts([]);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching blog post:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  ]
+    
+    fetchBlogPost();
+  }, [postId]);
+
+  // Increment views when blog post is viewed (once per session)
+  useEffect(() => {
+    if (!postId || !post) return;
+    
+    if (typeof window !== 'undefined') {
+      const viewKey = `blog_viewed_${postId}`;
+      const hasViewed = sessionStorage.getItem(viewKey);
+      if (!hasViewed) {
+        sessionStorage.setItem(viewKey, 'true');
+        incrementBlogPostViews(postId).catch((error) => {
+          console.warn('[BlogDetailPage] Failed to increment views (non-critical):', error);
+        });
+      }
+    }
+  }, [postId, post]);
+
+  // All data is now fetched dynamically from Strapi
+
+  // Related posts are now fetched dynamically from Strapi (stored in state)
 
   const handleLike = () => {
     setIsLiked(!isLiked)
@@ -510,7 +382,7 @@ Happy coding!
     }
   }
 
-  const handleCommentSubmit = (e: React.FormEvent) => {
+  const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newCommentContent.trim()) {
       toast.error("Comment cannot be empty.", {
@@ -524,28 +396,54 @@ Happy coding!
       return;
     }
 
-    const newComment: Comment = {
-      id: `c-${Date.now()}`,
+    if (!post || !postNumericId) {
+      toast.error("Post not found.");
+      return;
+    }
+
+    try {
+      const createdComment = await createBlogComment({
       content: newCommentContent,
+        postId: postNumericId,
+      });
+
+      if (createdComment) {
+        // Refresh comments to get the latest data
+        const blogComments = await getBlogComments(postNumericId);
+        const mappedComments: Comment[] = blogComments.map((comment: BlogComment) => ({
+          id: String(comment.id),
+          content: comment.content,
       author: {
-        id: "current-user", // Replace with actual current user ID
-        name: "You",
-        avatar: "/images/Avatar.jpg", // Replace with actual current user avatar
+            id: String(comment.author.id),
+            name: comment.author.name,
+            avatar: comment.author.avatar || "/images/Avatar.jpg",
         role: "Student",
-        joinDate: new Date().toISOString().split('T')[0],
+            joinDate: "Recently",
         postCount: 0,
         reputation: 0,
-        isOnline: true,
-      },
-      publishedAt: new Date().toISOString().split('T')[0],
+            isOnline: false,
+          },
+          publishedAt: comment.publishedAt || comment.createdAt,
+          replies: (comment.replies || []).map((reply: BlogComment) => ({
+            id: String(reply.id),
+            content: reply.content,
+            author: {
+              id: String(reply.author.id),
+              name: reply.author.name,
+              avatar: reply.author.avatar || "/images/Avatar.jpg",
+              role: "Student",
+              joinDate: "Recently",
+              postCount: 0,
+              reputation: 0,
+              isOnline: false,
+            },
+            createdAt: reply.createdAt || reply.publishedAt || new Date().toISOString(),
       likes: 0,
-      dislikes: 0,
       isLiked: false,
-      isDisliked: false,
-      replies: [],
-    };
-
-    setComments(prev => [...prev, newComment]);
+          })),
+          isLiked: false,
+        }));
+        setComments(mappedComments);
     setPost(prev => prev ? { ...prev, comments: prev.comments + 1 } : null);
     setNewCommentContent("");
     toast.success("Comment posted successfully!", {
@@ -556,9 +454,21 @@ Happy coding!
       },
       closeButton: false,
     });
+      }
+    } catch (error: any) {
+      console.error("Error creating comment:", error);
+      toast.error(error.message || "Failed to post comment", {
+        position: "top-center",
+        action: {
+          label: "Close",
+          onClick: () => {},
+        },
+        closeButton: false,
+      });
+    }
   }
 
-  const handleReplySubmit = (commentId: string) => {
+  const handleReplySubmit = async (commentId: string) => {
     if (!replyContent.trim()) {
       toast.error("Reply cannot be empty.", {
         position: "top-center",
@@ -571,30 +481,56 @@ Happy coding!
       return;
     }
 
-    const newReply: ForumReply = {
-      id: `r-${Date.now()}`,
+    if (!post || !postNumericId) {
+      toast.error("Post not found.");
+      return;
+    }
+
+    try {
+      const createdReply = await createBlogComment({
       content: replyContent,
+        postId: postNumericId,
+        parentCommentId: commentId,
+      });
+
+      if (createdReply) {
+        // Refresh comments to get the latest data
+        const blogComments = await getBlogComments(postNumericId);
+        const mappedComments: Comment[] = blogComments.map((comment: BlogComment) => ({
+          id: String(comment.id),
+          content: comment.content,
       author: {
-        id: "current-user", // Replace with actual current user ID
-        name: "You",
-        avatar: "/images/Avatar.jpg", // Replace with actual current user avatar
+            id: String(comment.author.id),
+            name: comment.author.name,
+            avatar: comment.author.avatar || "/images/Avatar.jpg",
         role: "Student",
-        joinDate: new Date().toISOString().split('T')[0],
+            joinDate: "Recently",
         postCount: 0,
         reputation: 0,
-        isOnline: true,
-      },
-      createdAt: new Date().toISOString().split('T')[0],
+            isOnline: false,
+          },
+          publishedAt: comment.publishedAt || comment.createdAt,
+          replies: (comment.replies || []).map((reply: BlogComment) => ({
+            id: String(reply.id),
+            content: reply.content,
+            author: {
+              id: String(reply.author.id),
+              name: reply.author.name,
+              avatar: reply.author.avatar || "/images/Avatar.jpg",
+              role: "Student",
+              joinDate: "Recently",
+              postCount: 0,
+              reputation: 0,
+              isOnline: false,
+            },
+            createdAt: reply.createdAt || reply.publishedAt || new Date().toISOString(),
       likes: 0,
       isLiked: false,
-    };
-
-    setComments(prev => prev.map(comment =>
-        comment.id === commentId
-            ? { ...comment, replies: [...comment.replies, newReply] }
-            : comment
-    ));
-    setPost(prev => prev ? { ...prev, comments: prev.comments + 1 } : null); // Increment total comments count
+          })),
+          isLiked: false,
+        }));
+        setComments(mappedComments);
+        setPost(prev => prev ? { ...prev, comments: prev.comments + 1 } : null);
     setReplyContent("");
     setReplyingTo(null);
     toast.success("Reply posted successfully!", {
@@ -605,6 +541,18 @@ Happy coding!
       },
       closeButton: false,
     });
+      }
+    } catch (error: any) {
+      console.error("Error creating reply:", error);
+      toast.error(error.message || "Failed to post reply", {
+        position: "top-center",
+        action: {
+          label: "Close",
+          onClick: () => {},
+        },
+        closeButton: false,
+      });
+    }
   }
 
   const toggleCommentExpansion = (commentId: string) => {
@@ -643,16 +591,50 @@ Happy coding!
     })
   }
 
-  const renderComment = (comment: Comment, depth: number = 0) => (
+  const handleDelete = async () => {
+    if (!post || !postNumericId) {
+      toast.error("Post not found.");
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deleteBlogPost(postNumericId);
+      toast.success("Blog post deleted successfully!", {
+        position: "top-center",
+        action: {
+          label: "Close",
+          onClick: () => {},
+        },
+        closeButton: false,
+      });
+      router.push("/blog");
+    } catch (error: any) {
+      console.error("Error deleting blog post:", error);
+      toast.error(error.message || "Failed to delete blog post", {
+        position: "top-center",
+        action: {
+          label: "Close",
+          onClick: () => {},
+        },
+        closeButton: false,
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  }
+
+  function renderComment(comment: Comment, depth: number = 0) {
+    return (
       <div key={comment.id} className={`${depth > 0 ? 'ml-8 mt-4' : 'mb-6'}`}>
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="p-4">
+        <div className="py-4">
             <div className="flex items-start gap-3">
               <Avatar
                   className="w-8 h-8 mt-1 cursor-pointer"
                   onClick={() => handleUserClick(comment.author.id)}
               >
-                <AvatarImage src={comment.author.avatar} />
+                <AvatarImage src={comment.author.avatar || "/images/Avatar.jpg"} />
                 <AvatarFallback className="text-xs">
                   {comment.author.name.split(" ").map(n => n[0]).join("")}
                 </AvatarFallback>
@@ -683,7 +665,7 @@ Happy coding!
                           onClick: () => {},
                         },
                         closeButton: false,
-                      })} // Placeholder
+                      })}
                   >
                     <Heart className="w-3 h-3 mr-1" />
                     {comment.likes}
@@ -695,7 +677,7 @@ Happy coding!
                       className="h-6 px-2"
                       onClick={() => {
                         setReplyingTo(replyingTo === comment.id ? null : comment.id);
-                        setReplyContent(""); // Clear reply input when toggling
+                        setReplyContent("");
                       }}
                   >
                     <Reply className="w-3 h-3 mr-1" />
@@ -725,7 +707,7 @@ Happy coding!
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="mt-3 p-3 bg-accent/50 rounded-lg"
+                          className="mt-3 p-3"
                       >
                         <form onSubmit={(e) => { e.preventDefault(); handleReplySubmit(comment.id); }}>
                           <Textarea
@@ -755,21 +737,21 @@ Happy coding!
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
       </div>
-  )
+        </div>
+    );
+  };
 
-  const renderReply = (reply: ForumReply, depth: number = 0) => (
+  const renderReply = (reply: ForumReply, depth: number = 0): React.JSX.Element => {
+    return (
       <div key={reply.id} className={`${depth > 0 ? 'ml-8 mt-4' : 'mb-6'}`}>
-        <Card className="hover:shadow-sm transition-shadow">
-          <CardContent className="p-3">
+        <div className="py-3">
             <div className="flex items-start gap-3">
               <Avatar
                   className="w-7 h-7 mt-1 cursor-pointer"
                   onClick={() => handleUserClick(reply.author.id)}
               >
-                <AvatarImage src={reply.author.avatar} />
+                <AvatarImage src={reply.author.avatar || "/images/Avatar.jpg"} />
                 <AvatarFallback className="text-xs">
                   {reply.author.name.split(" ").map(n => n[0]).join("")}
                 </AvatarFallback>
@@ -805,10 +787,10 @@ Happy coding!
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
       </div>
-  )
+      </div>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -835,7 +817,7 @@ Happy coding!
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
         <HeaderUltra />
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+        <div className="container mx-auto pt-24">
           {/* Back Button */}
           <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -844,7 +826,7 @@ Happy coding!
           >
             <Button
                 variant="ghost"
-                onClick={() => router.back()}
+                onClick={() => router.push("/blog")}
                 className="flex items-center gap-2 hover:bg-accent/20"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -852,9 +834,9 @@ Happy coding!
             </Button>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="w-full mx-auto">
             {/* Main Content */}
-            <div className="lg:col-span-3">
+            <div>
               {/* Article HeaderUltra */}
               <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -863,12 +845,33 @@ Happy coding!
               >
                 {/* Cover Image */}
                 <div className="relative w-full h-64 md:h-96 rounded-xl overflow-hidden mb-8">
-                  <img
-                      src={post.coverImage}
-                      alt={post.title}
-                      className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  {post.coverImage && typeof post.coverImage === 'string' && post.coverImage.trim() !== '' ? (
+                    <>
+                      <img
+                          src={post.coverImage}
+                          alt={post.title}
+                          className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    </>
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative overflow-hidden">
+                      {/* Animated gradient overlay for depth */}
+                      <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/50 via-transparent to-purple-600/50 animate-pulse" />
+                      {/* Decorative pattern */}
+                      <div className="absolute inset-0 opacity-20">
+                        <div className="absolute top-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
+                        <div className="absolute bottom-0 right-0 w-64 h-64 bg-purple-300/20 rounded-full blur-3xl" />
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-blue-300/15 rounded-full blur-2xl" />
+                      </div>
+                      {/* Title overlay for visual interest */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-white/30 font-bold text-6xl md:text-8xl select-none">
+                          {post.title.charAt(0).toUpperCase()}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Meta Info */}
@@ -905,7 +908,7 @@ Happy coding!
                         className="w-12 h-12 cursor-pointer"
                         onClick={() => handleUserClick(post.author.id)}
                     >
-                      <AvatarImage src={post.author.avatar} />
+                      <AvatarImage src={post.author.avatar || "/images/Avatar.jpg"} />
                       <AvatarFallback>
                         {post.author.name.split(" ").map(n => n[0]).join("")}
                       </AvatarFallback>
@@ -923,6 +926,28 @@ Happy coding!
 
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2">
+                    {canEdit && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push(`/blog/${post?.id || postId}/edit`)}
+                          className="mr-2"
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowDeleteDialog(true)}
+                          className="mr-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </Button>
+                      </>
+                    )}
                     <Button
                         variant="ghost"
                         size="sm"
@@ -978,16 +1003,9 @@ Happy coding!
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="prose prose-lg max-w-none mb-12"
+                  className="mb-12 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8"
               >
-                <Card>
-                  <CardContent className="p-8">
-                    <div
-                        className="prose prose-lg max-w-none"
-                        dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, '<br>') }}
-                    />
-                  </CardContent>
-                </Card>
+                <BlogContentRenderer content={post.content} />
               </motion.div>
 
               {/* Author Bio */}
@@ -995,16 +1013,14 @@ Happy coding!
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="mb-12"
+                  className="mb-12 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8"
               >
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-6">
+                <div className="flex items-start gap-6 py-8 border-t border-border/50">
                       <Avatar
                           className="w-20 h-20 cursor-pointer"
                           onClick={() => handleUserClick(post.author.id)}
                       >
-                        <AvatarImage src={post.author.avatar} />
+                    <AvatarImage src={post.author.avatar || "/images/Avatar.jpg"} />
                         <AvatarFallback>
                           {post.author.name.split(" ").map(n => n[0]).join("")}
                         </AvatarFallback>
@@ -1039,125 +1055,9 @@ Happy coding!
                         {isFollowingAuthor ? "Following" : "Follow"}
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
               </motion.div>
 
-              {/* Comments Section */}
-              <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="mb-12"
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MessageCircle className="w-5 h-5" />
-                      Comments ({comments.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    {/* Add Comment Form */}
-                    <form onSubmit={handleCommentSubmit} className="mb-8">
-                      <Textarea
-                          placeholder="Share your thoughts..."
-                          value={newCommentContent}
-                          onChange={(e) => setNewCommentContent(e.target.value)}
-                          className="mb-4"
-                      />
-                      <Button type="submit" disabled={!newCommentContent.trim()}>
-                        Post Comment
-                      </Button>
-                    </form>
-
-                    <Separator className="mb-6" />
-
-                    {/* Comments List */}
-                    <div className="space-y-6">
-                      {comments.map(comment => renderComment(comment))}
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Table of Contents */}
-              <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 }}
-              >
-                <Card className="sticky top-24">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Table of Contents</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <nav className="space-y-2">
-                      {post.tableOfContents.map((item, index) => (
-                          <a
-                              key={index}
-                              href={`#${item.anchor}`}
-                              className={`block text-sm hover:text-primary transition-colors ${
-                                  item.level === 1 ? 'font-medium' :
-                                      item.level === 2 ? 'ml-4' : 'ml-8 text-muted-foreground'
-                              }`}
-                          >
-                            {item.title}
-                          </a>
-                      ))}
-                    </nav>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Related Posts */}
-              <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 }}
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5" />
-                      Related Articles
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="space-y-4">
-                      {relatedPosts.map((relatedPost) => (
-                          <div
-                              key={relatedPost.id}
-                              className="group cursor-pointer"
-                              onClick={() => router.push(`/blog/${relatedPost.id}`)}
-                          >
-                            <div className="flex gap-3">
-                              <img
-                                  src={relatedPost.coverImage}
-                                  alt={relatedPost.title}
-                                  className="w-20 h-16 object-cover rounded-lg group-hover:scale-105 transition-transform"
-                              />
-                              <div className="flex-1">
-                                <h4 className="font-medium text-sm group-hover:text-primary transition-colors line-clamp-2 mb-2">
-                                  {relatedPost.title}
-                                </h4>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <span>{relatedPost.author}</span>
-                                  <span>•</span>
-                                  <span>{relatedPost.readTime} min read</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
           </div>
         </div>
 
@@ -1176,6 +1076,50 @@ Happy coding!
             title={post.title}
             onSubmit={handleReportSubmit}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Blog Post</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Are you sure you want to delete this blog post? This action cannot be undone. 
+                All associated images (cover image and SEO image) will also be deleted.
+              </p>
+              <p className="text-sm font-medium">
+                Post: {post?.title}
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Footer />
       </div>

@@ -82,6 +82,13 @@ export async function createUserWishlist(userId: string | number, courseId: stri
         const userDocId = await resolveDocumentIdByNumericId("users", numericUserId)
         const courseDocId = await resolveDocumentIdByNumericId("course-courses", numericCourseId)
 
+        console.log("[createUserWishlist] Resolved IDs:", {
+            userId: numericUserId,
+            courseId: numericCourseId,
+            userDocId,
+            courseDocId
+        })
+
         const payload: any = {
             user: userDocId
                 ? { connect: [{ documentId: userDocId }] }
@@ -91,25 +98,73 @@ export async function createUserWishlist(userId: string | number, courseId: stri
                 : numericCourseId,
         }
 
+        console.log("[createUserWishlist] Payload:", payload)
+
         const response = await strapi.post(`/api/user-wishlists?${query}`, {
             data: payload,
         })
+        
+        console.log("[createUserWishlist] Response:", response.data)
+        
         const entry = response.data?.data
-        return normalizeWishlistEntry(entry)
+        if (!entry) {
+            throw new Error("No entry returned from Strapi")
+        }
+        
+        const normalized = normalizeWishlistEntry(entry)
+        console.log("[createUserWishlist] Normalized entry:", normalized)
+        
+        return normalized
     } catch (error: any) {
-        console.error("[createUserWishlist] Failed:", error?.response?.data || error)
-        throw new Error(error?.response?.data?.error?.message || "Unable to save wishlist")
+        console.error("[createUserWishlist] Failed:", {
+            error,
+            response: error?.response?.data,
+            status: error?.response?.status,
+            userId: numericUserId,
+            courseId: numericCourseId
+        })
+        
+        // Extract detailed error message
+        const errorMessage = error?.response?.data?.error?.message 
+            || error?.message 
+            || `Unable to save wishlist (Status: ${error?.response?.status || 'unknown'})`
+        
+        throw new Error(errorMessage)
     }
 }
 
-export async function deleteUserWishlist(wishlistId: number | string): Promise<boolean> {
+export async function deleteUserWishlist(wishlistId: number | string, documentId?: string): Promise<boolean> {
     if (!wishlistId && wishlistId !== 0) throw new Error("Missing wishlist id")
     try {
-        await strapi.delete(`/api/user-wishlists/${wishlistId}`)
-        return true
+        // In Strapi v5, prefer documentId over numeric ID for deletion
+        const identifier = documentId || String(wishlistId)
+        console.log("[deleteUserWishlist] Deleting with identifier:", identifier, { wishlistId, documentId })
+        
+        const response = await strapi.delete(`/api/user-wishlists/${identifier}`)
+        console.log("[deleteUserWishlist] Delete response:", response)
+        
+        // Check if deletion was successful
+        if (response.status === 200 || response.status === 204) {
+            return true
+        }
+        
+        // If we get here, something unexpected happened
+        throw new Error(`Unexpected response status: ${response.status}`)
     } catch (error: any) {
-        console.error("[deleteUserWishlist] Failed:", error?.response?.data || error)
-        throw new Error(error?.response?.data?.error?.message || "Unable to remove wishlist")
+        console.error("[deleteUserWishlist] Failed:", {
+            error,
+            response: error?.response?.data,
+            status: error?.response?.status,
+            wishlistId,
+            documentId
+        })
+        
+        // Extract detailed error message
+        const errorMessage = error?.response?.data?.error?.message 
+            || error?.message 
+            || `Unable to remove wishlist (Status: ${error?.response?.status || 'unknown'})`
+        
+        throw new Error(errorMessage)
     }
 }
 

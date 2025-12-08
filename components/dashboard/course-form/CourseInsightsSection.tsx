@@ -76,7 +76,7 @@ export function CourseInsightsSection({
     return (
         <div className="rounded-2xl bg-background overflow-hidden">
             {isLoading ? (
-                <div className="flex items-center justify-center p-12">
+                <div className="flex items-center justify-center p-12 min-h-screen flex justify-center items-center">
                     <Loader2 className="w-6 h-6 animate-spin text-primary" />
                     <span className="ml-2 text-muted-foreground">Loading insights...</span>
                 </div>

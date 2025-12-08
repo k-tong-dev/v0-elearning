@@ -231,6 +231,7 @@ interface BasicsState {
     discount_percentage: number;
     discount_fix_price: number;
     duration_minutes: number;
+    enrollment_limit: number;
     preview_available: boolean;
     preview_url: string;
     course_level?: number | null;
@@ -436,6 +437,7 @@ export default function CreateCourseForm({
         discount_percentage: 0,
         discount_fix_price: 0,
         duration_minutes: 0,
+        enrollment_limit: 0,
         preview_available: false,
         preview_url: "",
         course_level: null,
@@ -1081,6 +1083,7 @@ export default function CreateCourseForm({
                     discount_percentage: existingCourse.discount_percentage || existingCourse.discount_percentage || 0,
                     discount_fix_price: existingCourse.discount_fix_price || 0,
                     duration_minutes: existingCourse.duration_minutes || 0,
+                    enrollment_limit: existingCourse.enrollment_limit || 0,
                     preview_available: existingCourse.preview_available || false,
                     preview_url: existingCourse.preview_url || "",
                     course_level: existingCourse.course_level?.id || null,
@@ -1588,6 +1591,7 @@ export default function CreateCourseForm({
             discount_fix_price: computedDiscountFixPrice,
             preview_available: basics.preview_available,
             duration_minutes: basics.duration_minutes,
+            enrollment_limit: basics.enrollment_limit,
             course_level: basics.course_level ?? null,
             course_categories: basics.course_categories ?? [],
             course_tages: basics.course_tages ?? [],
@@ -1615,6 +1619,7 @@ export default function CreateCourseForm({
             discount_fix_price: courseData.discount_fix_price,
             preview_available: courseData.preview_available,
             duration_minutes: courseData.duration_minutes,
+            enrollment_limit: courseData.enrollment_limit,
             course_level: courseData.course_level ? { connect: [{ id: courseData.course_level }] } : null,
             course_categories: courseData.course_categories && courseData.course_categories.length > 0 ? { set: courseData.course_categories.map(id => ({ id })) } : { set: [] },
             course_tages: courseData.course_tages && courseData.course_tages.length > 0 ? { set: courseData.course_tages.map(id => ({ id })) } : { set: [] },
@@ -3525,6 +3530,7 @@ export default function CreateCourseForm({
                         : null,
                 preview_available: basics.preview_available,
                 duration_minutes: basics.duration_minutes,
+                enrollment_limit: basics.enrollment_limit,
                 course_level: basics.course_level ? { connect: [{ id: basics.course_level }] } : null,
                 course_categories: basics.course_categories && basics.course_categories.length > 0 ? { set: basics.course_categories.map(id => ({ id })) } : { set: [] },
                 course_tages: basics.course_tages && basics.course_tages.length > 0 ? { set: basics.course_tages.map(id => ({ id })) } : { set: [] },
@@ -3790,6 +3796,19 @@ export default function CreateCourseForm({
                         />
                         <p className="mt-1 text-xs text-muted-foreground">
                             Approximate total runtime across all materials.
+                        </p>
+                                                    </div>
+                    <div>
+                        <Label htmlFor="enrollment_limit">Enrollment Limit</Label>
+                        <NumberInput
+                            id="enrollment_limit"
+                            value={basics.enrollment_limit}
+                            onValueChange={(val) => handleBasicsChange("enrollment_limit", Math.floor(val))}
+                            minValue={0}
+                            endContent={<span className="text-xs text-muted-foreground">students</span>}
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            Maximum number of students allowed to enroll. Set to 0 for unlimited enrollments.
                         </p>
                                                     </div>
                                                 </div>

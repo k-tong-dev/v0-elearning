@@ -54,7 +54,18 @@ import { getAvatarUrl } from "@/lib/getAvatarUrl"
 export default function CoursesPage() {
     const router = useRouter()
     const { user, isAuthenticated } = useAuth()
-    const { addToCart, isInCart } = useCart()
+    const { addToCart, isInCart, isInCartByDocumentId, items: cartItems, isLoading: isCartLoading } = useCart()
+    
+    // Debug: Log cart state
+    useEffect(() => {
+        console.log("[CoursesPage] Cart state:", {
+            cartItemsCount: cartItems.length,
+            cartItems: cartItems,
+            isCartLoading,
+            isAuthenticated,
+            userId: user?.id
+        })
+    }, [cartItems, isCartLoading, isAuthenticated, user?.id])
     const [isSearching, setIsSearching] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedCategories, setSelectedCategories] = useState<string[]>(["all"])
@@ -94,7 +105,7 @@ export default function CoursesPage() {
         (typeof (user as any)?.avatarUrl === "string" ? (user as any)?.avatarUrl : null)
     const [coursePreviewMap, setCoursePreviewMap] = useState<Record<string, CoursePreview | null>>({})
     const [enrichedCoursesData, setEnrichedCoursesData] = useState<CourseCourse[]>([])
-    
+
     // Enrich instructor data with avatars from instructor API
     useEffect(() => {
         if (!coursesData.length) {
@@ -324,8 +335,98 @@ export default function CoursesPage() {
 
         loadWishlist()
 
+        // Listen for wishlist changes from other components (like CartModal)
+        const handleWishlistChange = (event: CustomEvent) => {
+            if (!isMounted || !user?.id) return
+            
+            const { action, courseId, courseDocumentId, skipReload } = event.detail || {}
+            
+            // Optimistic update: Update UI immediately based on action
+            if (action === 'removed' && (courseId || courseDocumentId)) {
+                console.log("Event received - removing favorite:", { action, courseId, courseDocumentId, currentFavorites: favorites.length })
+                
+                // Find the courseId from the wishlist entry if we only have courseDocumentId
+                let targetCourseId = courseId
+                if (!targetCourseId && courseDocumentId) {
+                    const entryToRemove = wishlistEntries.find(entry => entry.courseDocumentId === courseDocumentId)
+                    if (entryToRemove?.courseId) {
+                        targetCourseId = entryToRemove.courseId
+                        console.log("Found courseId from wishlist entry:", targetCourseId)
+                    }
+                }
+                
+                setWishlistEntries(prev => {
+                    const before = prev.length
+                    const filtered = courseDocumentId
+                        ? prev.filter(entry => entry.courseDocumentId !== courseDocumentId)
+                        : prev.filter(entry => {
+                            const entryId = Number(entry.courseId)
+                            const targetId = Number(courseId)
+                            return entryId !== targetId
+                        })
+                    console.log("Updated wishlistEntries:", { before, after: filtered.length })
+                    return filtered
+                })
+                
+                // Update favorites array - remove by courseId (critical for heart icon update)
+                if (targetCourseId) {
+                    setFavorites(prev => {
+                        const before = prev.length
+                        const filtered = prev.filter(id => {
+                            const entryId = Number(id)
+                            const targetId = Number(targetCourseId)
+                            const shouldKeep = entryId !== targetId
+                            if (!shouldKeep) {
+                                console.log("Removing courseId from favorites:", { entryId, targetId })
+                            }
+                            return shouldKeep
+                        })
+                        console.log("Updated favorites array:", { 
+                            targetCourseId, 
+                            before, 
+                            after: filtered.length,
+                            removed: before > filtered.length
+                        })
+                        return filtered
+                    })
+                } else {
+                    console.warn("No targetCourseId found for removal:", { courseId, courseDocumentId })
+                }
+            } else if (action === 'added' && (courseId || courseDocumentId)) {
+                // Only add if not already in list (check current state)
+                if (courseId) {
+                    setFavorites(prev => {
+                        if (prev.includes(courseId)) return prev
+                        return [...prev, courseId]
+                    })
+                }
+                setWishlistEntries(prev => {
+                    if (courseDocumentId && prev.some(entry => entry.courseDocumentId === courseDocumentId)) return prev
+                    if (courseId && prev.some(entry => entry.courseId === courseId)) return prev
+                    const tempEntry = {
+                        id: Date.now(),
+                        courseId: courseId,
+                        courseDocumentId: courseDocumentId
+                    }
+                    return [...prev, tempEntry as any]
+                })
+            }
+            
+            // Reload from server after a delay (unless skipReload is true)
+            if (!skipReload) {
+                setTimeout(() => {
+                    if (isMounted) {
+                        loadWishlist()
+                    }
+                }, 200)
+            }
+        }
+
+        window.addEventListener('wishlist-changed', handleWishlistChange as EventListener)
+
         return () => {
             isMounted = false
+            window.removeEventListener('wishlist-changed', handleWishlistChange as EventListener)
         }
     }, [user?.id])
 
@@ -391,6 +492,7 @@ export default function CoursesPage() {
             }
             return {
                 id: course.id,
+                documentId: course.documentId, // Include documentId for reliable cart comparison
                 title: course.name,
                 description: course.description || "No description available",
                 image: thumbnail,
@@ -574,32 +676,104 @@ export default function CoursesPage() {
         setTimeout(() => setIsSearching(false), 1000)
     }
 
-    const toggleFavorite = async (courseId: number) => {
+    const toggleFavorite = async (courseId: number, courseDocumentId?: string) => {
         if (!user?.id) {
         setFavorites((prev) => (prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]))
             return
         }
 
-        const existing = wishlistEntries.find(entry => entry.courseId === courseId)
+        // Find by documentId if available (more reliable), otherwise by courseId
+        const existing = courseDocumentId
+            ? wishlistEntries.find(entry => entry.courseDocumentId === courseDocumentId)
+            : wishlistEntries.find(entry => {
+                const entryId = Number(entry.courseId)
+                const targetId = Number(courseId)
+                return entryId === targetId && !isNaN(entryId) && !isNaN(targetId)
+            })
 
         try {
             setIsWishlistSyncing(true)
             if (existing) {
-                await deleteUserWishlist(existing.id)
+                // Optimistic update: Remove immediately
+                const previousWishlistEntries = [...wishlistEntries]
+                const previousFavorites = [...favorites]
                 setWishlistEntries(prev => prev.filter(entry => entry.id !== existing.id))
                 setFavorites(prev => prev.filter(id => id !== courseId))
-                toast.success("Removed from wishlist")
+                
+                // Dispatch event immediately
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('wishlist-changed', { 
+                        detail: { action: 'removed', courseId, courseDocumentId, skipReload: true } 
+                    }))
+                }
+                
+                // Use documentId for deletion (more reliable in Strapi v5)
+                const success = await deleteUserWishlist(existing.id, existing.documentId)
+                if (success) {
+                    toast.success("Successfully removed from wishlist")
+                } else {
+                    throw new Error("Delete operation returned false")
+                }
             } else {
+                // Optimistic update: Add immediately with temporary entry
+                const tempEntry = {
+                    id: Date.now(),
+                    courseId: courseId,
+                    courseDocumentId: courseDocumentId
+                }
+                
+                // Update state immediately - use functional updates to ensure we get latest state
+                setWishlistEntries(prev => {
+                    const updated = [...prev, tempEntry as any]
+                    console.log("Adding to wishlistEntries:", { courseId, newLength: updated.length })
+                    return updated
+                })
+                setFavorites(prev => {
+                    const updated = prev.includes(courseId) ? prev : [...prev, courseId]
+                    console.log("Adding to favorites:", { courseId, newLength: updated.length, includes: updated.includes(courseId) })
+                    return updated
+                })
+                
+                // Dispatch event immediately
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('wishlist-changed', { 
+                        detail: { action: 'added', courseId, courseDocumentId, skipReload: true } 
+                    }))
+                }
+                
+                console.log("Creating wishlist entry:", { userId: user.id, courseId, courseDocumentId })
                 const created = await createUserWishlist(user.id, courseId)
                 if (created) {
-                    setWishlistEntries(prev => [...prev, created])
-                    setFavorites(prev => [...prev, courseId])
-                    toast.success("Saved to wishlist")
+                    console.log("Successfully created wishlist entry:", created)
+                    // Replace temp entry with real one
+                    setWishlistEntries(prev => prev.map(entry => 
+                        entry.id === tempEntry.id ? created : entry
+                    ))
+                    toast.success("Successfully added to wishlist")
+                } else {
+                    // Revert on failure
+                    setWishlistEntries(prev => prev.filter(entry => entry.id !== tempEntry.id))
+                    setFavorites(prev => prev.filter(id => id !== courseId))
+                    toast.error("Failed to add to wishlist - no entry created")
                 }
             }
         } catch (error: any) {
             console.error("Failed to update wishlist:", error)
-            toast.error(error?.message || "Unable to update wishlist")
+            // Revert optimistic update on error
+            if (existing) {
+                setWishlistEntries(prev => {
+                    const reverted = [...prev]
+                    reverted.push(existing)
+                    return reverted
+                })
+                setFavorites(prev => [...prev, courseId])
+            } else {
+                setWishlistEntries(prev => prev.filter(entry => entry.courseId !== courseId))
+                setFavorites(prev => prev.filter(id => id !== courseId))
+            }
+            // Show detailed error message
+            const errorMessage = error?.message || error?.response?.data?.error?.message || "Unable to update wishlist"
+            toast.error(`Error: ${errorMessage}`)
         } finally {
             setIsWishlistSyncing(false)
         }
@@ -921,36 +1095,42 @@ export default function CoursesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10 min-h-[70vh]">
                     {isLoadingCourses || isSearching
                         ? Array.from({length: initialCoursesToShow}).map((_, index) => <CourseSkeleton key={index}/>)
-                        : displayedCourses.map((course, index) => (
-                            <div
-                                key={course.id}
-                                className="animate-fadeInUp"
-                                style={{ animationDelay: `${index * 100}ms` }}
-                            >
-                                <CourseCard
-                                    course={course}
-                                    onEnrollClick={handleEnrollClick}
-                                    onCourseClick={handleCourseClick}
-                                    onToggleFavorite={toggleFavorite}
-                                    onAddToCart={(courseId) => {
-                                        const courseData = displayedCourses.find(c => c.id === courseId)
-                                        if (courseData) {
-                                            addToCart({
-                                                id: courseData.id,
-                                                title: courseData.title,
-                                                description: courseData.description,
-                                                image: courseData.image,
-                                                priceValue: courseData.priceValue || 0,
-                                                price: courseData.price,
-                                                educator: courseData.educator
-                                            })
-                                        }
-                                    }}
-                                    isInCart={isInCart(course.id)}
-                                    isFavorite={favorites.includes(course.id)}
-                                />
-                            </div>
-                        ))}
+                        : displayedCourses.map((course, index) => {
+                            const courseInCart = course.documentId
+                                ? isInCartByDocumentId(course.documentId)
+                                : isInCart(course.id)
+                            
+                            return (
+                                <div
+                                    key={`${course.id}-${courseInCart}`}
+                                    className="animate-fadeInUp"
+                                    style={{ animationDelay: `${index * 100}ms` }}
+                                >
+                                    <CourseCard
+                                        course={course}
+                                        onEnrollClick={handleEnrollClick}
+                                        onCourseClick={handleCourseClick}
+                                        onToggleFavorite={toggleFavorite}
+                                        onAddToCart={(courseId) => {
+                                            const courseData = displayedCourses.find(c => c.id === courseId)
+                                            if (courseData) {
+                                                addToCart({
+                                                    id: courseData.id,
+                                                    title: courseData.title,
+                                                    description: courseData.description,
+                                                    image: courseData.image,
+                                                    priceValue: courseData.priceValue || 0,
+                                                    price: courseData.price,
+                                                    educator: courseData.educator
+                                                })
+                                            }
+                                        }}
+                                        isInCart={courseInCart}
+                                        isFavorite={favorites.some(id => Number(id) === Number(course.id))}
+                                    />
+                                </div>
+                            )
+                        })}
                 </div>
 
                 {hasMore && displayedCourses.length > 0 && (

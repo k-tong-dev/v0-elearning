@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button, Chip } from "@heroui/react"
@@ -14,7 +14,7 @@ import dynamic from "next/dynamic"
 const ReactPlayer = dynamic(() => import("react-player"), { ssr: false })
 import { getPublicCourseCourses } from "@/integrations/strapi/courseCourse"
 import { cn } from "@/utils/utils"
-import { getUserWishlists, deleteUserWishlist, UserWishlistEntry } from "@/integrations/strapi/userWishlist"
+import { getUserWishlists, deleteUserWishlist, createUserWishlist, UserWishlistEntry } from "@/integrations/strapi/userWishlist"
 import { getAvatarUrl } from "@/lib/getAvatarUrl"
 import { getCoursePreview, getCoursePreviewUrl } from "@/integrations/strapi/coursePreview"
 import { MdRecommend } from "react-icons/md";
@@ -41,6 +41,8 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
     const [isLoadingWishlist, setIsLoadingWishlist] = useState(false)
     const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
     const [addingToCartId, setAddingToCartId] = useState<number | null>(null) // Track which course is being added
+    const [removingFromWishlistId, setRemovingFromWishlistId] = useState<string | null>(null) // Track which course is being removed (by documentId)
+    const [addingToWishlistId, setAddingToWishlistId] = useState<string | null>(null) // Track which course is being added to wishlist (by documentId)
 
     // Auto-select first item when cart loads
     useEffect(() => {
@@ -66,95 +68,7 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
         }
     }, [isOpen, isFullscreen])
 
-    // Auto-load recommended courses when modal opens OR when cart items change
-    useEffect(() => {
-        if (isOpen) {
-            // Clear old recommendations first to prevent stale data
-            setRecommendedCourses([])
-            loadRecommendedCourses()
-        }
-    }, [isOpen, items.length]) // Reload when modal opens or items count changes
-
-    // Auto-load wishlist when modal opens OR when cart items change (for authenticated users)
-    useEffect(() => {
-        if (isOpen && isAuthenticated && user) {
-            loadWishlist()
-        }
-    }, [isOpen, items.length, isAuthenticated, user]) // Reload when modal opens or items count changes
-
-    const loadRecommendedCourses = async () => {
-        try {
-            setIsLoadingRecommended(true)
-            const courses = await getPublicCourseCourses()
-            console.log(">>>>>>>>>>>>>>>>> Course Recommend: ", courses.map(c => ({ id: c.id, documentId: c.documentId, name: c.name })))
-            console.log(">>>>>>>>>>>>>>>>> Course Items: ", items.map(i => ({ 
-                cartId: i.id, 
-                courseId: i.courseId, 
-                courseDocumentId: i.courseDocumentId,
-                title: i.title 
-            })))
-            
-            // ✅ Use documentId for filtering (more reliable in Strapi v5)
-            const cartCourseDocumentIds = items.map(item => item.courseDocumentId).filter(Boolean)
-            console.log(">>>>>>>>>>>>>>>>> Cart Course DocumentIDs: ", cartCourseDocumentIds)
-            
-            // Filter: only paid courses, not in cart, random 6
-            const paidCourses = courses.filter(c => {
-                const isInCart = cartCourseDocumentIds.includes(c.documentId)
-                console.log(`Course ${c.id}/${c.documentId} (${c.name}) - In Cart: ${isInCart}`)
-                return c.is_paid && c.Price > 0 && !isInCart
-            })
-            console.log(">>>>>>>>>>>>>>>>> Course Recommend After filter: ", paidCourses.map(c => ({ id: c.id, documentId: c.documentId, name: c.name })))
-
-            // If no courses after filtering, clear the list
-            if (paidCourses.length === 0) {
-                console.log("⚠️ No courses available after filtering - all courses are in cart")
-                setRecommendedCourses([]);
-                return
-            }
-
-            const shuffled = paidCourses.sort(() => 0.5 - Math.random())
-            const selected = shuffled.slice(0, 6)
-            
-            // Fetch course preview images and types using getCoursePreview()
-            const coursesWithImages = await Promise.all(
-                selected.map(async (course) => {
-                    let imageUrl = "/placeholder.svg"
-                    let previewType: "image" | "url" | "video" = "image"
-                    
-                    const previewId = course.course_preview?.id || course.course_preview?.documentId;
-                    if (previewId) {
-                        try {
-                            const preview = await getCoursePreview(previewId);
-                            if (preview) {
-                                previewType = preview.types || "image"
-                                const previewUrl = getCoursePreviewUrl(preview);
-                                if (previewUrl) {
-                                    imageUrl = previewUrl
-                                }
-                            }
-                        } catch (error) {
-                            console.warn("Failed to fetch course preview:", error)
-                        }
-                    }
-                    return {
-                        ...course,
-                        preloadedImage: getAvatarUrl(imageUrl) || "/placeholder.svg",
-                        previewType: previewType
-                    }
-                })
-            )
-            
-            console.log("✅ Setting recommended courses:", coursesWithImages.length)
-            setRecommendedCourses(coursesWithImages)
-        } catch (error) {
-            console.error("Failed to load recommended courses:", error)
-        } finally {
-            setIsLoadingRecommended(false)
-        }
-    }
-
-    const loadWishlist = async () => {
+    const loadWishlist = useCallback(async () => {
         if (!user?.id) return
         try {
             setIsLoadingWishlist(true)
@@ -163,8 +77,17 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
             // Load course details for each wishlist item
             const courses = await getPublicCourseCourses()
             const wishlistPromises = wishlists.map(async (wishlist) => {
-                const course = courses.find(c => c.id === wishlist.courseId)
+                // Find course by documentId first (more reliable), then fallback to numeric ID
+                const course = wishlist.courseDocumentId
+                    ? courses.find(c => c.documentId === wishlist.courseDocumentId)
+                    : courses.find(c => c.id === wishlist.courseId)
+                
                 if (!course) {
+                    console.warn("Course not found for wishlist entry:", {
+                        wishlistId: wishlist.id,
+                        courseId: wishlist.courseId,
+                        courseDocumentId: wishlist.courseDocumentId
+                    })
                     return {
                         ...wishlist,
                         course: undefined
@@ -212,20 +135,263 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
         } finally {
             setIsLoadingWishlist(false)
         }
+    }, [user?.id])
+
+    // Auto-load recommended courses when modal opens OR when cart items change
+    useEffect(() => {
+        if (isOpen) {
+            // Clear old recommendations first to prevent stale data
+            setRecommendedCourses([])
+            loadRecommendedCourses()
+        }
+    }, [isOpen, items.length]) // Reload when modal opens or items count changes
+
+    // Auto-load wishlist when modal opens OR when cart items change (for authenticated users)
+    useEffect(() => {
+        if (isOpen && isAuthenticated && user) {
+            loadWishlist()
+        }
+    }, [isOpen, items.length, isAuthenticated, user, loadWishlist]) // Reload when modal opens or items count changes
+
+    // Listen for wishlist changes from other components (like courses page)
+    useEffect(() => {
+        const handleWishlistChange = (event: CustomEvent) => {
+            // Skip reload if the event says to skip (to prevent overwriting optimistic updates)
+            if (event.detail?.skipReload) {
+                return
+            }
+            if (isAuthenticated && user) {
+                loadWishlist()
+            }
+        }
+
+        window.addEventListener('wishlist-changed', handleWishlistChange as EventListener)
+        return () => {
+            window.removeEventListener('wishlist-changed', handleWishlistChange as EventListener)
+        }
+    }, [isAuthenticated, user, loadWishlist])
+
+    const loadRecommendedCourses = async () => {
+        try {
+            setIsLoadingRecommended(true)
+            const courses = await getPublicCourseCourses()
+
+            const cartCourseDocumentIds = items.map(item => item.courseDocumentId).filter(Boolean)
+
+            // Filter: only paid courses, not in cart, random 6
+            const paidCourses = courses.filter(c => {
+                const isInCart = cartCourseDocumentIds.includes(c.documentId)
+                console.log(`Course ${c.id}/${c.documentId} (${c.name}) - In Cart: ${isInCart}`)
+                return c.is_paid && c.Price > 0 && !isInCart
+            })
+            if (paidCourses.length === 0) {
+                setRecommendedCourses([]);
+                return
+            }
+
+            const shuffled = paidCourses.sort(() => 0.5 - Math.random())
+            const selected = shuffled.slice(0, 6)
+            
+            const coursesWithImages = await Promise.all(
+                selected.map(async (course) => {
+                    let imageUrl = "/placeholder.svg"
+                    let previewType: "image" | "url" | "video" = "image"
+                    
+                    const previewId = course.course_preview?.id || course.course_preview?.documentId;
+                    if (previewId) {
+                        try {
+                            const preview = await getCoursePreview(previewId);
+                            if (preview) {
+                                previewType = preview.types || "image"
+                                const previewUrl = getCoursePreviewUrl(preview);
+                                if (previewUrl) {
+                                    imageUrl = previewUrl
+                                }
+                            }
+                        } catch (error) {
+                            console.warn("Failed to fetch course preview:", error)
+                        }
+                    }
+                    return {
+                        ...course,
+                        preloadedImage: getAvatarUrl(imageUrl) || "/placeholder.svg",
+                        previewType: previewType
+                    }
+                })
+            )
+            
+            console.log("✅ Setting recommended courses:", coursesWithImages.length)
+            setRecommendedCourses(coursesWithImages)
+        } catch (error) {
+            console.error("Failed to load recommended courses:", error)
+        } finally {
+            setIsLoadingRecommended(false)
+        }
     }
 
-    const handleRemoveFromWishlist = async (courseId: number) => {
-        const wishlistEntry = wishlistItems.find(item => item.courseId === courseId)
-        if (!wishlistEntry) return
+    const handleRemoveFromWishlist = async (courseDocumentId: string) => {
+        // Find by documentId instead of courseId
+        const wishlistEntry = wishlistItems.find(item => item.courseDocumentId === courseDocumentId)
+        if (!wishlistEntry) {
+            console.warn("Cannot remove: wishlist entry not found for courseDocumentId:", courseDocumentId)
+            toast.error("Favorite item not found")
+            return
+        }
+        
+        // Set loading state
+        setRemovingFromWishlistId(courseDocumentId)
+        
+        console.log("Removing favorite:", { 
+            courseDocumentId, 
+            wishlistEntryId: wishlistEntry.id, 
+            wishlistDocumentId: wishlistEntry.documentId,
+            currentCount: wishlistItems.length 
+        })
+        
+        // Optimistic update: Remove from UI immediately (this will make the card disappear instantly)
+        const previousWishlistItems = [...wishlistItems]
+        setWishlistItems(prev => {
+            const filtered = prev.filter(item => {
+                const itemDocId = item.courseDocumentId || item.course?.documentId
+                const shouldKeep = itemDocId !== courseDocumentId
+                if (!shouldKeep) {
+                    console.log("Removing item from wishlistItems:", { itemDocId, courseDocumentId, itemId: item.id })
+                }
+                return shouldKeep
+            })
+            console.log("After filter:", { before: prev.length, after: filtered.length, courseDocumentId, removed: prev.length > filtered.length })
+            return filtered
+        })
+        
+        // Dispatch custom event immediately for other components (but skip reload in this component)
+        // Include both courseId and courseDocumentId for proper matching
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('wishlist-changed', { 
+                detail: { 
+                    action: 'removed', 
+                    courseId: wishlistEntry.courseId, // Include courseId for courses page
+                    courseDocumentId, 
+                    skipReload: true 
+                } 
+            }))
+        }
         
         try {
-            await deleteUserWishlist(wishlistEntry.id)
-            setWishlistItems(prev => prev.filter(item => item.courseId !== courseId))
-            toast.success("Removed from favorites")
-        } catch (error) {
+            // Use documentId for deletion (more reliable in Strapi v5)
+            // Prefer documentId, fallback to numeric ID
+            const identifier = wishlistEntry.documentId || wishlistEntry.id
+            console.log("Deleting from Strapi with identifier:", identifier)
+            
+            const success = await deleteUserWishlist(wishlistEntry.id, wishlistEntry.documentId)
+            
+            if (success) {
+                console.log("Successfully deleted from Strapi")
+                toast.success("Successfully removed from favorites")
+            } else {
+                throw new Error("Delete operation returned false")
+            }
+        } catch (error: any) {
             console.error("Failed to remove from wishlist:", error)
-            toast.error("Failed to remove from favorites")
+            // Revert optimistic update on error
+            setWishlistItems(previousWishlistItems)
+            
+            // Show detailed error message
+            const errorMessage = error?.message || error?.response?.data?.error?.message || "Failed to remove from favorites"
+            toast.error(`Error: ${errorMessage}`)
+        } finally {
+            // Clear loading state
+            setRemovingFromWishlistId(null)
         }
+    }
+
+    const handleAddToWishlist = async (courseId: number, courseDocumentId?: string) => {
+        if (!user?.id) {
+            toast.error("Please sign in to add favorites")
+            return
+        }
+
+        // Check if already in wishlist by documentId (more reliable)
+        const existing = courseDocumentId 
+            ? wishlistItems.find(item => item.courseDocumentId === courseDocumentId)
+            : wishlistItems.find(item => item.courseId === courseId)
+        if (existing) {
+            toast.info("This course is already in your favorites")
+            return
+        }
+
+        // Set loading state
+        const loadingKey = courseDocumentId || String(courseId)
+        setAddingToWishlistId(loadingKey)
+
+        // Optimistic update: Create a temporary entry immediately
+        const tempEntry: UserWishlistEntry & { course?: any } = {
+            id: Date.now(), // Temporary ID
+            courseId: courseId,
+            courseDocumentId: courseDocumentId,
+            course: undefined // Will be loaded from server
+        }
+        setWishlistItems(prev => [...prev, tempEntry])
+        
+        // Dispatch custom event immediately for other components (but skip reload in this component)
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('wishlist-changed', { 
+                detail: { action: 'added', courseId, courseDocumentId, skipReload: true } 
+            }))
+        }
+
+        try {
+            console.log("Adding to wishlist:", { userId: user.id, courseId, courseDocumentId })
+            const created = await createUserWishlist(user.id, courseId)
+            
+            if (created) {
+                console.log("Successfully created wishlist entry:", created)
+                // Replace temp entry with real entry from server (includes full course data)
+                setWishlistItems(prev => {
+                    // Remove temp entry and add real one
+                    const withoutTemp = prev.filter(item => item.id !== tempEntry.id)
+                    // Load course data for the new entry
+                    return [...withoutTemp, {
+                        ...created,
+                        course: tempEntry.course // Keep any course data we had
+                    }]
+                })
+                
+                // Reload wishlist to get full course data
+                await loadWishlist()
+                toast.success("Successfully added to favorites")
+            } else {
+                throw new Error("Create operation returned null")
+            }
+        } catch (error: any) {
+            console.error("Failed to add to wishlist:", error)
+            // Revert optimistic update on error
+            setWishlistItems(prev => {
+                if (courseDocumentId) {
+                    return prev.filter(item => item.courseDocumentId !== courseDocumentId)
+                }
+                return prev.filter(item => item.courseId !== courseId)
+            })
+            
+            // Show detailed error message
+            const errorMessage = error?.message || error?.response?.data?.error?.message || "Failed to add to favorites"
+            toast.error(`Error: ${errorMessage}`)
+        } finally {
+            // Clear loading state
+            setAddingToWishlistId(null)
+        }
+    }
+
+    const isInWishlist = (courseId: number, courseDocumentId?: string) => {
+        // Prefer documentId comparison (more reliable in Strapi v5)
+        if (courseDocumentId) {
+            return wishlistItems.some(item => item.courseDocumentId === courseDocumentId)
+        }
+        // Fallback to numeric ID comparison
+        const targetId = Number(courseId)
+        return wishlistItems.some(item => {
+            const itemId = Number(item.courseId)
+            return itemId === targetId && !isNaN(itemId) && !isNaN(targetId)
+        })
     }
 
     const handleCheckout = async () => {
@@ -460,7 +626,7 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                                                 {tab.count > 0 && (
                                                     <Chip 
                                                         size="sm" 
-                                                        className={"bg-red-400 text-white"}
+                                                        className={"bg-pink-500 text-white"}
                                                     >
                                                         {tab.count}
                                                     </Chip>
@@ -587,16 +753,38 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                                                                             </div>
                                                                             
                                                                             <div className="flex flex-col items-end justify-between">
-                                                                                <div onClick={(e) => e.stopPropagation()}>
-                                                                                <Button
-                                                                                    isIconOnly
-                                                                                    variant="light"
-                                                                                    color="danger"
-                                                                                    size="sm"
-                                                                                    onPress={() => removeFromCart(item.courseId)}
-                                                                                >
-                                                                                    <Trash2 className="w-4 h-4" />
-                                                                                </Button>
+                                                                                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                                                                    {isAuthenticated && (
+                                                                                        <Button
+                                                                                            isIconOnly
+                                                                                            variant="light"
+                                                                                            color={isInWishlist(item.courseId, item.courseDocumentId) ? "danger" : "default"}
+                                                                                            size="sm"
+                                                                                            isLoading={addingToWishlistId === (item.courseDocumentId || String(item.courseId)) || removingFromWishlistId === (item.courseDocumentId || String(item.courseId))}
+                                                                                            isDisabled={addingToWishlistId === (item.courseDocumentId || String(item.courseId)) || removingFromWishlistId === (item.courseDocumentId || String(item.courseId))}
+                                                                                            onPress={() => {
+                                                                                                if (isInWishlist(item.courseId, item.courseDocumentId)) {
+                                                                                                    handleRemoveFromWishlist(item.courseDocumentId || String(item.courseId))
+                                                                                                } else {
+                                                                                                    handleAddToWishlist(item.courseId, item.courseDocumentId)
+                                                                                                }
+                                                                                            }}
+                                                                                        >
+                                                                                            <Heart className={cn(
+                                                                                                "w-4 h-4",
+                                                                                                isInWishlist(item.courseId, item.courseDocumentId) && "fill-current"
+                                                                                            )} />
+                                                                                        </Button>
+                                                                                    )}
+                                                                                    <Button
+                                                                                        isIconOnly
+                                                                                        variant="light"
+                                                                                        color="danger"
+                                                                                        size="sm"
+                                                                                        onPress={() => removeFromCart(item.courseId)}
+                                                                                    >
+                                                                                        <Trash2 className="w-4 h-4" />
+                                                                                    </Button>
                                                                                 </div>
                                                                                 <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
                                                                                     {item.priceFormatted}
@@ -756,14 +944,16 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                                                     </div>
                                                 ) : (
                                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                                        {wishlistItems.map((item, index) => (
-                                                            <motion.div
-                                                                key={item.id}
-                                                                initial={{ opacity: 0, y: 20 }}
-                                                                animate={{ opacity: 1, y: 0 }}
-                                                                transition={{ delay: index * 0.1 }}
-                                                                className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl transition-all group"
-                                                            >
+                                                        <AnimatePresence mode="popLayout">
+                                                            {wishlistItems.map((item, index) => (
+                                                                <motion.div
+                                                                    key={item.documentId || item.id || `wishlist-${item.courseId}`}
+                                                                    initial={{ opacity: 0, y: 20 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                                                                    transition={{ delay: index * 0.05, duration: 0.2 }}
+                                                                    className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl transition-all group"
+                                                                >
                                                                 <div className="relative aspect-video overflow-hidden bg-slate-100 dark:bg-slate-800">
                                                                     {item.course?.previewType === "url" || item.course?.previewType === "video" ? (
                                                                         <ReactPlayer
@@ -877,14 +1067,23 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                                                                             size="sm"
                                                                             variant="light"
                                                                             color="danger"
-                                                                            onPress={() => item.courseId && handleRemoveFromWishlist(item.courseId)}
+                                                                            isLoading={removingFromWishlistId === (item.courseDocumentId || item.course?.documentId)}
+                                                                            isDisabled={removingFromWishlistId === (item.courseDocumentId || item.course?.documentId)}
+                                                                            onPress={() => {
+                                                                                const docId = item.courseDocumentId || item.course?.documentId
+                                                                                if (docId) {
+                                                                                    handleRemoveFromWishlist(docId)
+                                                                                }
+                                                                            }}
                                                                         >
                                                                             <Trash2 className="w-4 h-4" />
                                                                         </Button>
                                                                     </div>
                                                                 </div>
                                                             </motion.div>
-                                                        ))}
+                                                            )
+                                                            )}
+                                                        </AnimatePresence>
                                                     </div>
                                                 )}
                                             </motion.div>
@@ -953,7 +1152,33 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                                                                         className="object-cover group-hover:scale-105 transition-transform"
                                                                     />
                                                                     )}
-                                                                    <div className="absolute top-3 right-3">
+                                                                    <div className="absolute top-3 right-3 flex gap-2">
+                                                                        {isAuthenticated && (
+                                                                            <Button
+                                                                                isIconOnly
+                                                                                size="sm"
+                                                                                variant="solid"
+                                                                                className={cn(
+                                                                                    "bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm",
+                                                                                    isInWishlist(course.id, course.documentId) && "bg-rose-500 text-white"
+                                                                                )}
+                                                                                isLoading={addingToWishlistId === (course.documentId || String(course.id)) || removingFromWishlistId === (course.documentId || String(course.id))}
+                                                                                isDisabled={addingToWishlistId === (course.documentId || String(course.id)) || removingFromWishlistId === (course.documentId || String(course.id))}
+                                                                                onPress={(e) => {
+                                                                                    e.stopPropagation()
+                                                                                    if (isInWishlist(course.id, course.documentId)) {
+                                                                                        handleRemoveFromWishlist(course.documentId || String(course.id))
+                                                                                    } else {
+                                                                                        handleAddToWishlist(course.id, course.documentId)
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                <Heart className={cn(
+                                                                                    "w-4 h-4",
+                                                                                    isInWishlist(course.id, course.documentId) && "fill-current"
+                                                                                )} />
+                                                                            </Button>
+                                                                        )}
                                                                         <Chip 
                                                                             className="bg-blue-500 text-white font-bold"
                                                                             size="sm"
@@ -982,17 +1207,39 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                                                                         </div>
                                                                     </div>
                                                                     
-                                                                    <div onClick={(e) => e.stopPropagation()}>
-                                                                    <Button
-                                                                        className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold"
-                                                                        size="sm"
-                                                                        startContent={addingToCartId === course.id ? null : <ShoppingCart className="w-4 h-4" />}
-                                                                        isDisabled={
-                                                                            (course.documentId && isInCartByDocumentId(course.documentId)) || 
-                                                                            isInCart(course.id) || 
-                                                                            addingToCartId === course.id
-                                                                        }
-                                                                        isLoading={addingToCartId === course.id}
+                                                                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                                                        {isAuthenticated && (
+                                                                            <Button
+                                                                                isIconOnly
+                                                                                size="sm"
+                                                                                variant="light"
+                                                                                color={isInWishlist(course.id, course.documentId) ? "danger" : "default"}
+                                                                                isLoading={addingToWishlistId === (course.documentId || String(course.id)) || removingFromWishlistId === (course.documentId || String(course.id))}
+                                                                                isDisabled={addingToWishlistId === (course.documentId || String(course.id)) || removingFromWishlistId === (course.documentId || String(course.id))}
+                                                                                onPress={() => {
+                                                                                    if (isInWishlist(course.id, course.documentId)) {
+                                                                                        handleRemoveFromWishlist(course.documentId || String(course.id))
+                                                                                    } else {
+                                                                                        handleAddToWishlist(course.id, course.documentId)
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                <Heart className={cn(
+                                                                                    "w-4 h-4",
+                                                                                    isInWishlist(course.id, course.documentId) && "fill-current"
+                                                                                )} />
+                                                                            </Button>
+                                                                        )}
+                                                                        <Button
+                                                                            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold"
+                                                                            size="sm"
+                                                                            startContent={addingToCartId === course.id ? null : <ShoppingCart className="w-4 h-4" />}
+                                                                            isDisabled={
+                                                                                (course.documentId && isInCartByDocumentId(course.documentId)) || 
+                                                                                isInCart(course.id) || 
+                                                                                addingToCartId === course.id
+                                                                            }
+                                                                            isLoading={addingToCartId === course.id}
                                                                             onPress={() => {
                                                                                 console.log("🔘 Add to Cart clicked:", {
                                                                                     courseId: course.id,
@@ -1003,15 +1250,15 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                                                                                 })
                                                                                 handleAddRecommendedToCart(course)
                                                                             }}
-                                                                    >
-                                                                        {
-                                                                            (course.documentId && isInCartByDocumentId(course.documentId)) || isInCart(course.id)
-                                                                                ? "In Cart" 
-                                                                                : addingToCartId === course.id 
-                                                                                    ? "Adding..." 
-                                                                                    : "Add to Cart"
-                                                                        }
-                                                                    </Button>
+                                                                        >
+                                                                            {
+                                                                                (course.documentId && isInCartByDocumentId(course.documentId)) || isInCart(course.id)
+                                                                                    ? "In Cart" 
+                                                                                    : addingToCartId === course.id 
+                                                                                        ? "Adding..." 
+                                                                                        : "Add to Cart"
+                                                                            }
+                                                                        </Button>
                                                                     </div>
                                                                 </div>
                                                             </motion.div>

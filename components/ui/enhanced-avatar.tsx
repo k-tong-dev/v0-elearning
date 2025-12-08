@@ -185,26 +185,32 @@ export function CourseInstructorAvatar({
 }
 
 export function ForumUserAvatar({ user, size = "sm" }: { user: any; size?: "sm" | "md" | "lg" | "xl" | "2xl" }) {
-    const avatarUrl = getStrapiMediaUrl(user?.avatar);
+    // Get avatar URL - handle both direct URL strings and Strapi media objects
+    const avatarUrl = user?.avatar 
+        ? (typeof user.avatar === 'string' ? user.avatar : getStrapiMediaUrl(user.avatar))
+        : getStrapiMediaUrl(user?.avatar);
+    
+    // Use name or username for fallback
+    const userName = user?.name || user?.username || "User";
+    const fallbackText = userName !== "User" && userName !== "Anonymous"
+        ? userName
+            .split(" ")
+            .map((n: string) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2) // Limit to 2 characters
+        : "U";
 
     return (
         <EnhancedAvatar
             src={avatarUrl || defaultAvatar.src}
-            alt={user?.username || "User"}
-            fallback={
-                user?.username
-                    ? user.username
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
-                        .toUpperCase()
-                    : "U"
-            }
+            alt={userName}
+            fallback={fallbackText}
             size={size}
-            charactor={user.character?.code || "student"}
+            charactor={user?.character?.code || user?.role?.toLowerCase() || "student"}
             showStatus={true}
-            isOnline={user.isOnline}
-            verified={user.verified}
+            isOnline={user?.isOnline}
+            verified={user?.verified}
             interactive={true}
             className="hover:scale-105 transition-transform duration-200"
         />

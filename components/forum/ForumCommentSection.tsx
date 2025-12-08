@@ -1,11 +1,9 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { MessageCircle, Send, Link as LinkIcon, Smile } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ForumCommentItem } from "./ForumCommentItem";
@@ -24,6 +22,11 @@ interface ForumCommentSectionProps {
     handleUserClick: (userId: string) => void;
     handleShareToPlatform: (platform: string) => void;
     handleReport: (id: string, type: 'comment' | 'reply') => void;
+    handleEditComment?: (commentId: string, newContent: string) => void;
+    handleDeleteComment?: (commentId: string) => void;
+    handleEditReply?: (commentId: string, replyId: string, newContent: string) => void;
+    handleDeleteReply?: (commentId: string, replyId: string) => void;
+    allowComments?: boolean; // Whether new comments are allowed
 }
 
 export function ForumCommentSection({
@@ -39,6 +42,11 @@ export function ForumCommentSection({
                                         handleUserClick,
                                         handleShareToPlatform,
                                         handleReport,
+                                        handleEditComment,
+                                        handleDeleteComment,
+                                        handleEditReply,
+                                        handleDeleteReply,
+                                        allowComments = true, // Default to allowing comments
                                     }: ForumCommentSectionProps) {
     const handleLinkClick = () => {
         // Placeholder for link functionality
@@ -51,17 +59,23 @@ export function ForumCommentSection({
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <MessageCircle className="w-5 h-5" />
-                    Comments ({comments.length})
-                </CardTitle>
-            </CardHeader>
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-muted-foreground" />
+                <h3 className="text-lg font-semibold">Comments ({comments.length})</h3>
+            </div>
 
-            <CardContent className="space-y-6">
-                {/* Add Comment */}
+            <div className="space-y-6">
+                {/* Add Comment - Always show, but disable if comments not allowed */}
                 <div className="space-y-4">
+                    {!allowComments && (
+                        <div className="rounded-md bg-muted/30 p-3 text-center mb-2">
+                            <p className="text-xs text-muted-foreground">
+                                This discussion has been marked as answered. New comments are no longer allowed.
+                            </p>
+                        </div>
+                    )}
                     <div className="flex items-start gap-4">
                         <Avatar className="w-10 h-10">
                             <AvatarImage src={currentUser.avatar} />
@@ -70,26 +84,39 @@ export function ForumCommentSection({
 
                         <div className="flex-1 space-y-3">
                             <Textarea
-                                placeholder="Share your thoughts..."
+                                placeholder={allowComments ? "Share your thoughts..." : "Comments are disabled for this discussion"}
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
-                                className="min-h-20"
+                                disabled={!allowComments}
+                                className={`min-h-20 resize-none ${!allowComments ? "opacity-60 cursor-not-allowed" : ""}`}
                             />
 
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <Button variant="ghost" size="sm" onClick={handleLinkClick}>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={handleLinkClick} 
+                                        className="h-8 w-8 p-0"
+                                        disabled={!allowComments}
+                                    >
                                         <LinkIcon className="w-4 h-4" />
                                     </Button>
-                                    <Button variant="ghost" size="sm" onClick={handleEmojiClick}>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={handleEmojiClick} 
+                                        className="h-8 w-8 p-0"
+                                        disabled={!allowComments}
+                                    >
                                         <Smile className="w-4 h-4" />
                                     </Button>
                                 </div>
 
                                 <Button
                                     onClick={handleCommentSubmit}
-                                    disabled={!newComment.trim()}
-                                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                                    disabled={!newComment.trim() || !allowComments}
+                                    className={`h-9 px-4 ${allowComments ? "bg-primary hover:bg-primary/90" : "bg-muted opacity-60 cursor-not-allowed"}`}
                                 >
                                     <Send className="w-4 h-4 mr-2" />
                                     Comment
@@ -99,28 +126,38 @@ export function ForumCommentSection({
                     </div>
                 </div>
 
-                <Separator />
-
-                {/* Comments List */}
-                <div className="space-y-6">
-                    <AnimatePresence>
-                        {comments.map((comment) => (
-                            <ForumCommentItem
-                                key={comment.id}
-                                comment={comment}
-                                currentUser={currentUser}
-                                onLikeComment={handleLikeComment}
-                                onDislikeComment={handleDislikeComment}
-                                onLikeReply={handleLikeReply}
-                                onUserClick={handleUserClick}
+                {/* Comments List - Always show if there are comments */}
+                {comments.length > 0 ? (
+                    <div className="space-y-6">
+                        <AnimatePresence>
+                            {comments.map((comment) => (
+                                <ForumCommentItem
+                                    key={comment.id}
+                                    comment={comment}
+                                    currentUser={currentUser}
+                                    onLikeComment={handleLikeComment}
+                                    onDislikeComment={handleDislikeComment}
+                                    onLikeReply={handleLikeReply}
+                                    onUserClick={handleUserClick}
                                 onReplySubmit={handleReplySubmit}
                                 onShareToPlatform={handleShareToPlatform}
                                 onReport={handleReport}
-                            />
-                        ))}
-                    </AnimatePresence>
-                </div>
-            </CardContent>
-        </Card>
+                                onEditComment={handleEditComment}
+                                onDeleteComment={handleDeleteComment}
+                                onEditReply={handleEditReply}
+                                onDeleteReply={handleDeleteReply}
+                                allowComments={allowComments}
+                                />
+                            ))}
+                        </AnimatePresence>
+                    </div>
+                ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                        <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No comments yet. Be the first to comment!</p>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 }

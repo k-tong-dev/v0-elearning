@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { Footer } from "@/components/ui/footers/footer"
@@ -23,215 +23,316 @@ import {
   ThumbsUp,
   Reply,
   Filter,
-  Star
+  Star,
+  Loader2
 } from "lucide-react"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button as HeroButton,
+  Input as HeroInput,
+  Textarea as HeroTextarea,
   Select,
-  SelectContent,
   SelectItem,
+} from "@heroui/react"
+import { Switch } from "@/components/ui/switch"
+import {
+  Select as ShadcnSelect,
+  SelectContent,
+  SelectItem as ShadcnSelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { getForumPosts, createForumPost, getForumCategories, getForumStats, type ForumPost as StrapiForumPost, type ForumCategory } from "@/integrations/strapi/forum"
+import { strapiPublic } from "@/integrations/strapi/client"
+import { toast } from "sonner"
+import { formatDistanceToNow } from "date-fns"
+import { ArticleEditor } from "@/components/dashboard/course-form/ArticleEditor"
+import { getAvatarUrl } from "@/lib/getAvatarUrl"
+import { ForumCreateForm } from "@/components/forum/ForumCreateForm"
+import { ModernForumPostCard } from "@/components/forum/ModernForumPostCard"
+import { ForumPostCreator } from "@/components/forum/ForumPostCreator"
+import { ModernForumSidebar } from "@/components/forum/ModernForumSidebar"
+
+// Helper function to strip HTML tags and get plain text
+function stripHtml(html: string): string {
+    if (!html) return "";
+    // Create a temporary DOM element to parse HTML
+    const tmp = document.createElement("DIV");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+}
 
 interface ForumPost {
-  id: number
+  id: number | string
+  documentId?: string // Add documentId for stable routing
   title: string
   content: string
   author: {
+    id?: number
     name: string
     avatar?: string
-    role: string
+    role?: string
+    username?: string
   }
   category: string
   replies: number
   views: number
   likes: number
+  dislikes?: number
   isPinned: boolean
   isAnswered: boolean
   createdAt: string
   lastActivity: string
   tags: string[]
-}
-
-interface Category {
-  id: string
-  name: string
-  description: string
-  postCount: number
-  color: string
+  status?: string
 }
 
 export default function ForumPage() {
     const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedCategory, setSelectedCategory] = useState("all")
-    const [sortBy, setSortBy] = useState("recent")
-    const [isNewPostOpen, setIsNewPostOpen] = useState(false)
-    const [newPost, setNewPost] = useState({
-        title: "",
-        content: "",
-        category: "",
-        tags: ""
+    const [selectedStatus, setSelectedStatus] = useState("all")
+    const [sortBy, setSortBy] = useState<"recent" | "popular" | "views" | "replies">("recent")
+    const [showCreateForm, setShowCreateForm] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+    const [isCreating, setIsCreating] = useState(false)
+    const [forumPosts, setForumPosts] = useState<ForumPost[]>([])
+    const [categories, setCategories] = useState<ForumCategory[]>([])
+    const [forumStats, setForumStats] = useState({
+        totalPosts: 0,
+        publishedPosts: 0,
+        pinnedPosts: 0,
     })
+    const [newPost, setNewPost] = useState({
+        name: "", // subject/title
+        description: "", // description with text editor
+        content: "", // content with text editor
+        category: "", // category select
+        tags: "",
+        status: "published" as "draft" | "published" | "archived" | "closed",
+        isAnswered: false
+    })
+    const [availableTags, setAvailableTags] = useState<Array<{id: number; name: string; code?: string}>>([])
 
-    const categories: Category[] = [
-        {
-            id: "general",
-            name: "General Discussion",
-            description: "General topics and conversations",
-            postCount: 156,
-            color: "bg-blue-500"
-        },
-        {
-            id: "courses",
-            name: "Course Help",
-            description: "Get help with specific courses",
-            postCount: 89,
-            color: "bg-green-500"
-        },
-        {
-            id: "technical",
-            name: "Technical Support",
-            description: "Technical issues and troubleshooting",
-            postCount: 45,
-            color: "bg-red-500"
-        },
-        {
-            id: "projects",
-            name: "Project Showcase",
-            description: "Share your projects and get feedback",
-            postCount: 67,
-            color: "bg-purple-500"
-        },
-        {
-            id: "career",
-            name: "Career Advice",
-            description: "Career guidance and job opportunities",
-            postCount: 34,
-            color: "bg-orange-500"
-        },
-        {
-            id: "announcements",
-            name: "Announcements",
-            description: "Official announcements and updates",
-            postCount: 12,
-            color: "bg-blue-500"
+    const handleCreateSuccess = async () => {
+        setShowCreateForm(false);
+        // Refresh the forum posts list
+        setIsLoading(true);
+        try {
+            const statusFilter = selectedStatus !== "all" && selectedStatus !== "published" 
+                ? selectedStatus 
+                : selectedStatus === "published" 
+                    ? "published"
+                    : undefined;
+            
+            const postsResponse = await getForumPosts({
+                category: selectedCategory !== "all" ? selectedCategory : undefined,
+                status: statusFilter,
+                search: searchQuery || undefined,
+                sortBy,
+                page: 1,
+                pageSize: 6,
+            });
+            
+            // Extract posts from paginated response - handle both old and new format
+            let posts: StrapiForumPost[] = [];
+            if (postsResponse && typeof postsResponse === 'object' && 'data' in postsResponse) {
+                // New format: { data: [...], pagination: {...} }
+                posts = Array.isArray(postsResponse.data) ? postsResponse.data : [];
+            } else if (Array.isArray(postsResponse)) {
+                // Old format: direct array (backward compatibility)
+                posts = postsResponse;
+            } else {
+                console.error('Unexpected posts response format:', postsResponse);
+                posts = [];
+            }
+            
+            let finalPosts: StrapiForumPost[] = Array.isArray(posts) ? posts : [];
+            if (selectedStatus === "published") {
+                finalPosts = finalPosts.filter((p: StrapiForumPost) => p.publishedAt !== null && p.publishedAt !== undefined);
+            }
+            
+            // Ensure finalPosts is an array before mapping
+            if (!Array.isArray(finalPosts)) {
+                console.error('finalPosts is not an array:', finalPosts, typeof finalPosts);
+                finalPosts = [];
+            }
+            
+            const transformedPosts: ForumPost[] = finalPosts.map((post: StrapiForumPost) => ({
+                id: post.id,
+                title: post.name || post.title || "",
+                content: post.content || "",
+                author: {
+                    id: post.author?.id,
+                    name: post.author?.name || post.author?.username || "Anonymous",
+                    avatar: getAvatarUrl(post.author?.avatar) || "/images/Avatar.jpg",
+                    role: "Student",
+                    username: post.author?.username,
+                },
+                category: post.category || "general",
+                replies: post.repliesCount || 0,
+                views: post.views || 0,
+                likes: post.likes || post.liked || 0,
+                dislikes: post.dislikes || post.dislike || 0,
+                isPinned: post.isPinned || false,
+                isAnswered: post.isAnswered || false,
+                createdAt: post.createdAt 
+                    ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })
+                    : "Recently",
+                lastActivity: post.lastActivity 
+                    ? formatDistanceToNow(new Date(post.lastActivity), { addSuffix: true })
+                    : "Recently",
+                tags: post.tags?.map(t => t.name) || post.forum_tags?.map(t => t.name) || [],
+                status: post.status || "published",
+            }));
+            
+            setForumPosts(transformedPosts);
+            
+            // Refresh stats after creating a post
+            const stats = await getForumStats();
+            setForumStats(stats);
+        } catch (error) {
+            console.error("Error refreshing forum posts:", error);
+        } finally {
+            setIsLoading(false);
         }
-    ]
+    };
 
-    const forumPosts: ForumPost[] = [
-        {
-            id: 1,
-            title: "How to deploy React app to production?",
-            content: "I'm having trouble deploying my React application to production. Can someone help me with the best practices?",
+    // Fetch forum posts and categories
+    useEffect(() => {
+        const fetchData = async () => {
+            setIsLoading(true)
+            try {
+                // Only pass status filter if it's not 'all' and not 'published' (published uses publishedAt)
+                const statusFilter = selectedStatus !== "all" && selectedStatus !== "published" 
+                    ? selectedStatus 
+                    : selectedStatus === "published" 
+                        ? "published" // Will use publishedAt filter
+                        : undefined
+                
+                const [postsResponse, cats, stats] = await Promise.all([
+                    getForumPosts({
+                        category: selectedCategory !== "all" ? selectedCategory : undefined,
+                        status: statusFilter,
+                        search: searchQuery || undefined,
+                        sortBy,
+                        page: 1,
+                        pageSize: 6,
+                    }),
+                    getForumCategories(),
+                    getForumStats()
+                ])
+                
+                // Update forum stats
+                setForumStats(stats)
+                
+                // Extract posts from paginated response - handle both old and new format
+                let posts: StrapiForumPost[] = [];
+                
+                // Check if response is in new paginated format
+                if (postsResponse && typeof postsResponse === 'object' && 'data' in postsResponse) {
+                    // New format: { data: [...], pagination: {...} }
+                    posts = Array.isArray(postsResponse.data) ? postsResponse.data : [];
+                } else if (Array.isArray(postsResponse)) {
+                    // Old format: direct array (backward compatibility)
+                    posts = postsResponse;
+                } else {
+                    console.error('Unexpected posts response format:', postsResponse);
+                    posts = [];
+                }
+                
+                // If status filter was 'published' and we got all posts, filter in memory
+                let finalPosts: StrapiForumPost[] = Array.isArray(posts) ? posts : [];
+                if (selectedStatus === "published") {
+                    finalPosts = finalPosts.filter((p: StrapiForumPost) => p.publishedAt !== null && p.publishedAt !== undefined);
+                }
+                
+                // Ensure finalPosts is an array before mapping
+                if (!Array.isArray(finalPosts)) {
+                    console.error('finalPosts is not an array:', finalPosts, typeof finalPosts);
+                    finalPosts = [];
+                }
+                
+                // Transform Strapi posts to UI format
+                // CRITICAL: Include documentId for stable routing (never changes)
+                const transformedPosts: ForumPost[] = finalPosts.map((post: StrapiForumPost) => ({
+                    id: post.id,
+                    documentId: post.documentId || post.id.toString(), // Use documentId for routing
+                    title: post.name || post.title || "",
+                    content: post.content || "",
             author: {
-                name: "Sarah Johnson",
-                avatar: "/images/Avatar.jpg",
-                role: "Student"
-            },
-            category: "technical",
-            replies: 12,
-            views: 245,
-            likes: 8,
-            isPinned: false,
-            isAnswered: true,
-            createdAt: "2 hours ago",
-            lastActivity: "30 minutes ago",
-            tags: ["react", "deployment", "production"]
-        },
-        {
-            id: 2,
-            title: "Welcome to the NEXT4LEARN Community Forum!",
-            content: "Welcome everyone! This is our new community forum where you can ask questions, share projects, and connect with fellow learners.",
-            author: {
-                name: "Admin Team",
-                avatar: "/images/Avatar.jpg",
-                role: "Administrator"
-            },
-            category: "announcements",
-            replies: 25,
-            views: 1200,
-            likes: 45,
-            isPinned: true,
-            isAnswered: false,
-            createdAt: "1 week ago",
-            lastActivity: "1 hour ago",
-            tags: ["welcome", "community", "announcement"]
-        },
-        {
-            id: 3,
-            title: "JavaScript fundamentals - Need clarification on closures",
-            content: "I'm working through the JavaScript course and having trouble understanding closures. Can someone explain with examples?",
-            author: {
-                name: "Mike Chen",
-                avatar: "/images/Avatar.jpg",
-                role: "Student"
-            },
-            category: "courses",
-            replies: 7,
-            views: 189,
-            likes: 15,
-            isPinned: false,
-            isAnswered: true,
-            createdAt: "5 hours ago",
-            lastActivity: "2 hours ago",
-            tags: ["javascript", "closures", "fundamentals"]
-        },
-        {
-            id: 4,
-            title: "My first full-stack project - E-commerce site",
-            content: "Just finished building my first e-commerce site using MERN stack. Would love to get some feedback!",
-            author: {
-                name: "Emma Rodriguez",
-                avatar: "/images/Avatar.jpg",
-                role: "Student"
-            },
-            category: "projects",
-            replies: 18,
-            views: 356,
-            likes: 22,
-            isPinned: false,
-            isAnswered: false,
-            createdAt: "1 day ago",
-            lastActivity: "4 hours ago",
-            tags: ["project", "mern", "ecommerce", "feedback"]
-        },
-        {
-            id: 5,
-            title: "Career transition from marketing to web development",
-            content: "I'm making a career change from marketing to web development. Any advice on building a strong portfolio?",
-            author: {
-                name: "David Park",
-                avatar: "/images/Avatar.jpg",
-                role: "Student"
-            },
-            category: "career",
-            replies: 14,
-            views: 278,
-            likes: 19,
-            isPinned: false,
-            isAnswered: false,
-            createdAt: "2 days ago",
-            lastActivity: "6 hours ago",
-            tags: ["career", "transition", "portfolio", "advice"]
+                        id: post.author?.id,
+                        name: post.author?.name || post.author?.username || "Anonymous",
+                        avatar: getAvatarUrl(post.author?.avatar) || "/images/Avatar.jpg",
+                        role: "Student", // You may want to get this from user profile
+                        username: post.author?.username,
+                    },
+                    category: post.category || "general",
+                    replies: post.repliesCount || 0,
+                    views: post.views || 0,
+                    likes: post.likes || post.liked || 0,
+                    isPinned: post.isPinned || false,
+                    isAnswered: post.isAnswered || false,
+                    createdAt: post.createdAt 
+                        ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })
+                        : "Recently",
+                    lastActivity: post.lastActivity 
+                        ? formatDistanceToNow(new Date(post.lastActivity), { addSuffix: true })
+                        : "Recently",
+                    tags: post.tags?.map(t => t.name) || post.forum_tags?.map(t => t.name) || [],
+                    status: post.status || "published",
+                }))
+                
+                setForumPosts(transformedPosts)
+                setCategories(cats)
+            } catch (error: any) {
+                console.error("Error fetching forum data:", error)
+                const errorMessage = error.message || "Failed to load forum posts"
+                
+                // Don't show error toast if it's just empty results
+                if (!errorMessage.includes('Invalid key') && !errorMessage.includes('400')) {
+                    toast.error(errorMessage + ". Please try again later.")
+                } else {
+                    // If there's a schema issue, just show a warning
+                    console.warn("Schema may be missing some fields. Posts may not load correctly.")
+                }
+            } finally {
+                setIsLoading(false)
+            }
         }
-    ]
+
+        // Debounce search
+        const timeoutId = setTimeout(() => {
+            fetchData()
+        }, searchQuery ? 500 : 0)
+
+        return () => clearTimeout(timeoutId)
+    }, [selectedCategory, selectedStatus, sortBy, searchQuery])
 
     const filteredPosts = forumPosts.filter(post => {
-        const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        const matchesSearch = !searchQuery || 
+            post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+            (post.tags && post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
 
         const matchesCategory = selectedCategory === "all" || post.category === selectedCategory
 
-        return matchesSearch && matchesCategory
+        // Status filter - handle gracefully if status field doesn't exist
+        let matchesStatus = true
+        if (selectedStatus !== "all") {
+            if (post.status) {
+                matchesStatus = post.status === selectedStatus
+            } else {
+                // If status field doesn't exist, treat all as published
+                matchesStatus = selectedStatus === "published"
+            }
+        }
+
+        return matchesSearch && matchesCategory && matchesStatus
     })
 
     const sortedPosts = [...filteredPosts].sort((a, b) => {
@@ -243,169 +344,75 @@ export default function ForumPage() {
             case "replies":
                 return b.replies - a.replies
             default: // recent
-                return new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
+                return new Date(b.lastActivity || b.createdAt).getTime() - new Date(a.lastActivity || a.createdAt).getTime()
         }
     })
 
     const pinnedPosts = sortedPosts.filter(post => post.isPinned)
     const regularPosts = sortedPosts.filter(post => !post.isPinned)
 
-    const handleCreatePost = () => {
-        // In a real app, this would make an API call
-        console.log("Creating post:", newPost)
-        setIsNewPostOpen(false)
-        setNewPost({title: "", content: "", category: "", tags: ""})
+    const handlePostClick = (postId: number | string, documentId?: string) => {
+        // CRITICAL: Use documentId if available, otherwise fallback to numeric ID
+        // documentId never changes, so it prevents "forum not found" errors
+        const targetId = documentId || String(postId);
+        console.log('[ForumPage] Navigating to post - documentId:', documentId, 'numericId:', postId);
+        router.push(`/forum/${targetId}`)
     }
 
-    const handlePostClick = (postId: number) => {
-        router.push(`/forum/${postId}`)
-    }
-
-    const handleAuthorClick = (authorId: string) => {
+    const handleAuthorClick = (authorId?: number | string) => {
+        if (authorId) {
         router.push(`/users/${authorId}`)
+        }
+    }
+
+    // Show create form if toggled
+    if (showCreateForm) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
+                <HeaderUltra />
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+                    <ForumCreateForm
+                        categories={categories}
+                        onCancel={() => setShowCreateForm(false)}
+                        onSuccess={handleCreateSuccess}
+                    />
+                </div>
+                <Footer />
+            </div>
+        );
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
             <HeaderUltra/>
 
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
-                {/* HeaderUltra Section */}
-                <div className="mb-8" data-aos="fade-up">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                            <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                Community Forum
-                            </h1>
-                            <p className="text-muted-foreground">
-                                Connect, learn, and grow together with our community of learners
-                            </p>
-                        </div>
-
-                        <Dialog open={isNewPostOpen} onOpenChange={setIsNewPostOpen}>
-                            <DialogTrigger asChild>
-                                <Button
-                                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white">
-                                    <Plus className="w-4 h-4 mr-2"/>
-                                    New Discussion
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                    <DialogTitle>Start a New Discussion</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                    <Input
-                                        placeholder="Discussion title..."
-                                        value={newPost.title}
-                                        onChange={(e) => setNewPost(prev => ({...prev, title: e.target.value}))}
-                                    />
-                                    <Select value={newPost.category}
-                                            onValueChange={(value) => setNewPost(prev => ({...prev, category: value}))}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a category"/>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {categories.map(category => (
-                                                <SelectItem key={category.id} value={category.id}>
-                                                    {category.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <Textarea
-                                        placeholder="What would you like to discuss?"
-                                        className="min-h-32"
-                                        value={newPost.content}
-                                        onChange={(e) => setNewPost(prev => ({...prev, content: e.target.value}))}
-                                    />
-                                    <Input
-                                        placeholder="Tags (comma separated)"
-                                        value={newPost.tags}
-                                        onChange={(e) => setNewPost(prev => ({...prev, tags: e.target.value}))}
-                                    />
-                                    <div className="flex justify-end gap-2">
-                                        <Button variant="outline" onClick={() => setIsNewPostOpen(false)}>
-                                            Cancel
-                                        </Button>
-                                        <Button onClick={handleCreatePost}
-                                                disabled={!newPost.title || !newPost.content}>
-                                            Create Discussion
-                                        </Button>
-                                    </div>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                    {/* Sidebar */}
-                    <div className="lg:col-span-1 space-y-6">
-                        {/* Categories */}
-                        <Card data-aos="fade-up" data-aos-delay="100">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Filter className="w-5 h-5"/>
-                                    Categories
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-2">
-                                <Button
-                                    variant={selectedCategory === "all" ? "default" : "ghost"}
-                                    className="w-full justify-start"
-                                    onClick={() => setSelectedCategory("all")}
-                                >
-                                    All Categories
-                                </Button>
-                                {categories.map(category => (
-                                    <Button
-                                        key={category.id}
-                                        variant={selectedCategory === category.id ? "default" : "ghost"}
-                                        className="w-full justify-between"
-                                        onClick={() => setSelectedCategory(category.id)}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <div className={`w-3 h-3 rounded-full ${category.color}`}/>
-                                            {category.name}
-                                        </div>
-                                        <Badge variant="secondary">{category.postCount}</Badge>
-                                    </Button>
-                                ))}
-                            </CardContent>
-                        </Card>
-
-                        {/* Forum Stats */}
-                        <Card data-aos="fade-up" data-aos-delay="200">
-                            <CardHeader>
-                                <CardTitle>Forum Stats</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Total Posts</span>
-                                    <span className="font-semibold">403</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Active Members</span>
-                                    <span className="font-semibold">1,247</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Online Now</span>
-                                    <span className="font-semibold text-green-500">89</span>
-                                </div>
-                            </CardContent>
-                        </Card>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-24">
+                {/* Modern Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Left Sidebar */}
+                    <div className="lg:col-span-3">
+                        <ModernForumSidebar
+                            categories={categories}
+                            selectedCategory={selectedCategory}
+                            onCategoryChange={setSelectedCategory}
+                            onCreatePost={() => setShowCreateForm(true)}
+                            totalPosts={forumStats.totalPosts}
+                            publishedPosts={forumStats.publishedPosts}
+                            pinnedPosts={forumStats.pinnedPosts}
+                        />
                     </div>
 
-                    {/* Main Content */}
-                    <div className="lg:col-span-3 space-y-6">
-                        {/* Search and Filters */}
-                        <Card data-aos="fade-up" data-aos-delay="300">
+                    {/* Main Feed */}
+                    <div className="lg:col-span-9 space-y-4">
+                        {/* Post Creator */}
+                        <ForumPostCreator onCreatePost={() => setShowCreateForm(true)} />
+
+                        {/* Search and Sort */}
+                        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900">
                             <CardContent className="p-4">
                                 <div className="flex flex-col md:flex-row gap-4">
                                     <div className="relative flex-1">
-                                        <Search
-                                            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
+                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                         <Input
                                             placeholder="Search discussions..."
                                             className="pl-10"
@@ -413,200 +420,77 @@ export default function ForumPage() {
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                         />
                                     </div>
-                                    <Select value={sortBy} onValueChange={setSortBy}>
+                                    <ShadcnSelect value={sortBy} onValueChange={(value) => setSortBy(value as typeof sortBy)}>
                                         <SelectTrigger className="w-full md:w-48">
-                                            <SelectValue/>
+                                            <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="recent">Most Recent</SelectItem>
-                                            <SelectItem value="popular">Most Popular</SelectItem>
-                                            <SelectItem value="views">Most Viewed</SelectItem>
-                                            <SelectItem value="replies">Most Replies</SelectItem>
+                                            <ShadcnSelectItem value="recent">Most Recent</ShadcnSelectItem>
+                                            <ShadcnSelectItem value="popular">Most Popular</ShadcnSelectItem>
+                                            <ShadcnSelectItem value="views">Most Viewed</ShadcnSelectItem>
+                                            <ShadcnSelectItem value="replies">Most Replies</ShadcnSelectItem>
                                         </SelectContent>
-                                    </Select>
+                                    </ShadcnSelect>
                                 </div>
                             </CardContent>
                         </Card>
 
                         {/* Pinned Posts */}
                         {pinnedPosts.length > 0 && (
-                            <div className="space-y-4" data-aos="fade-up" data-aos-delay="400">
-                                <h2 className="text-xl font-semibold flex items-center gap-2">
-                                    <Pin className="w-5 h-5"/>
+                            <div className="space-y-4">
+                                <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                                    <Pin className="w-5 h-5 text-blue-500" />
                                     Pinned Discussions
                                 </h2>
                                 {pinnedPosts.map(post => (
-                                    <Card key={post.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handlePostClick(post.id)}>
-                                        <CardContent className="p-6">
-                                            <div className="flex items-start gap-4">
-                                                <Avatar 
-                                                    className="w-10 h-10 cursor-pointer hover:scale-110 transition-transform"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        handleAuthorClick("1")
-                                                    }}
-                                                >
-                                                    <AvatarImage src={post.author.avatar || "/images/Avatar.jpg"}/>
-                                                    <AvatarFallback>
-                                                        {post.author.name.split(" ").map(n => n[0]).join("")}
-                                                    </AvatarFallback>
-                                                </Avatar>
-
-                                                <div className="flex-1 space-y-2">
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="space-y-1">
-                                                            <div className="flex items-center gap-2">
-                                                                <Pin className="w-4 h-4 text-blue-500"/>
-                                                                <h3 className="font-semibold hover:text-primary cursor-pointer" onClick={() => handlePostClick(post.id)}>
-                                                                    {post.title}
-                                                                </h3>
-                                                                {post.isAnswered && (
-                                                                    <Badge
-                                                                        className="bg-green-500 text-white">Answered</Badge>
-                                                                )}
-                                                            </div>
-                                                            <p className="text-muted-foreground text-sm line-clamp-2">
-                                                                {post.content}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    <div
-                                                        className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <MessageCircle className="w-4 h-4"/>
-                                {post.replies}
-                            </span>
-                                                        <span className="flex items-center gap-1">
-                              <Eye className="w-4 h-4"/>
-                                                            {post.views}
-                            </span>
-                                                        <span className="flex items-center gap-1">
-                              <ThumbsUp className="w-4 h-4"/>
-                                                            {post.likes}
-                            </span>
-                                                        <span className="flex items-center gap-1">
-                              <Clock className="w-4 h-4"/>
-                                                            {post.lastActivity}
-                            </span>
-                                                    </div>
-
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            <Badge variant="outline">
-                                                                {categories.find(c => c.id === post.category)?.name}
-                                                            </Badge>
-                                                            {post.tags.map(tag => (
-                                                                <Badge key={tag} variant="secondary"
-                                                                       className="text-xs">
-                                                                    #{tag}
-                                                                </Badge>
-                                                            ))}
-                                                        </div>
-                                                        <div className="text-xs text-muted-foreground">
-                                                            by {post.author.name} • {post.createdAt}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                    <ModernForumPostCard
+                                        key={post.id}
+                                        post={post}
+                                        onPostClick={handlePostClick}
+                                        onAuthorClick={handleAuthorClick}
+                                        onLike={() => {}}
+                                        onComment={() => handlePostClick(post.documentId || post.id, post.documentId)}
+                                        onShare={() => {}}
+                                    />
                                 ))}
-                                <Separator/>
+                                <Separator className="my-6" />
                             </div>
                         )}
 
                         {/* Regular Posts */}
-                        <div className="space-y-4" data-aos="fade-up" data-aos-delay="500">
-                            <h2 className="text-xl font-semibold">Recent Discussions</h2>
+                        <div className="space-y-4">
                             {regularPosts.length > 0 ? (
                                 regularPosts.map(post => (
-                                    <Card key={post.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handlePostClick(post.id)}>
-                                        <CardContent className="p-6">
-                                            <div className="flex items-start gap-4">
-                                                <Avatar 
-                                                    className="w-10 h-10 cursor-pointer hover:scale-110 transition-transform"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        handleAuthorClick("1")
-                                                    }}
-                                                >
-                                                    <AvatarImage src={post.author.avatar || "/images/Avatar.jpg"}/>
-                                                    <AvatarFallback>
-                                                        {post.author.name.split(" ").map(n => n[0]).join("")}
-                                                    </AvatarFallback>
-                                                </Avatar>
-
-                                                <div className="flex-1 space-y-2">
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="space-y-1">
-                                                            <div className="flex items-center gap-2">
-                                                                <h3 className="font-semibold hover:text-primary cursor-pointer" onClick={() => handlePostClick(post.id)}>
-                                                                    {post.title}
-                                                                </h3>
-                                                                {post.isAnswered && (
-                                                                    <Badge
-                                                                        className="bg-green-500 text-white">Answered</Badge>
-                                                                )}
-                                                            </div>
-                                                            <p className="text-muted-foreground text-sm line-clamp-2">
-                                                                {post.content}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    <div
-                                                        className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <MessageCircle className="w-4 h-4"/>
-                                {post.replies}
-                            </span>
-                                                        <span className="flex items-center gap-1">
-                              <Eye className="w-4 h-4"/>
-                                                            {post.views}
-                            </span>
-                                                        <span className="flex items-center gap-1">
-                              <ThumbsUp className="w-4 h-4"/>
-                                                            {post.likes}
-                            </span>
-                                                        <span className="flex items-center gap-1">
-                              <Clock className="w-4 h-4"/>
-                                                            {post.lastActivity}
-                            </span>
-                                                    </div>
-
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            <Badge variant="outline">
-                                                                {categories.find(c => c.id === post.category)?.name}
-                                                            </Badge>
-                                                            {post.tags.map(tag => (
-                                                                <Badge key={tag} variant="secondary"
-                                                                       className="text-xs">
-                                                                    #{tag}
-                                                                </Badge>
-                                                            ))}
-                                                        </div>
-                                                        <div className="text-xs text-muted-foreground">
-                                                            by {post.author.name} • {post.createdAt}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                    <ModernForumPostCard
+                                        key={post.id}
+                                        post={post}
+                                        onPostClick={handlePostClick}
+                                        onAuthorClick={handleAuthorClick}
+                                        onLike={() => {}}
+                                        onComment={() => handlePostClick(post.documentId || post.id, post.documentId)}
+                                        onShare={() => {}}
+                                    />
                                 ))
                             ) : (
-                                <Card>
-                                    <CardContent className="p-8 text-center">
-                                        <MessageCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground"/>
-                                        <h3 className="text-lg font-semibold mb-2">No discussions found</h3>
-                                        <p className="text-muted-foreground mb-4">
-                                            {searchQuery ? "Try adjusting your search terms" : "Be the first to start a discussion!"}
-                                        </p>
-                                        <Button onClick={() => setIsNewPostOpen(true)}>
-                                            Start Discussion
-                                        </Button>
+                                <Card className="border-0 shadow-sm bg-white dark:bg-gray-900">
+                                    <CardContent className="p-12 text-center">
+                                        {isLoading ? (
+                                            <>
+                                                <Loader2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground animate-spin" />
+                                                <h3 className="text-lg font-semibold mb-2">Loading discussions...</h3>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <MessageCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                                                <h3 className="text-lg font-semibold mb-2">No discussions found</h3>
+                                                <p className="text-muted-foreground mb-4">
+                                                    {searchQuery ? "Try adjusting your search terms" : "Be the first to start a discussion!"}
+                                                </p>
+                                                <Button onClick={() => setShowCreateForm(true)}>
+                                                    Start Discussion
+                                                </Button>
+                                            </>
+                                        )}
                                     </CardContent>
                                 </Card>
                             )}

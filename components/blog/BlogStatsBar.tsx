@@ -23,30 +23,32 @@ export function BlogStatsBar({ posts }: BlogStatsBarProps) {
             transition={{ delay: 0.1 }}
             className="mb-8"
         >
-            <Card>
-                <CardContent className="p-4">
+            <Card className="border-0 shadow-lg">
+                <CardContent className="p-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-                        <div>
-                            <div className="text-2xl font-bold text-blue-500">{posts.length}</div>
-                            <div className="text-sm text-muted-foreground">Total Articles</div>
+                        <div className="space-y-2">
+                            <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
+                                {posts.length}
+                            </div>
+                            <div className="text-sm font-medium text-muted-foreground">Total Articles</div>
                         </div>
-                        <div>
-                            <div className="text-2xl font-bold text-purple-600">
+                        <div className="space-y-2">
+                            <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
                                 {totalViews.toLocaleString()}
                             </div>
-                            <div className="text-sm text-muted-foreground">Total Views</div>
+                            <div className="text-sm font-medium text-muted-foreground">Total Views</div>
                         </div>
-                        <div>
-                            <div className="text-2xl font-bold text-purple-600">
+                        <div className="space-y-2">
+                            <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
                                 {uniqueContributors}
                             </div>
-                            <div className="text-sm text-muted-foreground">Contributors</div>
+                            <div className="text-sm font-medium text-muted-foreground">Contributors</div>
                         </div>
-                        <div>
-                            <div className="text-2xl font-bold text-orange-600">
+                        <div className="space-y-2">
+                            <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
                                 {avgReadTime}
                             </div>
-                            <div className="text-sm text-muted-foreground">Avg. Read Time (min)</div>
+                            <div className="text-sm font-medium text-muted-foreground">Avg. Read Time (min)</div>
                         </div>
                     </div>
                 </CardContent>

@@ -70,6 +70,7 @@ export interface CourseCourse {
         id: number;
         name?: string;
         avatar?: any;
+        documentId?: string;
     }>;
     discount_type?: "percentage" | "fix_price" | null;
     discount_percentage?: number | null;
@@ -77,6 +78,7 @@ export interface CourseCourse {
     course_status?: "cancel" | "draft" | "published";
     active?: boolean;
     enrollment_count?: number;
+    enrollment_limit?: number;
     can_edit_after_publish?: boolean;
     course_preview?: CoursePreview | null;
     createdAt?: string;
@@ -95,19 +97,24 @@ function parseNumericId(value: any): number | undefined {
     return undefined
 }
 
-function normalizeRelationArray(relation: any): Array<{ id: number; name: string; avatar?: any }> {
+function normalizeRelationArray(relation: any): Array<{ id: number; name: string; avatar?: any; documentId?: string }> {
     if (!relation) return []
     const data = Array.isArray(relation) ? relation : relation.data
     if (!Array.isArray(data)) return []
-    const normalized: Array<{ id: number; name: string; avatar?: any }> = []
+    const normalized: Array<{ id: number; name: string; avatar?: any; documentId?: string }> = []
     for (const entry of data) {
         const attributes = entry.attributes ?? {}
         const rawId = entry.id ?? entry.documentId ?? attributes.id ?? ""
         const id = parseNumericId(rawId)
         if (id === undefined) continue
-        const normalizedEntry: { id: number; name: string; avatar?: any } = {
+        const documentId = entry.documentId || attributes.documentId || null
+        const normalizedEntry: { id: number; name: string; avatar?: any; documentId?: string } = {
             id,
             name: entry.name ?? attributes.name ?? "",
+        }
+        // Preserve documentId if available (more reliable for deduplication)
+        if (documentId) {
+            normalizedEntry.documentId = documentId
         }
         const avatar = entry.avatar ?? attributes.avatar
         if (avatar) {
@@ -368,6 +375,7 @@ export async function getPublicCourseCourses(options: CourseFetchOptions = {}): 
                     id: inst.id,
                     name: inst.name,
                     avatar: inst.avatar,
+                    documentId: inst.documentId,
                 })),
                 currency: currencyData
                     ? {
@@ -382,6 +390,7 @@ export async function getPublicCourseCourses(options: CourseFetchOptions = {}): 
                 course_status: item.course_status,
                 active: item.active,
                 enrollment_count: item.enrollment_count,
+                enrollment_limit: item.enrollment_limit || 0,
                 can_edit_after_publish: item.can_edit_after_publish,
                 course_preview: normalizedPreview,
                 createdAt: item.createdAt,
@@ -493,6 +502,7 @@ export async function getDashboardCourseCourses(options: DashboardCourseOptions 
             course_status: item.course_status,
             active: item.active,
             enrollment_count: item.enrollment_count,
+            enrollment_limit: item.enrollment_limit || 0,
             can_edit_after_publish: item.can_edit_after_publish,
             course_preview: normalizedPreview ?? null,
             createdAt: item.createdAt,
@@ -585,6 +595,7 @@ export async function getCourseCourse(id: string | number): Promise<CourseCourse
             course_status: item.course_status,
             active: item.active,
             enrollment_count: item.enrollment_count,
+            enrollment_limit: item.enrollment_limit || 0,
             can_edit_after_publish: item.can_edit_after_publish,
             instructors: instructorsData.map((inst: any) => ({
                 id: inst.id,
@@ -627,6 +638,7 @@ export interface CreateCourseCourseInput {
     active?: boolean;
     course_status?: "cancel" | "draft" | "published";
     owner?: number; // User ID (numeric) for the owner relation
+    enrollment_limit?: number;
 }
 
 export async function createCourseCourse(data: CreateCourseCourseInput): Promise<CourseCourse | null> {
@@ -679,6 +691,7 @@ export async function createCourseCourse(data: CreateCourseCourseInput): Promise
                 is_paid: data.is_paid || false,
                 preview_available: data.preview_available || false,
                 duration_minutes: data.duration_minutes || 0,
+                enrollment_limit: data.enrollment_limit || 0,
             // Single relations: use connect with documentId for CREATE to ensure Strapi Admin UI displays them
             course_level: courseLevelConnect,
             currency: currencyConnect,

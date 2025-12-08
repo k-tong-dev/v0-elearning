@@ -107,12 +107,22 @@ export const FileUpload = ({
   // Sync with external value prop
   useEffect(() => {
     if (value) {
-      const newFiles = value.map((file) => ({
-        file,
-        id: `${file.name}-${file.size}-${file.lastModified}`,
-        uploadStatus: "pending" as const,
-      }));
-      setFiles(newFiles);
+      // Filter out non-File objects (like strings, numbers, etc.)
+      const validFiles = value.filter((item): item is File => item instanceof File);
+      
+      if (validFiles.length > 0) {
+        const newFiles = validFiles.map((file) => ({
+          file,
+          id: `${file.name}-${file.size}-${file.lastModified}`,
+          uploadStatus: "pending" as const,
+        }));
+        setFiles(newFiles);
+      } else {
+        // If no valid files, clear the files array
+        setFiles([]);
+      }
+    } else {
+      setFiles([]);
     }
   }, [value]);
 

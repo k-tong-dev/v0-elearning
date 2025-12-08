@@ -13,6 +13,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import { useAuth } from "@/hooks/use-auth"
+import { createCourseReport } from "@/integrations/strapi/courseReport"
+import ReportForm from "@/components/ui/report-form"
 
 interface CourseActionsDropdownProps {
     courseId: string
@@ -24,11 +27,12 @@ export function CourseActionsDropdown({
                                           courseId,
                                           courseTitle,
                                       }: CourseActionsDropdownProps) {
+    const { user, isAuthenticated } = useAuth()
     const [showShareDialog, setShowShareDialog] = useState(false)
     const [showReportDialog, setShowReportDialog] = useState(false)
-    const [reportReason, setReportReason] = useState("")
+    const [isSubmittingReport, setIsSubmittingReport] = useState(false)
 
-    const courseLink = `${window.location.origin}/courses/${courseId}`
+    const courseLink = typeof window !== "undefined" ? `${window.location.origin}/courses/${courseId}` : ""
 
     const handleCopyLink = async () => {
         try {
@@ -79,28 +83,47 @@ export function CourseActionsDropdown({
         setShowShareDialog(false)
     }
 
-    const handleReportSubmit = () => {
-        if (reportReason.trim()) {
-            console.log(`Reporting course ${courseId} for reason: ${reportReason}`)
-            toast.success("Course reported successfully. We'll review it shortly.", {
+    const handleReportSubmit = async (reportType: string, reason: string) => {
+        if (!isAuthenticated || !user?.id) {
+            toast.error("Please login to report a course", {
                 position: "top-center",
-                action: {
-                    label: "Close",
-                    onClick: () => {},
-                },
-                closeButton: false,
             })
-            setReportReason("")
-            setShowReportDialog(false)
-        } else {
+            return
+        }
+
+        if (!reason.trim()) {
             toast.error("Please provide a reason for reporting.", {
                 position: "top-center",
-                action: {
-                    label: "Close",
-                    onClick: () => {},
-                },
-                closeButton: false,
             })
+            return
+        }
+
+        try {
+            setIsSubmittingReport(true)
+            
+            const reportTitle = `Course Report: ${courseTitle} - ${reportType}`
+            const reportDescription = `Report Type: ${reportType}\n\nReason: ${reason}`
+            
+            await createCourseReport({
+                title: reportTitle,
+                description: reportDescription,
+                type: reportType,
+                course_course: Number(courseId),
+                user: user.id,
+                url: courseLink,
+            })
+
+            toast.success("Course reported successfully. We'll review it shortly.", {
+                position: "top-center",
+            })
+            setShowReportDialog(false)
+        } catch (error: any) {
+            console.error("Error submitting report:", error)
+            toast.error(error?.message || "Failed to submit report. Please try again.", {
+                position: "top-center",
+            })
+        } finally {
+            setIsSubmittingReport(false)
         }
     }
 
@@ -164,30 +187,12 @@ export function CourseActionsDropdown({
             </Dialog>
 
             {/* Report Dialog */}
-            <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Report Course: {courseTitle}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <Textarea
-                            placeholder="Please describe why you are reporting this course..."
-                            value={reportReason}
-                            onChange={(e) => setReportReason(e.target.value)}
-                            className="min-h-[100px]"
-                        />
-                        <div className="flex gap-2 justify-end">
-                            <Button variant="outline" onClick={() => setShowReportDialog(false)}>
-                                Cancel
-                            </Button>
-                            <Button variant="destructive" onClick={handleReportSubmit}>
-                                <Flag className="w-4 h-4 mr-2" />
-                                Submit Report
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <ReportForm
+                title={courseTitle}
+                isOpen={showReportDialog}
+                onOpenChange={setShowReportDialog}
+                onSubmit={handleReportSubmit}
+            />
         </>
     )
 }

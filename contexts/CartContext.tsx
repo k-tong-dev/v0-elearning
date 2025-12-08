@@ -16,12 +16,12 @@ import { getCoursePreview, getCoursePreviewUrl } from "@/integrations/strapi/cou
 
 export interface CartItem {
     id: number
-    courseId: number // Note: May be unreliable in Strapi v5
-    courseDocumentId?: string // ✅ Reliable identifier for Strapi v5
+    courseId: number
+    courseDocumentId?: string
     title: string
     description: string
     image: string
-    previewType?: "image" | "url" | "video" // Type of preview (for rendering)
+    previewType?: "image" | "url" | "video"
     price: number
     priceFormatted: string
     instructor: string
@@ -66,16 +66,6 @@ async function mapStrapiCartItem(strapiItem: StrapiCartItem): Promise<CartItem |
         return null
     }
 
-    // DEBUG: Log the actual course structure from Strapi
-    console.log("[Cart] Mapping Strapi Item:", {
-        cartItemId: strapiItem.id,
-        courseId: course.id,
-        courseDocumentId: course.documentId,
-        courseName: course.name,
-        fullCourse: course
-    })
-
-    // Get image URL and preview type using getCoursePreview() function
     let imageUrl = "/placeholder.svg"
     let previewType: "image" | "url" | "video" = "image"
 
@@ -129,18 +119,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
      * Or from localStorage for guests
      */
     const loadCart = useCallback(async () => {
+        console.log("[CartContext] loadCart called", { isAuthenticated, userId: user?.id })
         if (isAuthenticated && user) {
             // Authenticated: Load from Strapi
             setIsLoading(true)
             try {
+                console.log("[CartContext] Fetching cart items from Strapi for user:", user.id)
                 const strapiItems = await getUserCartItems()
-                console.log("============== Strapi Items: ",strapiItems );
+                console.log("[CartContext] Raw strapiItems from API:", strapiItems)
+                console.log("[CartContext] Number of items:", strapiItems.length)
+                
                 const mappedPromises = strapiItems.map(item => mapStrapiCartItem(item))
                 const mappedResults = await Promise.all(mappedPromises)
                 const mappedItems = mappedResults.filter((item): item is CartItem => item !== null)
+                console.log("[CartContext] Mapped cart items:", mappedItems)
+                console.log("[CartContext] Setting items state with:", mappedItems.length, "items")
                 setItems(mappedItems)
             } catch (error) {
-                console.error("[Cart] Failed to load from Strapi:", error)
+                console.error("[CartContext] Failed to load from Strapi:", error)
                 toast.error("Failed to load cart")
         } finally {
                 setIsLoading(false)
@@ -183,8 +179,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     // Load cart on mount and auth change
     useEffect(() => {
+        console.log("[CartContext] useEffect triggered - loading cart", { isAuthenticated, userId: user?.id })
         loadCart()
     }, [loadCart])
+    
 
     /**
      * Sync local cart to Strapi when user logs in
@@ -377,7 +375,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     const isInCart = (courseId: number) => {
-        return items.some(item => item.courseId === courseId)
+        // Normalize comparison to handle potential type mismatches (string vs number)
+        const normalizedCourseId = Number(courseId)
+        return items.some(item => {
+            const normalizedItemCourseId = Number(item.courseId)
+            return normalizedItemCourseId === normalizedCourseId && !isNaN(normalizedItemCourseId) && !isNaN(normalizedCourseId)
+        })
     }
 
     // Check if course is in cart by documentId (more reliable for Strapi v5)

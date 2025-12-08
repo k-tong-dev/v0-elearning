@@ -9,6 +9,7 @@ import { BlogPostCard } from "./BlogPostCard";
 import {Card, CardContent} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
+import { getAvatarUrl } from "@/lib/getAvatarUrl";
 
 interface LatestArticlesSectionProps {
     regularPosts: BlogPost[];
@@ -53,16 +54,34 @@ export function LatestArticlesSection({
                         >
                             <Card
                                 className="hover:shadow-lg transition-all hover:scale-[1.01] cursor-pointer overflow-hidden"
-                                onClick={() => window.location.href = `/blog/${post.id}`} // Direct navigation for simplicity
+                                onClick={() => window.location.href = `/blog/${post.documentId || post.slug || post.id}`} // Use documentId first to prevent duplicates
                             >
                                 <CardContent className="p-0">
                                     <div className="md:flex">
-                                        <div className="md:w-1/3">
-                                            <img
-                                                src={post.coverImage}
-                                                alt={post.title}
-                                                className="w-full h-48 md:h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                            />
+                                        <div className="md:w-1/3 relative">
+                                            {post.coverImage && typeof post.coverImage === 'string' && post.coverImage.trim() !== '' ? (
+                                                <img
+                                                    src={post.coverImage}
+                                                    alt={post.title}
+                                                    className="w-full h-48 md:h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-48 md:h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 group-hover:scale-110 transition-transform duration-500 relative overflow-hidden">
+                                                    {/* Animated gradient overlay for depth */}
+                                                    <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/50 via-transparent to-purple-600/50 animate-pulse" />
+                                                    {/* Decorative pattern */}
+                                                    <div className="absolute inset-0 opacity-20">
+                                                        <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+                                                        <div className="absolute bottom-0 right-0 w-40 h-40 bg-purple-300/20 rounded-full blur-3xl" />
+                                                    </div>
+                                                    {/* Title overlay for visual interest */}
+                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                        <div className="text-white/30 font-bold text-4xl md:text-5xl select-none">
+                                                            {post.title.charAt(0).toUpperCase()}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="md:w-2/3 p-6">
@@ -70,7 +89,7 @@ export function LatestArticlesSection({
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <Badge variant="outline">
-                                                            {categories.find(c => c.id === post.category)?.name}
+                                                            {post.categoryData?.name || categories.find(c => c.id === post.category)?.name || post.category}
                                                         </Badge>
                                                         <span className="text-xs text-muted-foreground">
                                                             {formatDate(post.publishedAt)}
@@ -89,7 +108,7 @@ export function LatestArticlesSection({
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-3">
                                                         <Avatar className="w-8 h-8">
-                                                            <AvatarImage src={post.author.avatar} />
+                                                            <AvatarImage src={getAvatarUrl(post.author.avatar) || "/images/Avatar.jpg"} />
                                                             <AvatarFallback>
                                                                 {post.author.name.split(" ").map(n => n[0]).join("")}
                                                             </AvatarFallback>
