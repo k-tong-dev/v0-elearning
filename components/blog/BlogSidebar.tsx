@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Tag } from "lucide-react";
+import { Search, Filter, Tag, Plus } from "lucide-react";
 import { BlogCategory } from "@/types/blog";
 
 interface BlogSidebarProps {
@@ -19,6 +19,7 @@ interface BlogSidebarProps {
     setSortBy: (sort: string) => void;
     categories: BlogCategory[];
     popularTags: string[];
+    onCreatePost?: () => void;
 }
 
 export function BlogSidebar({
@@ -30,9 +31,10 @@ export function BlogSidebar({
                                 setSortBy,
                                 categories,
                                 popularTags,
+                                onCreatePost,
                             }: BlogSidebarProps) {
     return (
-        <div className="lg:col-span-1 space-y-6">
+        <div className="space-y-6">
             {/* Search & Filters */}
             <motion.div
                 initial={{ opacity: 0, x: -20 }}

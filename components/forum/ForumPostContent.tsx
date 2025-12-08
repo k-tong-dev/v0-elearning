@@ -5,11 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { ThumbsUp, ThumbsDown, Eye, MessageCircle } from "lucide-react";
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { ForumPost } from "@/types/forum";
+import { ForumContentRenderer } from "./ForumContentRenderer";
 
 interface ForumPostContentProps {
     post: ForumPost;
@@ -18,33 +15,21 @@ interface ForumPostContentProps {
 }
 
 export function ForumPostContent({ post, onLikePost, onDislikePost }: ForumPostContentProps) {
+    // Get description from post if available (may need to fetch from Strapi)
+    const description = (post as any).description || "";
+    
     return (
         <div className="p-6 pt-0">
-            <div className="prose max-w-none mb-6 dark:prose-invert">
-                <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                        code({ node, inline, className, children, ...props }) {
-                            const match = /language-(\w+)/.exec(className || '');
-                            return !inline && match ? (
-                                <SyntaxHighlighter
-                                    style={atomDark}
-                                    language={match[1]}
-                                    PreTag="div"
-                                    {...props}
-                                >
-                                    {String(children).replace(/\n$/, '')}
-                                </SyntaxHighlighter>
-                            ) : (
-                                <code className={className} {...props}>
-                                    {children}
-                                </code>
-                            );
-                        },
-                    }}
-                >
-                    {post.content}
-                </ReactMarkdown>
+            {/* Description if available */}
+            {description && (
+                <div className="mb-6">
+                    <ForumContentRenderer content={description} />
+                </div>
+            )}
+            
+            {/* Main Content */}
+            <div className="mb-6">
+                <ForumContentRenderer content={post.content} />
             </div>
 
             <div className="flex items-center gap-2 mb-4">

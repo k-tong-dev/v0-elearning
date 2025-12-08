@@ -206,11 +206,11 @@ export function ChatWidget() {
                                             className="text-center text-muted-foreground py-8"
                                         >
                                             <div className="w-32 h-32 mx-auto mb-4"> {/* Container for lottie */}
-                                                <DotLottieReact
-                                                    src="https://lottie.host/8e4dc7ea-d549-4c32-8d4e-d2d0c825a7d8/C5RAdvAFYS.lottie"
-                                                    loop
-                                                    autoplay
-                                                />
+                                                {/*<DotLottieReact*/}
+                                                {/*    src="https://lottie.host/8e4dc7ea-d549-4c32-8d4e-d2d0c825a7d8/C5RAdvAFYS.lottie"*/}
+                                                {/*    loop*/}
+                                                {/*    autoplay*/}
+                                                {/*/>*/}
                                             </div>
                                             <p className="text-lg font-semibold mb-2">How can I help you today?</p>
                                             <p className="text-sm">Ask me anything about CamEdu courses, learning, or tech!</p>
@@ -271,7 +271,7 @@ export function ChatWidget() {
                                                 </span>
                                             </div>
                                             {msg.sender === "user" && (
-                                                <Avatar className="w-8 h-8 shrink-0 border border-border dark:border-cyan-500">
+                                                <Avatar className="w-8 h-8 shrink-0 border border-border dark:border-blue-500">
                                                     <AvatarFallback className="bg-none text-gray-400">
                                                         <User className="w-4 h-4" />
                                                     </AvatarFallback>
@@ -289,7 +289,7 @@ export function ChatWidget() {
                                                         autoplay
                                                     />
                                                 </Avatar>
-                                                <span className="text-sm">CamEdu AI is typing...</span>
+                                                <span className="text-sm">Typing...</span>
                                             </div>
                                         </div>
                                     )}

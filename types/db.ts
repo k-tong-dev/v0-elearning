@@ -2,7 +2,7 @@ import { ObjectId } from 'mongodb';
 
 export interface Skill {
     _id?: ObjectId;
-    id?: string; // String representation of _id for frontend
+    id?: string;
     name: string;
     category?: string; // e.g., "Programming Languages", "Frontend", "Backend"
     createdAt: Date;
@@ -11,11 +11,11 @@ export interface Skill {
 
 export interface BadgeDefinition {
     _id?: ObjectId;
-    id?: string; // String representation of _id for frontend
+    id?: string;
     name: string;
     description: string;
-    icon: string; // Emoji or URL to an icon
-    color: string; // Tailwind CSS class for background color
-    createdAt: Date;
-    updatedAt: Date;
+    icon: string;
+    color: string;
+    createdAt?: Date;
+    updatedAt?: Date;
 }

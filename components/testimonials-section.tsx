@@ -37,14 +37,25 @@ const testimonials = [
 
 export function TestimonialsSection() {
   return (
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-32 bg-white dark:bg-slate-950 relative">
+        {/* Light/Dark Mode Background */}
+        <div 
+          className="absolute inset-0 dark:opacity-30 opacity-10"
+          style={{
+            backgroundImage: `
+              radial-gradient(circle at 20% 50%, rgba(0, 0, 0, 0.03) 0%, transparent 60%),
+              radial-gradient(circle at 80% 80%, rgba(0, 0, 0, 0.02) 0%, transparent 60%)
+            `,
+            backgroundSize: "100% 100%",
+          }}
+        />
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Section Header */}
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent uppercase">Testimonials</span>
+          <div className="text-center mb-20">
+            <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-slate-900 dark:text-white uppercase tracking-wide">
+              Testimonials
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg text-slate-600 dark:text-gray-300 max-w-2xl mx-auto">
               Hear from our learners as they share their journeys of transformation, success, and how our platform has
               made a difference in their lives.
             </p>
@@ -61,32 +72,29 @@ export function TestimonialsSection() {
                     transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
                   <Card
-                      className="group h-full flex flex-col justify-between hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 backdrop-blur-sm relative overflow-hidden"
+                      className="group h-full flex flex-col justify-between liquid-glass-card hover:border-blue-500/30 relative overflow-hidden"
                   >
-                    <CardContent className="p-6 flex flex-col h-full">
-                      {/* Decorative background element */}
-                      <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-300" style={{ backgroundImage: `url(/image-79.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-
+                    <CardContent className="p-8 flex flex-col h-full">
                       {/* Quote Icon */}
-                      <div className="mb-4 relative z-10">
-                        <Quote className="w-8 h-8 text-primary/50 group-hover:text-primary transition-colors" />
+                      <div className="mb-6 relative z-10">
+                        <Quote className="w-10 h-10 text-blue-500/50 dark:text-blue-500/50 group-hover:text-blue-500 dark:group-hover:text-blue-500 transition-colors" />
                       </div>
 
                       {/* Rating */}
-                      <div className="flex items-center mb-4 relative z-10">
+                      <div className="flex items-center mb-6 relative z-10">
                         {[...Array(testimonial.rating)].map((_, i) => (
-                            <Star key={i} className="w-4 h-4 text-yellow-500 fill-current" />
+                            <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
                         ))}
                       </div>
 
                       {/* Content */}
-                      <p className="text-foreground mb-6 leading-relaxed flex-grow relative z-10">{testimonial.content}</p>
+                      <p className="text-slate-700 dark:text-white/90 mb-8 leading-relaxed flex-grow relative z-10 text-lg">{testimonial.content}</p>
 
                       {/* Author */}
                       <div className="flex items-center mt-auto relative z-10">
-                        <Avatar className="w-12 h-12 mr-4 border-2 border-primary/30 group-hover:border-primary transition-colors">
+                        <Avatar className="w-14 h-14 mr-4 border-2 border-blue-500/30 dark:border-blue-500/30 group-hover:border-blue-500 dark:group-hover:border-blue-500 transition-colors">
                           <AvatarImage src={testimonial.avatar || "/placeholder.svg"} alt={testimonial.name} />
-                          <AvatarFallback className="bg-primary/10 text-primary">
+                          <AvatarFallback className="bg-blue-500/10 dark:bg-blue-500/10 text-blue-500 dark:text-blue-500">
                             {testimonial.name
                                 .split(" ")
                                 .map((n) => n[0])
@@ -94,8 +102,8 @@ export function TestimonialsSection() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <h4 className="font-semibold text-foreground">{testimonial.name}</h4>
-                          <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                          <h4 className="font-semibold text-slate-900 dark:text-white">{testimonial.name}</h4>
+                          <p className="text-sm text-slate-600 dark:text-gray-400">{testimonial.role}</p>
                         </div>
                       </div>
                     </CardContent>

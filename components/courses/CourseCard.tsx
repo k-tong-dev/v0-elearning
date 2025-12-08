@@ -1,33 +1,40 @@
 "use client"
 
-import React from "react"
-import {motion} from "framer-motion"
-import {Card, CardContent, CardFooter, CardHeader} from "@/components/ui/card"
-import {Badge} from "@/components/ui/badge"
-import {Button} from "@heroui/react"
-import {
-    Star,
-    Clock,
-    Users,
-    Heart,
-    BookOpen,
-    TrendingUp,
-    Award,
-    Play,
-    ChevronRight,
-    Sparkles
-} from "lucide-react"
-import Link from "next/link"
+import React, { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@heroui/react"
+import { Star, Clock, Users, BookOpen, Flame, Heart, Award, Tag as TagIcon, Play, Edit, Eye, ShoppingCart, CheckCircle } from "lucide-react"
 import Image from "next/image"
+import { getAvatarUrl } from "@/lib/getAvatarUrl"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import ReactPlayer from "react-player"
+import { CoursePreview, getCoursePreviewUrl } from "@/integrations/strapi/coursePreview"
+import { motion } from "framer-motion"
+import { cn } from "@/utils/utils"
+import {FaRegMoneyBillAlt} from "react-icons/fa";
+
+interface InstructorSummary {
+    id: string | number
+    name?: string
+    avatar?: any
+}
 
 interface CourseCardProps {
     course: {
         id: number
+        documentId?: string
         title: string
         description: string
         image: string
         price: string
-        originalPrice: string
+        priceValue?: number
+        originalPrice?: string
         rating: number
         students: number
         duration: string
@@ -41,265 +48,684 @@ interface CourseCardProps {
         discount?: string
         lectures?: number
         projects?: number
+        badges?: string[]
+        company?: string | null
+        companyAvatar?: string | null
+        instructors?: InstructorSummary[]
+        preview_available?: boolean
+        preview_url?: string | null
+        course_preview?: CoursePreview | null
+        is_paid?: boolean
     }
-    index?: number
     onCourseClick?: (courseId: number) => void
-    onToggleFavorite?: (courseId: number) => void
+    onToggleFavorite?: (courseId: number, courseDocumentId?: string) => void
     onEnrollClick?: (courseId: number) => void
+    onOpenWishlist?: () => void
+    onAddToCart?: (courseId: number) => void
+    onEdit?: (courseId: number) => void
+    onView?: (courseId: number) => void
     isFavorite?: boolean
+    isInCart?: boolean
+    showEditButton?: boolean
+    variant?: "default" | "dashboard"
+}
+
+const getInstructorInitials = (name?: string) => {
+    if (!name) return "IN"
+    const letters = name
+        .split(" ")
+        .filter(Boolean)
+        .map((part) => part[0]?.toUpperCase())
+        .join("")
+    return letters.slice(0, 2) || "IN"
+}
+
+// Preview Display Component
+const CoursePreviewDisplay = ({ 
+    course, 
+    preview, 
+    previewUrl 
+}: { 
+    course: { id: number; title: string }
+    preview?: CoursePreview | null
+    previewUrl?: string | null
+}) => {
+    const playerRef = useRef<any>(null)
+    const videoElementRef = useRef<HTMLVideoElement | null>(null)
+    const [hasError, setHasError] = useState(false)
+    const [isPlaying, setIsPlaying] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
+
+    useEffect(() => {
+        let isActive = true
+        setIsMounted(true)
+        
+        const timer = setTimeout(() => {
+            if (isActive) {
+                setIsPlaying(true)
+            }
+        }, 500)
+
+        return () => {
+            isActive = false
+            clearTimeout(timer)
+            setIsMounted(false)
+            setIsPlaying(false)
+            
+            if (playerRef.current) {
+                try {
+                    const player = playerRef.current as any
+                    if (player.setPlaying) {
+                        player.setPlaying(false)
+                    }
+                    if (player.getInternalPlayer) {
+                        const internalPlayer = player.getInternalPlayer()
+                        if (internalPlayer && typeof internalPlayer.pause === 'function') {
+                            try {
+                                internalPlayer.pause()
+                            } catch (e) {
+                                // Ignore pause errors
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Ignore cleanup errors
+                }
+            }
+            if (videoElementRef.current) {
+                try {
+                    videoElementRef.current.pause()
+                    videoElementRef.current.currentTime = 0
+                } catch (err) {
+                    // ignore cleanup errors
+                }
+            }
+        }
+    }, [])
+
+    const extractedUrl = getCoursePreviewUrl(preview) || previewUrl
+    const previewType = preview?.types
+
+    // Simple placeholder when no preview - less colorful
+    if (!extractedUrl) {
+        return (
+            <div className="relative aspect-[16/9] w-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center overflow-hidden">
+                <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+            </div>
+        )
+    }
+
+    if (previewType === "image") {
+        return (
+            <div className="relative aspect-[16/9] w-full overflow-hidden">
+                <img
+                    src={extractedUrl}
+                    alt={course.title || "Course preview"}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    onError={() => setHasError(true)}
+                />
+                {hasError && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                        <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+                    </div>
+                )}
+                {/* Minimal overlay - only at bottom for text readability */}
+                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+            </div>
+        )
+    }
+
+    const isStreamingVideo = extractedUrl.includes('youtube.com') || 
+                      extractedUrl.includes('youtu.be') || 
+                      extractedUrl.includes('vimeo.com')
+    const isDirectVideoFile = extractedUrl.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i) !== null || (previewType === "video" && !isStreamingVideo)
+    const isImageUrl = extractedUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i)
+    const shouldLimitTo30s = (isStreamingVideo || isDirectVideoFile || previewType === "video") && !isImageUrl
+
+    if (isImageUrl) {
+        return (
+            <div className="relative aspect-[16/9] w-full overflow-hidden">
+                <img
+                    src={extractedUrl}
+                    alt={course.title || "Course preview"}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    onError={() => setHasError(true)}
+                />
+                {hasError && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                        <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+                    </div>
+                )}
+                {/* Minimal overlay - only at bottom for text readability */}
+                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+            </div>
+        )
+    } else if (isDirectVideoFile) {
+        return (
+            <div className="relative aspect-[16/9] w-full bg-black overflow-hidden">
+                <video
+                    ref={videoElementRef}
+                    src={extractedUrl}
+                    className="w-full h-full object-cover"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    controls={false}
+                    onTimeUpdate={(event) => {
+                        if (!shouldLimitTo30s) return
+                        const videoEl = event.currentTarget
+                        if (videoEl.currentTime >= 30) {
+                            videoEl.currentTime = 0
+                        }
+                    }}
+                    onCanPlay={() => setHasError(false)}
+                    onError={(event) => {
+                        setHasError(true)
+                        try {
+                            event?.currentTarget?.pause?.()
+                        } catch (err) {
+                            // ignore
+                        }
+                    }}
+                />
+                {hasError && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                        <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+                    </div>
+                )}
+                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+            </div>
+        )
+    } else if (isStreamingVideo || previewType === "video" || previewType === "url") {
+        return (
+            <div className="relative aspect-[16/9] w-full bg-black overflow-hidden">
+                {isMounted && (
+                    <ReactPlayer
+                        ref={playerRef}
+                        src={extractedUrl}
+                        playing={isPlaying && isMounted}
+                        loop={true}
+                        muted={true}
+                        controls={false}
+                        width="100%"
+                        height="100%"
+                        style={{ position: 'absolute', top: 0, left: 0 }}
+                        config={{
+                            youtube: {
+                                playerVars: {
+                                    autoplay: 0,
+                                    controls: 0,
+                                    loop: 1,
+                                    start: 0,
+                                    end: shouldLimitTo30s ? 30 : undefined,
+                                    modestbranding: 1,
+                                    rel: 0,
+                                    playsinline: 1,
+                                },
+                            },
+                            vimeo: {
+                                playerOptions: {
+                                    autoplay: false,
+                                    loop: true,
+                                    muted: true,
+                                    controls: false,
+                                    responsive: true,
+                                },
+                            },
+                        } as any}
+                        onProgress={(state: any) => {
+                            if (!isMounted) return
+                            if (shouldLimitTo30s && state?.playedSeconds >= 30 && playerRef.current) {
+                                playerRef.current.seekTo(0, 'seconds')
+                            }
+                        }}
+                        onError={(error) => {
+                            console.error("ReactPlayer error:", error)
+                            setHasError(true)
+                            setIsPlaying(false)
+                        }}
+                        onReady={() => {
+                            if (!isMounted) return
+                            setHasError(false)
+                            setTimeout(() => {
+                                if (isMounted) {
+                                    setIsPlaying(true)
+                                }
+                            }, 100)
+                        }}
+                    />
+                )}
+                {hasError && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                        <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+                    </div>
+                )}
+                {/* Minimal overlay - only at bottom for text readability */}
+                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+            </div>
+        )
+    }
+
+    return (
+        <div className="relative aspect-[16/9] w-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center overflow-hidden">
+            <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+        </div>
+    )
 }
 
 export function CourseCard({
                                course,
-                               index = 0,
                                onCourseClick,
                                onToggleFavorite,
                                onEnrollClick,
-                               isFavorite = false
+                               onOpenWishlist,
+                               onAddToCart,
+                               onEdit,
+                               onView,
+                               isFavorite = false,
+                               isInCart = false,
+                               showEditButton = false,
+                               variant = "default",
                            }: CourseCardProps) {
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+    const cardRef = useRef<HTMLDivElement>(null)
+    const router = useRouter()
+    
+
     const handleCardClick = () => {
         onCourseClick?.(course.id)
     }
 
-    const handleFavoriteClick = (e: React.MouseEvent) => {
-        e.stopPropagation()
-        onToggleFavorite?.(course.id)
-    }
-
     const handleEnrollButtonClick = (e: React.MouseEvent) => {
         e.stopPropagation()
+        
+        // For paid courses, navigate to checkout page
+        if (course.is_paid && course.priceValue) {
+            // Prepare checkout data
+            const checkoutData = {
+                courseId: course.id,
+                title: course.title,
+                description: course.description,
+                image: course.image,
+                previewType: course.course_preview?.types || "image",
+                price: course.priceValue,
+                instructor: course.educator,
+            }
+            
+            // Store in sessionStorage
+            sessionStorage.setItem('checkoutCourse', JSON.stringify(checkoutData))
+            
+            // Navigate to checkout
+            router.push('/checkout')
+        } else {
+            // For free courses or if no checkout flow, use original callback
         onEnrollClick?.(course.id)
     }
+    }
+
+    const handleFavoriteClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        onToggleFavorite?.(course.id, course.documentId)
+    }
+
+    const handlePreviewClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        const previewUrl = getCoursePreviewUrl(course.course_preview) || course.preview_url
+        if (previewUrl) {
+            window.open(previewUrl, '_blank')
+        }
+    }
+
+    const handleEditClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        onEdit?.(course.id)
+    }
+
+    const handleViewClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        onView?.(course.id)
+    }
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!cardRef.current) return
+        const rect = cardRef.current.getBoundingClientRect()
+        setMousePosition({
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+        })
+    }
+
+    const lessons = course.lectures || 0
+    const instructors = course.instructors && course.instructors.length > 0
+        ? course.instructors
+        : [{ id: course.educatorId, name: course.educator }]
+    
+    const shouldShowPreview = course.preview_available && (course.course_preview || course.preview_url)
+    const previewUrl = getCoursePreviewUrl(course.course_preview) || course.preview_url
 
     return (
         <motion.div
-            initial={{opacity: 0, y: 20, scale: 0.95}}
-            animate={{opacity: 1, y: 0, scale: 1}}
-            transition={{
-                delay: 0.1 * (index % 4),
-                duration: 0.4,
-                ease: "easeOut"
-            }}
-            whileHover={{
-                y: -8,
-                scale: 1.02,
-                transition: {duration: 0.2}
-            }}
-            className="group h-full"
+            ref={cardRef}
+            className="group relative h-full w-full max-w-sm mx-auto"
+            onClick={handleCardClick}
+            onMouseMove={handleMouseMove}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            whileHover={{ y: -4 }}
         >
-            <Card
-                className="relative overflow-hidden h-full bg-gradient-to-br from-white/80 via-white/60 to-cyan-50/30
-              dark:from-gray-900/80 dark:via-gray-800/60 dark:to-cyan-900/20 dark:group-hover:border-cyan-800/50
-                backdrop-blur-xl border-0 shadow-xl hover:shadow-2xl transition-all duration-500
-                cursor-pointer py-0
-              group-hover:border-cyan-200/50 "
-                // onClick={handleCardClick}
-            >
-                {/* Animated background gradient */}
-                <div
-                    className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"/>
-
-                {/* Floating particles effect */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-4 right-4 w-2 h-2 bg-cyan-400/30 rounded-full animate-pulse"/>
-                    <div
-                        className="absolute top-8 right-8 w-1 h-1 bg-emerald-400/40 rounded-full animate-pulse delay-1000"/>
-                    <div
-                        className="absolute bottom-6 left-6 w-1.5 h-1.5 bg-cyan-300/20 rounded-full animate-pulse delay-2000"/>
-                </div>
-
-                {/* Status badges */}
-                {(course.trending || course.bestseller) && (
-                    <div className="absolute top-2 right-4 z-20 flex flex-col gap-2">
-                        {course.trending && (
-                            <motion.div
-                                initial={{scale: 0, rotate: -180}}
-                                animate={{scale: 1, rotate: 0}}
-                                transition={{delay: 0.2, type: "spring", stiffness: 200}}
-                            >
-                                <Badge
-                                    className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg border-0">
-                                    <TrendingUp className="w-3 h-3 mr-1"/>
-                                    Trending
-                                </Badge>
-                            </motion.div>
-                        )}
-                        {course.bestseller && (
-                            <motion.div
-                                initial={{scale: 0, rotate: 180}}
-                                animate={{scale: 1, rotate: 0}}
-                                transition={{delay: 0.3, type: "spring", stiffness: 200}}
-                            >
-                                <Badge
-                                    className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg border-0">
-                                    <Award className="w-3 h-3 mr-1"/>
-                                    Bestseller
-                                </Badge>
-                            </motion.div>
-                        )}
-                    </div>
-                )}
-
-                <CardHeader className="p-0 relative">
-                    <div className="relative overflow-hidden">
-                        {/* Course image with enhanced hover effects */}
-                        <div className="relative aspect-video overflow-hidden">
+            <Card className="relative overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl h-full flex flex-col p-0 min-h-[550px] max-h-[650px]">
+                {/* Subtle hover glow - less colorful */}
+                <div 
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+                    style={{
+                        background: `radial-gradient(400px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(59, 130, 246, 0.08), transparent 40%)`,
+                    }}
+                />
+                
+                {/* Preview Header */}
+                    <div className="relative overflow-hidden rounded-t-2xl">
+                        <div className="aspect-[16/9] relative">
+                        {shouldShowPreview ? (
+                            <CoursePreviewDisplay 
+                                course={course}
+                                preview={course.course_preview}
+                                previewUrl={previewUrl}
+                            />
+                        ) : (
+                            <>
                             <Image
                                 src={course.image || "/placeholder.svg"}
                                 alt={course.title}
                                 fill
-                                className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                             />
-
-                            {/* Gradient overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"/>
-
-                            {/* Favorite button */}
-                            <Button
-                                size="sm"
-                                className="absolute min-w-0 top-4 left-4 bg-white/90 hover:bg-white text-gray-700 rounded-full p-2 shadow-lg backdrop-blur-sm border-0 z-10"
-                                onClick={handleFavoriteClick}
-                            >
-                                <Heart
-                                    className={`w-4 h-4 transition-all duration-300 ${
-                                        isFavorite
-                                            ? "fill-red-500 text-red-500 scale-110"
-                                            : "hover:scale-110"
-                                    }`}
-                                />
-                            </Button>
-
-                            {/* Level and discount badges */}
-                            <div className="absolute bottom-4 left-4 flex gap-2">
-                                <Badge
-                                    className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white font-semibold px-3 py-1.5 rounded-full shadow-lg border-0">
+                                {/* Minimal overlay - only at bottom */}
+                                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/50 to-transparent" />
+                            </>
+                        )}
+                            
+                        {/* Badges container */}
+                        <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2 z-10">
+                            <div className="flex flex-wrap gap-1.5">
+                                <Badge className="bg-blue-500/90 backdrop-blur-sm text-white border-0 text-[10px] font-medium px-2 py-0.5 shadow-md">
+                                    {course.category}
+                                </Badge>
+                                <Badge className="bg-purple-500/90 backdrop-blur-sm text-white border-0 text-[10px] font-medium px-2 py-0.5 shadow-md">
                                     {course.level}
                                 </Badge>
-                                {course.discount && (
-                                    <Badge
-                                        className="bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold px-3 py-1.5 rounded-full shadow-lg border-0">
-                                        {course.discount}
+                            </div>
+                            <div className="flex gap-1.5">
+                                {shouldShowPreview && (
+                                    <Badge className="bg-emerald-500/90 backdrop-blur-sm border-0 text-white text-[10px] font-medium px-2 py-0.5 shadow-md">
+                                        <Eye className="w-2.5 h-2.5 mr-1" />
+                                        Preview
+                                    </Badge>
+                                )}
+                                {course.trending && (
+                                    <Badge className="bg-rose-500 text-white flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 shadow-md">
+                                        <Flame className="w-2.5 h-2.5" />
+                                        Trending
                                     </Badge>
                                 )}
                             </div>
                         </div>
-                    </div>
-                </CardHeader>
 
-                <CardContent className="p-6 space-y-4">
-                    {/* Category and educator */}
-                    <div className="flex items-center justify-between">
-                        <Badge
-                            variant="outline"
-                            className="text-xs font-medium border-cyan-200/50 text-cyan-700 dark:border-cyan-800/50 dark:text-cyan-300 bg-cyan-50/50 dark:bg-cyan-900/20"
-                        >
-                            {course.category}
-                        </Badge>
-                        <Link
-                            href={`/users/${course.educatorId}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-xs text-muted-foreground font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-200 flex items-center gap-1"
-                        >
-                            by {course.educator}
-                            <ChevronRight className="w-3 h-3"/>
-                        </Link>
-                    </div>
-
-                    {/* Course title */}
-                    <h3 className="text-xl font-bold leading-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-300 line-clamp-2">
-                        {course.title}
-                    </h3>
-
-                    {/* Course description */}
-                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
-                        {course.description}
-                    </p>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-2">
-                        {course.tags.slice(0, 3).map((tag, tagIndex) => (
-                            <motion.div
-                                key={tag}
-                                initial={{opacity: 0, scale: 0.8}}
-                                animate={{opacity: 1, scale: 1}}
-                                transition={{delay: 0.1 * tagIndex}}
+                        {/* Preview Play Button */}
+                        {shouldShowPreview && previewUrl && (
+                            <motion.button
+                                onClick={handlePreviewClick}
+                                className="absolute bottom-3 left-3 p-2.5 rounded-full bg-white/90 backdrop-blur-md text-slate-900 shadow-lg transition-all hover:scale-110 z-10"
+                                aria-label="Preview course"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.95 }}
                             >
-                                <Badge
-                                    variant="secondary"
-                                    className="text-xs bg-gradient-to-r from-cyan-50 to-emerald-50 dark:from-cyan-900/30 dark:to-emerald-900/30 text-cyan-700 dark:text-cyan-300 border-cyan-200/50 dark:border-cyan-800/50 hover:scale-105 transition-transform duration-200"
-                                >
-                                    {tag}
-                                </Badge>
-                            </motion.div>
-                        ))}
+                                <Play className="w-4 h-4 fill-current" />
+                            </motion.button>
+                        )}
+
+                        {/* Favorite Button */}
+                        {onToggleFavorite && (
+                            <motion.button
+                                onClick={handleFavoriteClick}
+                                className={`absolute bottom-3 right-3 p-2.5 rounded-full backdrop-blur-md shadow-lg transition-all z-10 ${
+                                    isFavorite 
+                                        ? "bg-rose-500 text-white" 
+                                        : "bg-white/90 text-rose-500 hover:bg-white"
+                                }`}
+                                aria-label="Toggle favorite"
+                                whileHover={{ scale: 1.1, rotate: isFavorite ? 0 : 10 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                <Heart className={`w-4 h-4 ${isFavorite ? "fill-current" : ""}`} />
+                            </motion.button>
+                        )}
+                        </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <div className="flex items-center">
-                                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400"/>
-                                <span className="ml-1 font-semibold text-foreground">{course.rating}</span>
+                {/* Course Content */}
+                <CardContent className="p-4 space-y-4 flex-1 flex flex-col">
+                    {/* Title */}
+                    <div>
+                        <h3 className="text-base font-bold text-slate-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+                            {course.title}
+                        </h3>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 mt-1.5 leading-relaxed">
+                            {course.description}
+                            </p>
+                        </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-2 border border-blue-100 dark:border-blue-900/50">
+                            <div className="flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                                <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{course.duration}</span>
+                            </div>
+                                </div>
+                        <div className="bg-purple-50 dark:bg-purple-950/30 rounded-lg p-2 border border-purple-100 dark:border-purple-900/50">
+                            <div className="flex items-center gap-1.5">
+                                <Users className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                                <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{course.students.toLocaleString()}</span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Users className="w-4 h-4"/>
-                            <span className="font-medium">{course.students.toLocaleString()}</span>
+                        <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2 border border-amber-100 dark:border-amber-900/50">
+                            <div className="flex items-center gap-1.5">
+                                <Star className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 fill-amber-600 dark:fill-amber-400" />
+                                <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{course.rating.toFixed(1)}</span>
+                            </div>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Clock className="w-4 h-4"/>
-                            <span className="font-medium">{course.duration}</span>
+
+                    {/* Badges and Tags - Improved styling */}
+                    {((course.badges && course.badges.length > 0) || (course.tags && course.tags.length > 0)) && (
+                        <div className="flex flex-wrap gap-1.5">
+                            {course.badges?.slice(0, 2).map((badge, index) => (
+                                <Badge 
+                                    key={`badge-${index}`} 
+                                    className="bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-[10px] font-medium px-2 py-0.5"
+                                >
+                                    <Award className="w-2.5 h-2.5 mr-1" />
+                                    {badge}
+                                </Badge>
+                            ))}
+                            {course.tags?.slice(0, 2).map((tag, index) => (
+                                    <Badge
+                                    key={`tag-${index}`} 
+                                    className="bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 text-[10px] font-medium px-2 py-0.5"
+                                    >
+                                    <TagIcon className="w-2.5 h-2.5 mr-1" />
+                                        {tag}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+
+                    {/* Instructors */}
+                    {instructors.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div className="flex -space-x-2">
+                                {instructors.slice(0, 3).map((instructor) => {
+                                    // Use enriched avatarUrl if available, otherwise fall back to getAvatarUrl
+                                    const avatarUrl = (instructor as any).avatarUrl || getAvatarUrl(instructor.avatar)
+                                    const initials = getInstructorInitials(instructor.name)
+                                    return (
+                                        <Popover key={instructor.id}>
+                                            <PopoverTrigger asChild>
+                                                <button
+                                                    type="button"
+                                                    className="relative size-9 rounded-full border border-white bg-slate-100 dark:bg-slate-800 shadow-sm overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                                                >
+                                                    {avatarUrl ? (
+                                                        <Image
+                                                            src={avatarUrl}
+                                                            alt={instructor.name || "Instructor"}
+                                                            fill
+                                                            sizes="36px"
+                                                            className="object-cover"
+                                                        />
+                                                    ) : (
+                                                        <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-200">
+                                                            {initials}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-48 p-3">
+                                                <div className="flex items-center gap-2">
+                                                    {avatarUrl ? (
+                                                        <Image
+                                                            src={avatarUrl}
+                                                            alt={instructor.name || "Instructor"}
+                                                            width={32}
+                                                            height={32}
+                                                            className="rounded-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-semibold text-slate-600 dark:text-slate-200">
+                                                            {initials}
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                                            {instructor.name || "Instructor"}
+                                                        </p>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-300">
+                                                            Course instructor
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    )
+                                })}
+                                {instructors.length > 3 && (
+                                    <div className="size-9 rounded-full border border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-[11px] font-semibold text-slate-500 flex items-center justify-center">
+                                        +{instructors.length - 3}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                                {instructors.length === 1
+                                    ? instructors[0].name
+                                    : `${instructors.length} instructors`}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Price Section - Keep as is */}
+                    <div className="mt-auto pt-3 border-t border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-3">
+                            <div>
+                                {course.discount && (
+                                    <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-semibold px-2 py-1 mb-1">
+                                        {course.discount}
+                                    </Badge>
+                                )}
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                    {course.price}
+                                    </span>
+                                    {course.originalPrice && (
+                                        <span className="text-sm text-slate-400 dark:text-slate-500 line-through">
+                                            {course.originalPrice}
+                                        </span>
+                                    )}
+                                </div>
+                                </div>
+                            </div>
+                            
+                        {/* Action Buttons */}
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            {showEditButton ? (
+                                <>
+                                    {onEdit && (
+                                        <Button
+                                            variant="bordered"
+                                            size="sm"
+                                            className="flex-1 border-2 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-blue-500 dark:hover:border-blue-400 transition-all duration-300 font-semibold text-xs"
+                                            onClick={handleEditClick}
+                                        >
+                                            <Edit className="w-3.5 h-3.5 mr-1" />
+                                            Edit
+                                        </Button>
+                                    )}
+                                    {onView && (
+                                        <Button
+                                            variant="bordered"
+                                            size="sm"
+                                            className="flex-1 border-2 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-purple-500 dark:hover:border-purple-400 transition-all duration-300 font-semibold text-xs"
+                                            onClick={handleViewClick}
+                                        >
+                                            <Eye className="w-3.5 h-3.5 mr-1" />
+                                            View
+                                        </Button>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    {/* Show "Add to Cart" button if course is paid, has onAddToCart handler, and is NOT already in cart */}
+                                    {course.is_paid && onAddToCart && !isInCart ? (
+                                        <Button 
+                                            variant="bordered"
+                                            className="rounded-sm flex-1 h-9 px-3 text-xs font-semibold border-2 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 transition-all duration-300"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                onAddToCart(course.id)
+                                            }}
+                                        >
+                                            <ShoppingCart className="w-3.5 h-3.5 mr-1" />
+                                            Add to Cart
+                                        </Button>
+                                    ) : null}
+                                    {course.is_paid && isInCart && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="flex-1 flex items-center justify-center h-9 px-3 rounded-sm bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-700 shadow-sm"
+                                        >
+                                            <CheckCircle className="w-4 h-4 mr-1.5 text-green-600 dark:text-green-400 fill-green-100 dark:fill-green-900/40" />
+                                            <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+                                                In Cart
+                                            </span>
+                                        </motion.div>
+                                    )}
+                            <Button 
+                                className={cn(
+                                    "bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white h-9 px-4 text-xs font-bold rounded-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105",
+                                    course.is_paid && onAddToCart && !isInCart ? "flex-1" : "w-full"
+                                )}
+                                onClick={handleEnrollButtonClick}
+                            >
+                                        <FaRegMoneyBillAlt className="w-3.5 h-3.5 mr-1.5" />
+                                        {course.is_paid ? "Buy Now" : "Enroll Now"}
+                            </Button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </CardContent>
-
-                <CardFooter className="p-6 pt-0">
-                    <div className="flex flex-col gap-4 w-full">
-                        {/* Price */}
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <span
-                                    className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
-                                    {course.price}
-                                </span>
-                                <span className="text-sm text-muted-foreground line-through">
-                                    {course.originalPrice}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Enroll button */}
-                        <motion.div
-                            whileHover={{scale: 1.02}}
-                            whileTap={{scale: 0.98}}
-                        >
-                            <Button
-                                size={"md"}
-                                className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600
-                                hover:to-emerald-600 text-white font-normal py-3
-                                rounded-xl shadow-lg hover:shadow-xl hover:shadow-cyan-500/25
-                                transition-all duration-300 border-0 group/btn"
-                                onClick={handleEnrollButtonClick}
-                            >
-                                <BookOpen
-                                    className="w-4 h-4 mr-2 group-hover/btn:rotate-12 transition-transform duration-300"/>
-                                Enroll Now
-                                <ChevronRight
-                                    className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform duration-300"/>
-                            </Button>
-                        </motion.div>
-                    </div>
-                </CardFooter>
-
-                {/* Subtle border glow effect */}
-                <div
-                    className="absolute inset-0 rounded-lg bg-gradient-to-r from-cyan-500/20 via-emerald-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                    style={{
-                        background: 'linear-gradient(45deg, transparent, rgba(6, 182, 212, 0.1), transparent, rgba(16, 185, 129, 0.1), transparent)',
-                        backgroundSize: '200% 200%',
-                        animation: 'gradient 3s ease infinite'
-                    }}/>
             </Card>
         </motion.div>
     )

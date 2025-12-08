@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
             {
                 role: 'system',
                 content:
-                    'You are CamEdu AI, a helpful and knowledgeable assistant for an e-learning platform. Your goal is to assist users with questions about courses, learning paths, technical topics, and general inquiries related to online education. Be friendly, encouraging, and provide concise, accurate information.',
+                    'You are NEXT4LEARN AI, a helpful and knowledgeable assistant for an e-learning platform. Your goal is to assist users with questions about courses, learning paths, technical topics, and general inquiries related to online education. Be friendly, encouraging, and provide concise, accurate information.',
             },
             ...messages,
         ];

@@ -96,7 +96,7 @@ export function DashboardOverview({ stats, enrollmentData, courseTypeData, recen
                 transition={{ delay: 0.1 }}
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
             >
-                <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card">
                     <CardContent className="p-6">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center">
@@ -110,7 +110,7 @@ export function DashboardOverview({ stats, enrollmentData, courseTypeData, recen
                     </CardContent>
                 </Card>
 
-                <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card">
                     <CardContent className="p-6">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
@@ -124,7 +124,7 @@ export function DashboardOverview({ stats, enrollmentData, courseTypeData, recen
                     </CardContent>
                 </Card>
 
-                <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card">
                     <CardContent className="p-6">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center">
@@ -138,7 +138,7 @@ export function DashboardOverview({ stats, enrollmentData, courseTypeData, recen
                     </CardContent>
                 </Card>
 
-                <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card">
                     <CardContent className="p-6">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center">
@@ -161,7 +161,7 @@ export function DashboardOverview({ stats, enrollmentData, courseTypeData, recen
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
                 >
-                    <Card className="glass-enhanced hover:scale-[1.01] hover:shadow-xl transition-all duration-300">
+                    <Card className="liquid-glass-card">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <TrendingUp className="w-5 h-5 text-blue-500" />
@@ -188,7 +188,7 @@ export function DashboardOverview({ stats, enrollmentData, courseTypeData, recen
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                 >
-                    <Card className="glass-enhanced hover:scale-[1.01] hover:shadow-xl transition-all duration-300">
+                    <Card className="liquid-glass-card">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <PieChartIcon className="w-5 h-5 text-purple-500" />
@@ -224,7 +224,7 @@ export function DashboardOverview({ stats, enrollmentData, courseTypeData, recen
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
             >
-                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Activity className="w-5 h-5 text-green-500" />

@@ -2,17 +2,10 @@
 
 import {
     Bell,
-    Search,
     Settings,
     BookOpen,
     Menu,
     X,
-    MessageCircle,
-    Info,
-    FileText,
-    Briefcase,
-    HelpCircle,
-    Phone,
     User,
     LogOut,
     Share2,
@@ -23,9 +16,10 @@ import {
     GraduationCap,
     Compass,
     DollarSign,
+    Users,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
-import { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -37,13 +31,10 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
     DropdownMenuSeparator,
-    DropdownMenuSub,
-    DropdownMenuSubContent,
-    DropdownMenuSubTrigger,
-    DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
+import {Image} from "@heroui/react";
 
 export function HeaderDark() {
     const router = useRouter()
@@ -51,8 +42,8 @@ export function HeaderDark() {
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false)
     const [isScrolled, setIsScrolled] = useState(false)
+    const [isDarkMode, setIsDarkMode] = useState(false)
     const headerRef = useRef<HTMLDivElement>(null)
 
     /* ---------- Mouse liquid effect ---------- */
@@ -77,7 +68,20 @@ export function HeaderDark() {
         return () => window.removeEventListener("scroll", onScroll)
     }, [])
 
-    /* ---------- All your original handlers (unchanged) ---------- */
+    /* ---------- Detect dark mode ---------- */
+    useEffect(() => {
+        const checkDarkMode = () => {
+            setIsDarkMode(document.documentElement.classList.contains('dark'))
+        }
+        checkDarkMode()
+        const observer = new MutationObserver(checkDarkMode)
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class']
+        })
+        return () => observer.disconnect()
+    }, [])
+
     const handleGetStartedClick = () => {
         router.push("/auth/start")
         setIsMenuOpen(false)
@@ -112,8 +116,8 @@ export function HeaderDark() {
         try {
             if (navigator.share) {
                 await navigator.share({
-                    title: "CamEducation",
-                    text: "Check out CamEducation - the best online learning platform!",
+                    title: "NEXT4LEARN",
+                    text: "Check out NEXT4LEARN - the best online learning platform!",
                     url: window.location.origin,
                 })
                 toast.success("Shared successfully!")
@@ -139,31 +143,73 @@ export function HeaderDark() {
         setIsUserMenuOpen(false)
     }
 
-    const handleSearch = () => {
-        console.log("[v0] Search button clicked from header")
-    }
-
-    /* ---------- Explore items (your original data) ---------- */
+    /* ---------- Explore items with card-style ---------- */
     const exploreItems = [
-        { title: "Forum", description: "Join discussions with fellow learners", href: "/forum", icon: MessageCircle, color: "text-blue-400" },
-        { title: "About Us", description: "Learn about our mission and team", href: "/about", icon: Info, color: "text-green-400" },
-        { title: "Blog", description: "Read our latest articles and insights", href: "/blog", icon: FileText, color: "text-purple-400" },
-        { title: "Services", description: "Explore our educational services", href: "/services", icon: Briefcase, color: "text-orange-400" },
-        { title: "Support", description: "Get help when you need it", href: "/support", icon: HelpCircle, color: "text-red-400" },
-        { title: "Contact", description: "Reach out to our team", href: "/contact", icon: Phone, color: "text-cyan-400" },
+        { 
+            title: "Forum", 
+            href: "/forum",
+            description: "Join discussions and connect with learners",
+            icon: "💬",
+            gradient: "from-blue-500 to-indigo-500"
+        },
+        { 
+            title: "About Us", 
+            href: "/about",
+            description: "Learn about our mission and values",
+            icon: "🏢",
+            gradient: "from-purple-500 to-pink-500"
+        },
+        { 
+            title: "Blog", 
+            href: "/blog",
+            description: "Read latest articles and updates",
+            icon: "📝",
+            gradient: "from-purple-500 to-pink-500"
+        },
+        { 
+            title: "Services", 
+            href: "/services",
+            description: "Explore our comprehensive offerings",
+            icon: "⚡",
+            gradient: "from-orange-500 to-red-500"
+        },
+        { 
+            title: "Support", 
+            href: "/support",
+            description: "Get help and find answers",
+            icon: "🛟",
+            gradient: "from-indigo-500 to-purple-500"
+        },
+        { 
+            title: "Contact", 
+            href: "/contact",
+            description: "Reach out to our team",
+            icon: "📧",
+            gradient: "from-violet-500 to-fuchsia-500"
+        },
     ]
 
     return (
         <header
             ref={headerRef}
             className={`
-                left-0 right-0 z-50 overflow-hidden
-                transition-all duration-300
-                ${isScrolled
-                ? "fixed top-0 bg-white/80 dark:bg-black/80 backdrop-blur-2xl border-b dark:border-white/10 border-gray-200/50 shadow-lg"
-                : "absolute top-0 bg-white/10 dark:bg-black/40 backdrop-blur-2xl border-b dark:border-white/5 border-gray-200/50"
+        left-0 right-0 z-50 overflow-hidden
+        transition-all duration-300
+        ${
+                isScrolled
+                    ? "fixed top-0 backdrop-blur-xl border-b shadow-lg"
+                    : "absolute top-0 backdrop-blur-xl border-b"
             }
-            `}
+        ${isScrolled 
+            ? "bg-transparent dark:bg-slate-950/95 border-transparent dark:border-blue-800/30" 
+            : "bg-transparent dark:bg-slate-950/80 border-transparent dark:border-blue-800/20"
+        }
+      `}
+            style={{
+                boxShadow: isScrolled 
+                    ? "0 8px 32px rgba(0, 0, 0, 0.05), 0 1px 0 rgba(0, 0, 0, 0.05)"
+                    : "none",
+            }}
         >
             {/* ---- Liquid blobs ---- */}
             <div className="pointer-events-none absolute inset-0">
@@ -175,7 +221,7 @@ export function HeaderDark() {
                     }}
                 />
                 <div
-                    className="absolute -right-20 top-0 h-80 w-80 animate-[blob_10s_ease-in-out_infinite_2s] rounded-full bg-gradient-to-bl from-cyan-500/30 via-blue-600/20 to-transparent dark:from-cyan-500/30 dark:via-blue-600/20 blur-3xl"
+                    className="absolute -right-20 top-0 h-80 w-80 animate-[blob_10s_ease-in-out_infinite_2s] rounded-full bg-gradient-to-bl from-blue-500/30 via-purple-600/20 to-transparent dark:from-blue-500/30 dark:via-purple-600/20 blur-3xl"
                     style={{
                         transform: `translate(${mousePosition.x * -0.015}px, ${mousePosition.y * 0.015}px)`,
                         transition: "transform .3s cubic-bezier(.4,0,.2,1)",
@@ -190,15 +236,14 @@ export function HeaderDark() {
                 />
             </div>
 
-            {/* ---- Shimmer ---- */}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent dark:via-white/5 via-gray-900/5 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" />
 
-            <div className="relative mx-auto max-w-7xl px-6 py-4">
-                <div className="flex items-center justify-between">
-                    {/* ---- Logo ---- */}
-                    <Link href="/" className="flex items-center space-x-2 group">
+            <div className="relative mx-auto max-w-7xl px-6 py-2">
+                <div className="flex items-center justify-between gap-8">
+                    {/* ---- LEFT: LOGO + NAME ---- */}
+                    <Link href="/" className="flex items-center space-x-2 group flex-shrink-0">
                         <motion.div
-                            className="w-10 h-10 rounded-2xl flex items-center justify-center relative overflow-hidden"
+                            className="w-10 h-10 rounded-2xl flex items-center justify-center relative"
                             style={{
                                 background: "linear-gradient(135deg, rgba(59,130,246,.9) 0%, rgba(147,51,234,.9) 100%)",
                                 boxShadow: "0 4px 16px rgba(59,130,246,.3), inset 0 1px 0 rgba(255,255,255,.3)",
@@ -206,149 +251,206 @@ export function HeaderDark() {
                             whileHover={{ scale: 1.05, rotate: 5 }}
                             transition={{ type: "spring", stiffness: 400, damping: 10 }}
                         >
-                            <BookOpen className="w-5 h-5 text-white relative z-10" />
-                            <motion.div
-                                className="absolute inset-0"
-                                style={{ background: "linear-gradient(135deg, rgba(255,255,255,.3) 0%, transparent 100%)" }}
-                                animate={{ opacity: [0.3, 0.6, 0.3] }}
-                                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-                            />
+                            <Image src="/logoNoBg.png" alt="Logo with text"/>
                         </motion.div>
                         <span
-                            className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 bg-clip-text text-transparent"
+                            className="text-md font-saira font-bold text-slate-900 dark:bg-gradient-to-r dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 dark:bg-clip-text dark:text-transparent"
                             style={{ backgroundSize: "200% auto", animation: "gradient-shift 3s ease infinite" }}
                         >
-                            CamEdu
+                          NEXT4LEARN
                         </span>
                     </Link>
 
-                    {/* ---- CENTER SEARCH (kept on lg+ and md) ---- */}
-                    <div className="hidden md:block flex-1 max-w-md mx-8">
-                        <div className="group relative">
-                            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/20 to-cyan-500/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
-                            <div className="relative flex items-center gap-3 rounded-2xl border dark:border-white/10 border-gray-200/80 dark:bg-white/5 bg-gray-100/20 px-4 py-2.5 backdrop-blur-xl transition-all duration-300 dark:group-hover:border-white/20 group-hover:border-gray-400/50 dark:group-hover:bg-white/10 group-hover:bg-gray-200/80">
-                                <Search className="h-4 w-4 dark:text-gray-400 text-gray-600 transition-colors dark:group-hover:text-gray-300 group-hover:text-gray-900" />
-                                <input
-                                    type="text"
-                                    placeholder="Search anything..."
-                                    className="flex-1 bg-transparent text-sm dark:text-white text-gray-900 dark:placeholder-gray-500 placeholder-gray-400 outline-none"
-                                />
-                                <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border dark:border-white/10 border-gray-300/50 dark:bg-white/5 bg-gray-200/50 px-1.5 text-xs font-medium dark:text-gray-400 text-gray-600">
-                                    Command K
-                                </kbd>
-                            </div>
-                        </div>
-                    </div>
+                    <nav className="hidden lg:flex items-center gap-2">
+                        {[
+                            { href: "/", label: "Home", icon: Home },
+                            { href: "/about", label: "About", icon: null },
+                            { href: "/instructors", label: "Instructors", icon: Users, special: true },
+                            { href: "/courses", label: "Courses", icon: GraduationCap },
+                            { href: "/pricing", label: "Pricing", icon: DollarSign },
+                            { href: "/career", label: "Career", icon: null },
+                        ].map((item) => {
+                            const Icon = item.icon
+                            const isSpecial = item.special
+                            
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className="relative group px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 overflow-hidden"
+                                >
+                                    {/* Background gradient on hover */}
+                                    <motion.div
+                                        className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 dark:from-blue-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                        whileHover={{ scale: 1.05 }}
+                                    />
+                                    
+                                    {/* Special glow effect for Instructors */}
+                                    {isSpecial && (
+                                        <motion.div
+                                            className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 dark:from-blue-500/30 dark:via-purple-500/30 dark:to-pink-500/30 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                                            animate={{
+                                                opacity: [0, 0.3, 0],
+                                            }}
+                                            transition={{
+                                                duration: 2,
+                                                repeat: Infinity,
+                                                ease: "easeInOut",
+                                            }}
+                                        />
+                                    )}
+                                    
+                                    {/* Content */}
+                                    <span className="relative z-10 flex items-center gap-2 text-slate-900 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+                                        {Icon && <Icon className="w-4 h-4" />}
+                                        {item.label}
+                                    </span>
+                                    
+                                    {/* Underline animation */}
+                                    <motion.div
+                                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full"
+                                        initial={{ scaleX: 0 }}
+                                        whileHover={{ scaleX: 1 }}
+                                        transition={{ duration: 0.3 }}
+                                    />
+                                </Link>
+                            )
+                        })}
 
-                    {/* ---- RIGHT ICONS + USER MENU (lg+ only) ---- */}
-                    <div className="hidden lg:flex items-center gap-2">
+                        {/* Explorers Dropdown - Elegant Vertical List Style */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-900 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100/50 dark:hover:bg-blue-950/20 transition-all duration-200 group">
+                                    <Compass className="h-4 w-4 transition-transform group-hover:rotate-12" />
+                                    <span>Explorers</span>
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="start"
+                                className="w-[320px] p-2 mt-2 rounded-xl border-0 min-w-[280px]"
+                                style={isDarkMode ? {
+                                    background: "linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)",
+                                    backdropFilter: "blur(20px) saturate(180%)",
+                                    WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                                    border: "1px solid rgba(103, 232, 249, 0.2)",
+                                    boxShadow: "0 8px 32px rgba(103, 232, 249, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+                                } : {
+                                    background: "rgba(255, 255, 255, 0.9)",
+                                    backdropFilter: "blur(20px) saturate(180%)",
+                                    WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                                    border: "1px solid rgba(148, 163, 184, 0.2)",
+                                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)",
+                                }}
+                            >
+                                <div className="space-y-1">
+                                    {exploreItems.map((item, idx) => (
+                                        <Link
+                                            key={item.title}
+                                            href={item.href}
+                                            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 hover:bg-slate-100 dark:hover:bg-gradient-to-r dark:hover:from-blue-950/30 dark:hover:to-purple-950/30"
+                                            style={{
+                                                border: "1px solid transparent",
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.borderColor = "rgba(8, 145, 178, 0.2)"
+                                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(8, 145, 178, 0.1)"
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.borderColor = "transparent"
+                                                e.currentTarget.style.boxShadow = "none"
+                                            }}
+                                        >
+                                            {/* Icon with gradient background */}
+                                            <div 
+                                                className={`w-10 h-10 rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center text-lg shadow-sm group-hover:scale-110 group-hover:shadow-md transition-all duration-200 flex-shrink-0`}
+                                            >
+                                                {item.icon}
+                                            </div>
+                                            {/* Content */}
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-sm font-semibold text-slate-900 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                    {item.title}
+                                                </h3>
+                                                <p className="text-xs text-slate-600 dark:text-gray-400 leading-tight mt-0.5 line-clamp-1">
+                                                    {item.description}
+                                                </p>
+                                            </div>
+                                            {/* Arrow indicator */}
+                                            <motion.div
+                                                className="opacity-0 group-hover:opacity-100 text-blue-600 dark:text-blue-400 flex-shrink-0"
+                                                initial={{ x: -4, opacity: 0 }}
+                                                whileHover={{ x: 0, opacity: 1 }}
+                                                transition={{ duration: 0.2 }}
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                </svg>
+                                            </motion.div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </nav>
+
+                    {/* ---- RIGHT: ICONS + USER MENU ---- */}
+                    <div className="flex items-center gap-3 ml-auto">
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <ThemeToggle />
                         </motion.div>
 
-                        {/* Notification */}
-                        <button className="group relative rounded-xl border border-white/10 dark:border-white/10 border-gray-300/50 bg-white/5 dark:bg-white/5 bg-gray-100/80 p-2.5 backdrop-blur-xl transition-all duration-300 hover:border-white/20 dark:hover:border-white/20 hover:border-gray-400/50 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 hover:scale-105">
-                            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/20 to-cyan-500/20 opacity-0 blur transition-opacity duration-300 group-hover:opacity-100" />
-                            <Bell className="relative h-5 w-5 text-gray-300 dark:text-gray-300 text-gray-700 transition-colors group-hover:text-white dark:group-hover:text-white group-hover:text-gray-900" />
-                            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-xs font-bold text-white shadow-lg shadow-purple-500/50">
-                                3
-                            </span>
-                        </button>
-
-                        {/* Settings Dropdown */}
-                        <DropdownMenu open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-                            <DropdownMenuTrigger asChild>
-                                <button className="group relative rounded-xl border border-white/10 dark:border-white/10 border-gray-300/50 bg-white/5 dark:bg-white/5 bg-gray-100/80 p-2.5 backdrop-blur-xl transition-all duration-300 hover:border-white/20 dark:hover:border-white/20 hover:border-gray-400/50 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 hover:scale-105">
-                                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/20 to-cyan-500/20 opacity-0 blur transition-opacity duration-300 group-hover:opacity-100" />
-                                    <Settings className="relative h-5 w-5 text-gray-300 dark:text-gray-300 text-gray-700 transition-colors group-hover:text-white dark:group-hover:text-white group-hover:text-gray-900" />
-                                </button>
-                            </DropdownMenuTrigger>
-
-                            <DropdownMenuContent
-                                align="end"
-                                side="bottom"
-                                className="w-64 mt-2 border-0"
+                        {/* Notification - Ultra Creative Design */}
+                        <motion.button 
+                            onClick={() => {
+                                // Check if we're in dashboard, if so trigger notification sidebar
+                                if (typeof window !== 'undefined' && window.location.pathname.includes('/dashboard')) {
+                                    // Dispatch custom event that dashboard can listen to
+                                    window.dispatchEvent(new CustomEvent('openNotificationSidebar'))
+                                }
+                            }}
+                            whileHover={{ scale: 1.05, rotate: 5 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="group relative rounded-2xl border-2 border-border/50 dark:border-slate-700/50 bg-gradient-to-br from-background/80 to-muted/40 dark:from-slate-900/80 dark:to-slate-800/40 backdrop-blur-xl p-2.5 transition-all duration-300 hover:border-primary/50 dark:hover:border-blue-500/50 hover:shadow-xl hover:shadow-primary/20 dark:hover:shadow-blue-500/20 overflow-hidden"
+                        >
+                            {/* Animated background */}
+                            <motion.div
+                                className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 dark:from-blue-500/20 dark:via-purple-500/20 dark:to-pink-500/20"
+                                animate={{
+                                    backgroundPosition: ["0% 0%", "100% 100%"],
+                                }}
+                                transition={{
+                                    duration: 3,
+                                    repeat: Infinity,
+                                    repeatType: "reverse",
+                                    ease: "easeInOut",
+                                }}
                                 style={{
-                                    backdropFilter: "blur(20px) saturate(180%)",
-                                    WebkitBackdropFilter: "blur(20px) saturate(180%)",
-                                    boxShadow: "0 8px 32px 0 rgba(0,0,0,.1), inset 0 1px 0 0 rgba(255,255,255,.5)",
-                                    borderRadius: "16px",
+                                    backgroundSize: "200% 200%",
+                                }}
+                            />
+                            
+                            <Bell className="h-5 w-5 text-foreground dark:text-gray-300 group-hover:text-primary dark:group-hover:text-blue-400 transition-colors relative z-10" />
+                            
+                            {/* Notification badge with pulse animation */}
+                            <motion.span 
+                                className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-red-500 via-pink-500 to-red-500 dark:from-red-600 dark:via-pink-600 dark:to-red-600 text-xs font-bold text-white shadow-lg shadow-red-500/50 dark:shadow-red-600/50 relative z-10"
+                                animate={{
+                                    scale: [1, 1.1, 1],
+                                    boxShadow: [
+                                        "0 0 0 0 rgba(239, 68, 68, 0.7)",
+                                        "0 0 0 8px rgba(239, 68, 68, 0)",
+                                        "0 0 0 0 rgba(239, 68, 68, 0)",
+                                    ],
+                                }}
+                                transition={{
+                                    duration: 2,
+                                    repeat: Infinity,
+                                    ease: "easeOut",
                                 }}
                             >
-                                <div className="px-2 py-2">
-                                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 px-2 mb-2">
-                                        NAVIGATION
-                                    </p>
-
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/" className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-200/80 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" onClick={() => setIsSettingsOpen(false)}>
-                                            <Home className="h-4 w-4" />
-                                            <span>Home</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/courses" className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-200/80 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" onClick={() => setIsSettingsOpen(false)}>
-                                            <GraduationCap className="h-4 w-4" />
-                                            <span>Courses</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuSub>
-                                        <DropdownMenuSubTrigger className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-200/80 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer">
-                                            <Compass className="h-4 w-4" />
-                                            <span>Explore</span>
-                                        </DropdownMenuSubTrigger>
-                                        <DropdownMenuPortal>
-                                            <DropdownMenuSubContent
-                                                className="w-72 p-2 border dark:border-white/10 border-gray-300/50"
-                                                sideOffset={8}
-                                                style={{
-                                                    backdropFilter: "blur(20px) saturate(180%)",
-                                                    WebkitBackdropFilter: "blur(20px) saturate(180%)",
-                                                    boxShadow: "0 8px 32px 0 rgba(0,0,0,.1), inset 0 1px 0 0 rgba(255,255,255,.5)",
-                                                    borderRadius: "16px",
-                                                    background: "rgba(255,255,255,.95) dark:rgba(0,0,0,.95)",
-                                                }}
-                                            >
-                                                {exploreItems.map((item) => {
-                                                    const Icon = item.icon
-                                                    return (
-                                                        <DropdownMenuItem key={item.title} asChild>
-                                                            <Link
-                                                                href={item.href}
-                                                                className="flex items-start gap-3 rounded-lg px-3 py-2.5 hover:bg-gray-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                                                                onClick={() => setIsSettingsOpen(false)}
-                                                            >
-                                                                <Icon className={`h-5 w-5 ${item.color} mt-0.5 flex-shrink-0`} />
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-sm font-medium text-gray-900 dark:text-white">{item.title}</span>
-                                                                    <span className="text-xs text-gray-500 dark:text-gray-400">{item.description}</span>
-                                                                </div>
-                                                            </Link>
-                                                        </DropdownMenuItem>
-                                                    )
-                                                })}
-                                            </DropdownMenuSubContent>
-                                        </DropdownMenuPortal>
-                                    </DropdownMenuSub>
-
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/pricing" className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-200/80 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" onClick={() => setIsSettingsOpen(false)}>
-                                            <DollarSign className="h-4 w-4" />
-                                            <span>Partner & Price</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/contact" className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-200/80 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" onClick={() => setIsSettingsOpen(false)}>
-                                            <Phone className="h-4 w-4" />
-                                            <span>Contact</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                </div>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                3
+                            </motion.span>
+                        </motion.button>
 
                         {/* USER MENU / GET STARTED */}
                         {isLoading ? (
@@ -359,15 +461,15 @@ export function HeaderDark() {
                             <DropdownMenu open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
                                 <DropdownMenuTrigger className="w-fit">
                                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                        <div className="group relative ml-2">
-                                            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/30 to-cyan-500/30 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
+                                        <div className="group relative">
+                                            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/30 to-blue-500/30 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
                                             <div className="relative flex items-center gap-3 rounded-2xl border border-white/10 dark:border-white/10 border-gray-300/50 bg-white/5 dark:bg-white/5 bg-gray-100/80 py-2 pl-3 pr-4 backdrop-blur-xl transition-all duration-300 group-hover:border-white/20 dark:group-hover:border-white/20 group-hover:border-gray-400/50 group-hover:bg-white/10 dark:group-hover:bg-white/10 group-hover:bg-gray-200/80">
-                                                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 via-violet-500 to-cyan-500 shadow-lg shadow-purple-500/30 flex items-center justify-center">
+                                                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 via-violet-500 to-blue-500 shadow-lg shadow-purple-500/30 flex items-center justify-center">
                                                     <UserMenuAvatar user={user} />
                                                 </div>
                                                 <div className="hidden sm:block text-left">
                                                     <p className="text-sm font-semibold dark:text-white text-gray-900 leading-tight">
-                                                        {user?.name || "User"}
+                                                        {user?.username || "User"}
                                                     </p>
                                                     <p className="text-xs text-gray-400 dark:text-gray-400 text-gray-600 leading-tight">
                                                         {user?.email || "user@example.com"}
@@ -378,7 +480,6 @@ export function HeaderDark() {
                                     </motion.div>
                                 </DropdownMenuTrigger>
 
-                                {/* User menu – unchanged */}
                                 <DropdownMenuContent
                                     align="end"
                                     side="bottom"
@@ -392,38 +493,52 @@ export function HeaderDark() {
                                 >
                                     <div className="flex items-center justify-start gap-2 p-3">
                                         <div className="flex flex-col space-y-1 leading-none">
-                                            <p className="font-medium text-sm dark:text-white text-gray-900">{user.name}</p>
-                                            <p className="w-[200px] truncate text-xs dark:text-gray-400 text-gray-600">
-                                                {user.email}
-                                            </p>
+                                            <p className="font-medium text-sm dark:text-white text-gray-900">{user.username}</p>
+                                            <p className="w-[200px] truncate text-xs dark:text-gray-400 text-gray-600">{user.email}</p>
                                         </div>
                                     </div>
                                     <DropdownMenuSeparator className="bg-white/10 dark:bg-white/10 bg-gray-300/50" />
-                                    <DropdownMenuItem onClick={handleProfileClick} className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900">
+                                    <DropdownMenuItem
+                                        onClick={handleProfileClick}
+                                        className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900"
+                                    >
                                         <User className="mr-2 h-4 w-4" />
                                         <span>Profile</span>
                                     </DropdownMenuItem>
-                                    {user.charactor?.code === "instructor" && (
-                                        <DropdownMenuItem onClick={handleCreateCourseClick} className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900">
-                                            <PlusCircle className="mr-2 h-4 w-4" />
-                                            <span>Create Course</span>
-                                        </DropdownMenuItem>
-                                    )}
-                                    <DropdownMenuItem onClick={() => console.log("Settings clicked")} className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900">
+                                    <DropdownMenuItem
+                                        onClick={handleCreateCourseClick}
+                                        className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900"
+                                    >
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        <span>Create Course</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={() => console.log("Settings clicked")}
+                                        className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900"
+                                    >
                                         <Settings className="mr-2 h-4 w-4" />
                                         <span>Settings</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator className="bg-white/10 dark:bg-white/10 bg-gray-300/50" />
-                                    <DropdownMenuItem onClick={handleShare} className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900">
+                                    <DropdownMenuItem
+                                        onClick={handleShare}
+                                        className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900"
+                                    >
                                         <Share2 className="mr-2 h-4 w-4" />
                                         <span>Share</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleCopy} className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900">
+                                    <DropdownMenuItem
+                                        onClick={handleCopy}
+                                        className="rounded-lg mx-1 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200/80 text-gray-300 dark:text-gray-300 text-gray-700 hover:text-white dark:hover:text-white hover:text-gray-900"
+                                    >
                                         <Copy className="mr-2 h-4 w-4" />
                                         <span>Copy Link</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator className="bg-white/10 dark:bg-white/10 bg-gray-300/50" />
-                                    <DropdownMenuItem onClick={handleSignOut} className="rounded-lg mx-1 hover:bg-red-500/20 text-red-400 dark:text-red-400 text-red-600 hover:text-red-300 dark:hover:text-red-300 hover:text-red-700">
+                                    <DropdownMenuItem
+                                        onClick={handleSignOut}
+                                        className="rounded-lg mx-1 hover:bg-red-500/20 text-red-400 dark:text-red-400 text-red-600 hover:text-red-300 dark:hover:text-red-300 hover:text-red-700"
+                                    >
                                         <LogOut className="mr-2 h-4 w-4" />
                                         <span>Sign Out</span>
                                     </DropdownMenuItem>
@@ -433,27 +548,19 @@ export function HeaderDark() {
                             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                                 <Button
                                     onClick={handleGetStartedClick}
-                                    className="rounded-full relative text-white px-6 py-2 transition-all duration-300 border-0 overflow-hidden"
+                                    className="rounded-lg relative text-white px-6 py-2 text-sm font-semibold transition-all duration-300 border-0 overflow-hidden shadow-lg shadow-blue-500/30 hover:shadow-lg hover:shadow-blue-500/50"
                                     style={{
-                                        background: "linear-gradient(135deg, rgba(59,130,246,.9) 0%, rgba(147,51,234,.9) 100%)",
-                                        boxShadow: "0 4px 16px rgba(59,130,246,.4), inset 0 1px 0 rgba(255,255,255,.3)",
+                                        background: "linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)",
                                     }}
                                 >
                                     <span className="relative z-10">Get Started</span>
-                                    <motion.div
-                                        className="absolute inset-0"
-                                        style={{ background: "linear-gradient(135deg, rgba(255,255,255,.2) 0%, transparent 100%)" }}
-                                        animate={{ opacity: [0.2, 0.4, 0.2] }}
-                                        transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-                                    />
                                 </Button>
                             </motion.div>
                         )}
                     </div>
 
-                    {/* ---- HAMBURGER (sm & md) — only nav items go inside ---- */}
-                    <div className="flex md:hidden items-center space-x-2">
-                        <ThemeToggle />
+                    {/* ---- MOBILE HAMBURGER ---- */}
+                    <div className="flex lg:hidden items-center space-x-2">
                         <Button
                             variant="ghost"
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -464,12 +571,11 @@ export function HeaderDark() {
                     </div>
                 </div>
 
-                {/* ---- MOBILE MENU (sm only) — only navigation, search stays above ---- */}
+                {/* ---- MOBILE MENU ---- */}
                 {isMenuOpen && (
-                    <motion.div
-                        className="md:hidden mt-4 rounded-2xl overflow-hidden border border-gray-200/50 dark:border-white/10"
+                    <motion.nav
+                        className="lg:hidden mt-4 rounded-2xl overflow-hidden border border-gray-200/50 dark:border-white/10 p-4 space-y-2"
                         style={{
-                            background: "rgba(255,255,255,0.95)",
                             backdropFilter: "blur(20px) saturate(180%)",
                             WebkitBackdropFilter: "blur(20px) saturate(180%)",
                             boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
@@ -479,47 +585,62 @@ export function HeaderDark() {
                         exit={{ opacity: 0, y: -12 }}
                         transition={{ duration: 0.25 }}
                     >
-                        <nav className="p-4 space-y-2">
-                            <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg">
-                                <Home className="h-4 w-4" /> Home
-                            </Link>
-                            <Link href="/courses" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg">
-                                <GraduationCap className="h-4 w-4" /> Courses
-                            </Link>
-
-                            <div className="space-y-1">
-                                <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white">
-                                    <Compass className="h-4 w-4" /> Explore
-                                </div>
-                                <div className="pl-6 space-y-1">
-                                    {exploreItems.map((item) => {
-                                        const Icon = item.icon
-                                        return (
-                                            <Link
-                                                key={item.title}
-                                                href={item.href}
-                                                onClick={() => setIsMenuOpen(false)}
-                                                className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg transition-colors"
-                                            >
-                                                <Icon className={`h-4 w-4 ${item.color}`} />
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium">{item.title}</span>
-                                                    <span className="text-xs text-gray-500 dark:text-gray-400">{item.description}</span>
-                                                </div>
-                                            </Link>
-                                        )
-                                    })}
-                                </div>
+                        <Link
+                            href="/"
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg"
+                        >
+                            <Home className="h-4 w-4" /> Home
+                        </Link>
+                        <Link
+                            href="/about"
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg"
+                        >
+                            About
+                        </Link>
+                        <Link
+                            href="/instructors"
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gradient-to-r hover:from-blue-500/10 hover:via-purple-500/10 hover:to-pink-500/10 dark:hover:bg-white/10 rounded-lg transition-all duration-300 relative group"
+                        >
+                            <Users className="w-4 h-4 text-blue-500 group-hover:text-purple-500 transition-colors" />
+                            <span className="relative z-10 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">
+                                Instructors
+                            </span>
+                        </Link>
+                        <Link
+                            href="/courses"
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg"
+                        >
+                            <GraduationCap className="h-4 w-4" /> Courses
+                        </Link>
+                        <Link
+                            href="/career"
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg"
+                        >
+                            Career
+                        </Link>
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white">
+                                <Compass className="h-4 w-4" /> Explorers
                             </div>
-
-                            <Link href="/pricing" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg">
-                                <DollarSign className="h-4 w-4" /> Partner & Price
-                            </Link>
-                            <Link href="/contact" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg">
-                                <Phone className="h-4 w-4" /> Contact
-                            </Link>
-                        </nav>
-                    </motion.div>
+                            <div className="pl-6 space-y-1">
+                                {exploreItems.map((item) => (
+                                    <Link
+                                        key={item.title}
+                                        href={item.href}
+                                        onClick={() => setIsMenuOpen(false)}
+                                        className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 rounded-lg"
+                                    >
+                                        {item.title}
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    </motion.nav>
                 )}
             </div>
 

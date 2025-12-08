@@ -21,7 +21,7 @@ export function UserSkills({ skills, userRole }: UserSkillsProps) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
         >
-            <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+            <Card className="liquid-glass-card">
                 <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                         <CheckCircle className="w-5 h-5 text-green-500" />
@@ -30,7 +30,7 @@ export function UserSkills({ skills, userRole }: UserSkillsProps) {
                 </CardHeader>
                 <CardContent className="flex flex-wrap gap-2">
                     {skills.map((skill, index) => (
-                        <Badge key={index} variant="secondary" className="bg-emerald-50/20 text-emerald-700 dark:text-emerald-300">
+                        <Badge key={index} variant="secondary" className="bg-blue-50/20 text-blue-700 dark:text-blue-300">
                             {skill}
                         </Badge>
                     ))}

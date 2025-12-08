@@ -2,7 +2,7 @@
 
 import React from "react"
 import { useRouter } from "next/navigation"
-import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { Footer } from "@/components/ui/footers/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -98,7 +98,7 @@ export default function AboutUsPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-            <HeaderDark />
+            <HeaderUltra />
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
                 {/* Back Button */}
@@ -123,8 +123,8 @@ export default function AboutUsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-center mb-12"
                 >
-                    <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
-                        About CamEdu
+                    <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        About Us
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                         We are a passionate team from Cambodia Mekong University (CMU) dedicated to revolutionizing online education.
@@ -138,7 +138,7 @@ export default function AboutUsPage() {
                     transition={{ delay: 0.2 }}
                     className="mb-12 max-w-4xl mx-auto"
                 >
-                    <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                    <Card className="liquid-glass-card">
                         <CardHeader className="text-center">
                             <GraduationCap className="w-12 h-12 text-primary mx-auto mb-4" />
                             <CardTitle className="text-2xl">Our Mission</CardTitle>
@@ -166,7 +166,7 @@ export default function AboutUsPage() {
                                 viewport={{ once: true, amount: 0.3 }}
                                 transition={{ duration: 0.5, delay: index * 0.1 }}
                             >
-                                <Card className="text-center glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                                <Card className="text-center liquid-glass-card">
                                     <CardContent className="p-6">
                                         <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary shadow-md avatar-border-gradient">
                                             <AvatarImage src={member.avatar} alt={member.name} />
@@ -200,8 +200,8 @@ export default function AboutUsPage() {
                                             )}
                                             {member.social.website && (
                                                 <a href={member.social.website} target="_blank" rel="noopener noreferrer">
-                                                    <Button variant="ghost" size="icon" className="hover:bg-emerald-50 dark:hover:bg-emerald-950">
-                                                        <Globe className="w-5 h-5 text-emerald-500" />
+                                                    <Button variant="ghost" size="icon" className="hover:bg-blue-50 dark:hover:bg-blue-950">
+                                                        <Globe className="w-5 h-5 text-purple-500" />
                                                     </Button>
                                                 </a>
                                             )}
@@ -220,13 +220,13 @@ export default function AboutUsPage() {
                     transition={{ delay: 0.6 }}
                     className="max-w-4xl mx-auto"
                 >
-                    <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                    <Card className="liquid-glass-card">
                         <CardHeader className="text-center">
                             <img src="/placeholder-logo.png" alt="CMU Logo" className="h-16 mx-auto mb-4" /> {/* Replace with actual CMU logo */}
                             <CardTitle className="text-2xl">Cambodia Mekong University (CMU)</CardTitle>
                         </CardHeader>
                         <CardContent className="text-lg text-muted-foreground text-center leading-relaxed">
-                            CamEdu is a final year project developed by students from Cambodia Mekong University. Our aim is to apply our academic knowledge to create a practical and impactful e-learning platform for the community.
+                            NEXT4LEARN is a final year project developed by students from Cambodia Mekong University. Our aim is to apply our academic knowledge to create a practical and impactful e-learning platform for the community.
                             <div className="flex items-center justify-center gap-2 mt-4 text-sm">
                                 <MapPin className="w-4 h-4 text-muted-foreground" />
                                 <span>Phnom Penh, Cambodia</span>

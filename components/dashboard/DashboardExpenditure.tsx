@@ -86,17 +86,17 @@ export function DashboardExpenditure() {
         <div className="space-y-6">
             <h2 className="text-2xl font-bold">My Expenditure</h2>
 
-            {/* Overview Cards */}
+            {/* OverView Carts */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
                 className="grid grid-cols-1 md:grid-cols-3 gap-6"
             >
-                <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
                     <CardContent className="p-6">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
                                 <DollarSign className="w-6 h-6 text-white" />
                             </div>
                             <div>
@@ -107,7 +107,7 @@ export function DashboardExpenditure() {
                     </CardContent>
                 </Card>
 
-                <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
                     <CardContent className="p-6">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center">
@@ -121,7 +121,7 @@ export function DashboardExpenditure() {
                     </CardContent>
                 </Card>
 
-                <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
                     <CardContent className="p-6">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center">
@@ -144,10 +144,10 @@ export function DashboardExpenditure() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
                 >
-                    <Card className="glass-enhanced hover:scale-[1.01] hover:shadow-xl transition-all duration-300">
+                    <Card className="liquid-glass-card hover:scale-[1.01] hover:shadow-xl transition-all duration-300">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <TrendingUp className="w-5 h-5 text-cyan-500" />
+                                <TrendingUp className="w-5 h-5 text-blue-500" />
                                 Monthly Spending Trend
                             </CardTitle>
                         </CardHeader>
@@ -173,7 +173,7 @@ export function DashboardExpenditure() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                 >
-                    <Card className="glass-enhanced hover:scale-[1.01] hover:shadow-xl transition-all duration-300">
+                    <Card className="liquid-glass-card hover:scale-[1.01] hover:shadow-xl transition-all duration-300">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <PieChartIcon className="w-5 h-5 text-pink-500" />
@@ -210,7 +210,7 @@ export function DashboardExpenditure() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
             >
-                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-green-500" />

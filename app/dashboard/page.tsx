@@ -2,11 +2,9 @@
 
 import React, { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Footer } from "@/components/ui/footers/footer"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { motion } from "framer-motion"
 import { useAuth } from "@/hooks/use-auth"
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader"
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview"
 import { DashboardMyCourses } from "@/components/dashboard/DashboardMyCourses"
 import { DashboardCombinedEnrollments } from "@/components/dashboard/DashboardCombinedEnrollments"
@@ -14,24 +12,23 @@ import { DashboardAnalytics } from "@/components/dashboard/DashboardAnalytics"
 import { DashboardSettings } from "@/components/dashboard/DashboardSettings"
 import CreateCourseForm from "@/components/dashboard/CreateCourseForm"
 import { DashboardExpenditure } from "@/components/dashboard/DashboardExpenditure"
-import {
-    Users,
-    BookOpen,
-    DollarSign,
-    Star,
-    MessageCircle,
-    ThumbsUp,
-    LayoutDashboard,
-    BarChart3,
-    Settings,
-    GraduationCap,
-    CreditCard,
-} from "lucide-react"
-import { FloatingDock, DockIcon } from "@/components/ui/floating-dock"
-import { FaRegUser, FaCog, FaCrown } from "react-icons/fa"
-import {HeaderVibrant} from "@/components/ui/headers/HeaderVibrant";
+import { DashboardSidebarResizable } from "@/components/dashboard/DashboardSidebarResizable"
+import { DashboardMyReports } from "@/components/dashboard/DashboardMyReports"
+import { DashboardMyContacts } from "@/components/dashboard/DashboardMyContacts"
+import { DashboardInstructors } from "@/components/dashboard/DashboardInstructors"
+import { NotificationSidebar } from "@/components/dashboard/NotificationSidebar"
+import { DashboardFriends } from "@/components/dashboard/DashboardFriends"
+import { DashboardCertificates } from "@/components/dashboard/DashboardCertificates"
+import { DashboardViewCard } from "@/components/dashboard/DashboardViewCard"
+import { DashboardFavorites } from "@/components/dashboard/DashboardFavorites"
+import { User as StrapiUser } from "@/types/user"
+import { getUserSubscription } from "@/integrations/strapi/subscription"
+import {BookOpen, DollarSign, MessageCircle, Star, ThumbsUp, Users} from "lucide-react"
+import { FreePlanAgreementPopup } from "@/components/dashboard/FreePlanAgreementPopup"
+import { useFreePlanCheck } from "@/hooks/use-free-plan-check"
+import { useConfirmPageReload } from "@/hooks/use-confirm-page-reload"
 
-// Interfaces for mock data
+// Interfaces for mock data (keeping them here for context, but ideally they'd be in a types file)
 interface DashboardStats {
     totalCourses: number
     activeLearners: number
@@ -73,40 +70,12 @@ interface Enrollment {
     completed: boolean
 }
 
-interface User {
-    id: string
-    username: string
-    email: string
-    avatar?: string | { url: string }
-    role?: string
-    followers: number
-    following: number
-    jwt?: string
-    charactor?: { id: string; attributes: { slug: string } }
-    settings?: {
-        bio?: string
-        location?: string
-        website?: string
-        socialLinks?: { twitter?: string; github?: string; linkedin?: string }
-        skills?: string[]
-        notifications?: {
-            newEnrollments?: boolean
-            courseReviews?: boolean
-            paymentNotifications?: boolean
-            weeklyAnalytics?: boolean
-        }
-    }
-    badgeIds?: number[]
-}
-
 export default function DashboardPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-            <HeaderVibrant />
             <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading dashboard...</div>}>
                 <DashboardContent />
             </Suspense>
-            <Footer />
         </div>
     )
 }
@@ -115,11 +84,71 @@ function DashboardContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { user, isLoading: authLoading } = useAuth()
+    const [userSubscription, setUserSubscription] = useState<any>(null);
+    const [userTier, setUserTier] = useState<string>("Free");
 
     const initialTab = searchParams?.get("tab") || "overview"
     const initialCreateCourse = searchParams?.get("create") === "true"
+    const editCourseId = searchParams?.get("edit")
     const [selectedTab, setSelectedTab] = useState(initialTab)
     const [showCreateCourseForm, setShowCreateCourseForm] = useState(initialCreateCourse && initialTab === 'my-courses')
+    const [editingCourseId, setEditingCourseId] = useState<number | string | undefined>(
+        editCourseId ? (isNaN(Number(editCourseId)) ? editCourseId : Number(editCourseId)) : undefined
+    )
+    const [isNotificationSidebarOpen, setIsNotificationSidebarOpen] = useState(false)
+    const { requestReload, ReloadConfirmDialog } = useConfirmPageReload({
+        title: "Refresh dashboard to verify",
+        description: "Refreshing will reload the page and sync your Strapi session. Do you want to continue?",
+        confirmLabel: "Refresh & verify",
+        cancelLabel: "Keep working",
+    })
+    
+    // Free plan check - runs 5 seconds after dashboard load
+    const { missingPlans, hasMissingPlans } = useFreePlanCheck({
+        userId: user?.id,
+        delay: 5000,
+        enabled: !!user?.id && !authLoading,
+    })
+    const [showFreePlanPopup, setShowFreePlanPopup] = useState(false)
+
+    // Listen for notification button clicks from header
+    useEffect(() => {
+        const handleOpenNotification = () => {
+            setIsNotificationSidebarOpen(true)
+        }
+
+        window.addEventListener('openNotificationSidebar', handleOpenNotification)
+        return () => {
+            window.removeEventListener('openNotificationSidebar', handleOpenNotification)
+        }
+    }, [])
+
+    // Fetch user subscription to get dynamic tier
+    useEffect(() => {
+        const fetchUserSubscription = async () => {
+            if (user?.id) {
+                try {
+                    const subscription = await getUserSubscription(user.id);
+                    if (subscription) {
+                        setUserSubscription(subscription);
+                        // Get subscription type from the subscription relation
+                        if (subscription.subscription && typeof subscription.subscription === 'object') {
+                            const subType = subscription.subscription.type || "Free";
+                            setUserTier(subType);
+                        } else {
+                            setUserTier("Free");
+                        }
+                    } else {
+                        setUserTier("Free");
+                    }
+                } catch (error) {
+                    console.error("Error fetching user subscription:", error);
+                    setUserTier("Free");
+                }
+            }
+        };
+        fetchUserSubscription();
+    }, [user?.id]);
 
     useEffect(() => {
         const tab = searchParams?.get("tab")
@@ -131,14 +160,12 @@ function DashboardContent() {
         }
     }, [searchParams, selectedTab])
 
-    const tabsConfig = [
-        { value: "overview", label: "Overview", icon: LayoutDashboard },
-        { value: "enrollments", label: "Enrollments", icon: GraduationCap },
-        { value: "my-courses", label: "My Courses", icon: BookOpen },
-        { value: "expenditure", label: "Expenditure", icon: CreditCard },
-        { value: "analytics", label: "Analytics", icon: BarChart3 },
-        { value: "settings", label: "Settings", icon: Settings },
-    ]
+    // Show free plan popup when missing plans are found
+    useEffect(() => {
+        if (hasMissingPlans && missingPlans.length > 0) {
+            setShowFreePlanPopup(true)
+        }
+    }, [hasMissingPlans, missingPlans])
 
     // Mock data for dashboard
     const stats: DashboardStats = {
@@ -329,13 +356,28 @@ function DashboardContent() {
         if (selectedTab !== "my-courses" || !showCreateCourseForm) {
             setSelectedTab("my-courses")
             setShowCreateCourseForm(true)
+            setEditingCourseId(undefined)
             router.push("/dashboard?tab=my-courses&create=true")
         }
+    }
+
+    const handleEditCourse = (courseId: number | string) => {
+        // Ensure we always use numeric id, not documentId
+        const numericId = typeof courseId === 'string' ? Number(courseId) : courseId;
+        if (isNaN(numericId)) {
+            console.error("Invalid course ID - must be numeric:", courseId);
+            return;
+        }
+        setSelectedTab("my-courses")
+        setShowCreateCourseForm(true)
+        setEditingCourseId(numericId)
+        router.push(`/dashboard?tab=my-courses&edit=${numericId}`)
     }
 
     const handleCancelCreateCourse = () => {
         if (showCreateCourseForm) {
             setShowCreateCourseForm(false)
+            setEditingCourseId(undefined)
             router.push("/dashboard?tab=my-courses")
         }
     }
@@ -343,131 +385,206 @@ function DashboardContent() {
     const handleCourseCreatedSuccess = () => {
         if (showCreateCourseForm) {
             setShowCreateCourseForm(false)
+            setEditingCourseId(undefined)
             router.push("/dashboard?tab=my-courses")
         }
     }
 
+    // Update editingCourseId when URL changes
+    useEffect(() => {
+        const editId = searchParams?.get("edit")
+        if (editId) {
+            // Only accept numeric IDs, reject documentId strings
+            const numericId = Number(editId)
+            if (isNaN(numericId)) {
+                console.error("Invalid course ID in URL - must be numeric:", editId)
+                setEditingCourseId(undefined)
+                return
+            }
+            setEditingCourseId(numericId)
+            setShowCreateCourseForm(true)
+        } else if (searchParams?.get("create") !== "true") {
+            setEditingCourseId(undefined)
+        }
+    }, [searchParams])
+
     if (authLoading || !user) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500"></div>
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
             </div>
         )
     }
 
+    // Ensure user is treated as StrapiUser type for DashboardSettings
+    const currentUserForSettings: StrapiUser = user as StrapiUser;
+    // Add userTier to user object for components that need it
+    const currentUserWithTier = { ...currentUserForSettings, userTier, userSubscription };
     return (
-        <main className="pt-24 pb-8 px-4 sm:px-6 lg:px-8">
-            <div className="container mx-auto">
-                <DashboardHeader userName={user.username} />
-
-                <motion.div
-                    key={selectedTab + (showCreateCourseForm ? '-create' : '-list')}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-6"
-                >
-                    <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
-                        <TabsContent value="overview" className="mt-0">
-                            <DashboardOverview
-                                stats={stats}
-                                enrollmentData={enrollmentData}
-                                courseTypeData={courseTypeData}
-                                recentActivity={recentActivityData}
-                            />
-                        </TabsContent>
-
-                        <TabsContent value="enrollments" className="mt-0">
-                            <DashboardCombinedEnrollments recentEnrollments={recentEnrollments} myLearningProgress={myLearningProgress} />
-                        </TabsContent>
-
-                        <TabsContent value="my-courses" className="mt-0">
-                            {showCreateCourseForm ? (
-                                <CreateCourseForm
-                                    onCancel={handleCancelCreateCourse}
-                                    onSuccess={handleCourseCreatedSuccess}
-                                />
-                            ) : (
-                                <DashboardMyCourses
-                                    myCourses={myCourses}
-                                    onCreateCourse={handleCreateCourseClick}
-                                    showCreateButton={true}
-                                />
-                            )}
-                        </TabsContent>
-
-                        <TabsContent value="expenditure" className="mt-0">
-                            <DashboardExpenditure />
-                        </TabsContent>
-
-                        <TabsContent value="analytics" className="mt-0">
-                            <DashboardAnalytics stats={stats} enrollmentData={enrollmentData} lessonsCompletedData={lessonsCompletedData} />
-                        </TabsContent>
-
-                        <TabsContent value="settings" className="mt-0">
-                            <DashboardSettings
-                                currentUser={{
-                                    id: user.id,
-                                    username: user.username,
-                                    email: user.email,
-                                    avatar: typeof user.avatar === 'string' ? user.avatar : user.avatar?.url ? `${process.env.NEXT_PUBLIC_STRAPI_URL}${user.avatar.url}` : null,
-                                    role: user.role,
-                                    followers: user.followers,
-                                    following: user.following,
-                                    charactor: user.charactor,
-                                    settings: user.settings || {},
-                                    badgeIds: user.badgeIds || [],
-                                }}
-                                stats={{
-                                    coursesCreated: stats.coursesCreated,
-                                    totalEnrollments: stats.activeLearners,
-                                    totalRevenue: stats.totalRevenue,
-                                    completionRate: stats.completionRate
-                                }}
-                            />
-                        </TabsContent>
-                    </Tabs>
-                </motion.div>
+        <div className="min-h-screen flex flex-col lg:flex-row">
+            <NotificationSidebar 
+                isOpen={isNotificationSidebarOpen}
+                onClose={() => setIsNotificationSidebarOpen(false)}
+            />
+            <div className="lg:sticky lg:top-0 lg:self-start lg:h-screen w-fit">
+                <DashboardSidebarResizable
+                currentUser={currentUserWithTier}
+                selectedTab={selectedTab}
+                onTabChange={handleTabChange}
+                onCreateCourse={handleCreateCourseClick}
+                    onNotificationClick={() => setIsNotificationSidebarOpen(true)}
+            />
             </div>
 
-            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-                <FloatingDock>
-                    {tabsConfig.map((tab) => {
-                        const IconComponent = tab.icon
-                        return (
-                            <DockIcon
-                                key={tab.value}
-                                label={tab.label}
-                                active={selectedTab === tab.value}
-                                onClick={() => handleTabChange(tab.value)}
-                            >
-                                <IconComponent className={`w-6 h-6 ${selectedTab === tab.value ? "text-white" : "group-hover:text-white"}`} />
-                            </DockIcon>
-                        )
-                    })}
-                </FloatingDock>
-            </div>
+            <main 
+                className="flex-1 min-h-screen transition-all duration-300 ease-in-out pt-10 sm:px-4 md:px-6 lg:px-8 scrollbar-hide"
+                style={{ minWidth: 0 }}
+            >
+                <div className="container mx-auto max-w-7xl">
+                    <motion.div
+                        key={selectedTab + (showCreateCourseForm ? '-create' : '-list')}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="space-y-6"
+                    >
+                        <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
+                            <TabsContent value="overview" className="mt-0">
+                                <DashboardOverview
+                                    stats={stats}
+                                    enrollmentData={enrollmentData}
+                                    courseTypeData={courseTypeData}
+                                    recentActivity={recentActivityData}
+                                />
+                            </TabsContent>
 
-            {/* Keep FloatingDock for settings sub-tabs commented out as requested */}
-            {/* {selectedTab === "settings" && (
-                <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50">
-                    <FloatingDock>
-                        {settingsTabsConfig.map((section) => {
-                            const IconComponent = section.icon
-                            return (
-                                <DockIcon
-                                    key={section.value}
-                                    label={section.label}
-                                    active={activeSettingsSection === section.value}
-                                    onClick={() => handleSettingsSectionChange(section.value)}
-                                >
-                                    <IconComponent className={`w-6 h-6 ${activeSettingsSection === section.value ? "text-white" : "text-white/70 group-hover:text-white"}`} />
-                                </DockIcon>
-                            )
-                        })}
-                    </FloatingDock>
+                            <TabsContent value="enrollments" className="mt-0">
+                                <DashboardCombinedEnrollments recentEnrollments={recentEnrollments} myLearningProgress={myLearningProgress} />
+                            </TabsContent>
+
+                            <TabsContent value="my-courses" className="mt-0">
+                                {showCreateCourseForm ? (
+                                    <CreateCourseForm
+                                        onCancel={handleCancelCreateCourse}
+                                        onSuccess={handleCourseCreatedSuccess}
+                                        courseId={editingCourseId}
+                                    />
+                                ) : (
+                                    <DashboardMyCourses
+                                        onCreateCourse={handleCreateCourseClick}
+                                        onEditCourse={handleEditCourse}
+                                        showCreateButton={true}
+                                    />
+                                )}
+                            </TabsContent>
+
+                            <TabsContent value="certificates" className="mt-0">
+                                <DashboardCertificates />
+                            </TabsContent>
+
+                            <TabsContent value="instructors" className="mt-0">
+                                <DashboardInstructors />
+                            </TabsContent>
+
+                            <TabsContent value="expenditure" className="mt-0">
+                                <DashboardExpenditure />
+                            </TabsContent>
+
+                            <TabsContent value="analytics" className="mt-0">
+                                <DashboardAnalytics stats={stats} enrollmentData={enrollmentData} lessonsCompletedData={lessonsCompletedData} />
+                            </TabsContent>
+
+                            <TabsContent value="reports" className="mt-0">
+                                <DashboardMyReports currentUser={currentUserForSettings} />
+                            </TabsContent>
+
+                            <TabsContent value="contact" className="mt-0">
+                                <DashboardMyContacts />
+                            </TabsContent>
+
+                            <TabsContent value="friends" className="mt-0">
+                                <DashboardFriends />
+                            </TabsContent>
+
+                            {/* Shopping Cart Tabs */}
+                            <TabsContent value="cart-view" className="mt-0">
+                                <DashboardViewCard />
+                            </TabsContent>
+
+                            <TabsContent value="card-history" className="mt-0">
+                                <div className="rounded-xl border border-border/50 bg-card/50 p-8">
+                                    <h2 className="text-2xl font-bold mb-4">Card History</h2>
+                                    <p className="text-muted-foreground">Your past card activities will appear here</p>
+                                </div>
+                            </TabsContent>
+
+                            {/* Orders Tabs */}
+                            <TabsContent value="orders-my" className="mt-0">
+                                <div className="rounded-xl border border-border/50 bg-card/50 p-8">
+                                    <h2 className="text-2xl font-bold mb-4">My Orders</h2>
+                                    <p className="text-muted-foreground">Your purchase orders will appear here</p>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="orders-sales" className="mt-0">
+                                <div className="rounded-xl border border-border/50 bg-card/50 p-8">
+                                    <h2 className="text-2xl font-bold mb-4">Course Sales</h2>
+                                    <p className="text-muted-foreground">Sales from your courses will appear here</p>
+                                </div>
+                            </TabsContent>
+
+                            {/* Wishlist Tabs */}
+                            <TabsContent value="wishlist-courses" className="mt-0">
+                                <DashboardFavorites />
+                            </TabsContent>
+
+                            <TabsContent value="wishlist-forums" className="mt-0">
+                                <div className="rounded-xl border border-border/50 bg-card/50 p-8">
+                                    <h2 className="text-2xl font-bold mb-4">Bookmarked Forums</h2>
+                                    <p className="text-muted-foreground">Your bookmarked forum discussions will appear here</p>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="wishlist-blogs" className="mt-0">
+                                <div className="rounded-xl border border-border/50 bg-card/50 p-8">
+                                    <h2 className="text-2xl font-bold mb-4">Saved Blogs</h2>
+                                    <p className="text-muted-foreground">Your saved blog articles will appear here</p>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="wishlist-career" className="mt-0">
+                                <div className="rounded-xl border border-border/50 bg-card/50 p-8">
+                                    <h2 className="text-2xl font-bold mb-4">Career Opportunities</h2>
+                                    <p className="text-muted-foreground">Your saved job opportunities will appear here</p>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="settings" className="mt-0">
+                                <DashboardSettings
+                                    currentUser={currentUserForSettings}
+                                    stats={{
+                                        coursesCreated: stats.coursesCreated,
+                                        totalEnrollments: stats.activeLearners,
+                                        totalRevenue: stats.totalRevenue,
+                                        completionRate: stats.completionRate
+                                    }}
+                                />
+                            </TabsContent>
+                        </Tabs>
+                    </motion.div>
                 </div>
-            )} */}
-        </main>
+            </main>
+
+            {/* Free Plan Agreement Popup */}
+            <FreePlanAgreementPopup
+                isOpen={showFreePlanPopup}
+                plans={missingPlans}
+                onClose={() => setShowFreePlanPopup(false)}
+                onSuccess={() => {
+                    requestReload(() => setShowFreePlanPopup(false))
+                }}
+            />
+            {ReloadConfirmDialog}
+        </div>
     )
 }

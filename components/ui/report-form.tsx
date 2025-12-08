@@ -113,14 +113,14 @@ export default function ReportForm({ title, isOpen, onOpenChange, onSubmit }: Re
         }}>
             <DialogContent className="max-w-md sm:max-w-lg p-6">
                 <DialogHeader>
-                    <DialogTitle className="text-lg font-semibold">Report Article: {title}</DialogTitle>
+                    <DialogTitle className="text-lg font-semibold">Report: {title}</DialogTitle>
                     <p className="text-sm text-muted-foreground">Step {step} of 2</p>
                 </DialogHeader>
                 <div className={`space-y-4 transition-opacity duration-300 ${animate ? "opacity-100" : "opacity-0"}`}>
                     {step === 1 ? (
                         <>
                             <p className="text-sm text-muted-foreground">
-                                Why are you reporting this article?
+                                Why are you reporting this content?
                             </p>
                             <div className="grid gap-2 max-h-64 overflow-y-auto">
                                 {reportTypes.map((type) => {
@@ -131,7 +131,7 @@ export default function ReportForm({ title, isOpen, onOpenChange, onSubmit }: Re
                                             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                                                 reportType === type.value
                                                     ? "border-primary bg-primary/10"
-                                                    : "border-border hover:bg-gray-200 dark:hover:bg-cyan-100/10"
+                                                    : "border-border hover:bg-gray-200 dark:hover:bg-blue-500/10"
                                             }`}
                                             htmlFor={type.value}
                                         >

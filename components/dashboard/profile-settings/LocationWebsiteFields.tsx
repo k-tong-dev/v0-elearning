@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label"
 import { MapPin, Link as LinkIcon } from "lucide-react"
 
 interface LocationWebsiteFieldsProps {
-    location: string
-    website: string
+    location: string | undefined
+    website: string | undefined
     onInputChange: (field: string, value: string) => void
 }
 
@@ -21,7 +21,7 @@ export function LocationWebsiteFields({ location, website, onInputChange }: Loca
                 </Label>
                 <Input
                     id="location"
-                    value={location}
+                    value={location || ""}
                     onChange={(e) => onInputChange("location", e.target.value)}
                     placeholder="e.g., San Francisco, CA"
                 />
@@ -33,7 +33,7 @@ export function LocationWebsiteFields({ location, website, onInputChange }: Loca
                 </Label>
                 <Input
                     id="website"
-                    value={website}
+                    value={website || ""}
                     onChange={(e) => onInputChange("website", e.target.value)}
                     placeholder="https://yourwebsite.com"
                 />

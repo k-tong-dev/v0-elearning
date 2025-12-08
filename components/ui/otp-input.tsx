@@ -69,7 +69,7 @@ export function OtpInput({ length, value, onChange, disabled, className }: OtpIn
                     onPaste={handlePaste}
                     disabled={disabled}
                     ref={(el) => (inputRefs.current[index] = el)}
-                    className="w-12 h-12 text-center text-2xl font-bold border-2 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
+                    className="w-12 h-12 text-center text-2xl font-bold border-2 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200"
                     inputMode="numeric"
                     pattern="[0-9]"
                 />

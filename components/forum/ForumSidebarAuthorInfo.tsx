@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Star } from "lucide-react";
 import { User } from "@/types/forum";
+import { getAvatarUrl } from "@/lib/getAvatarUrl";
 
 interface ForumSidebarAuthorInfoProps {
     author: User;
@@ -26,7 +27,7 @@ export function ForumSidebarAuthorInfo({ author, onUserClick }: ForumSidebarAuth
                 >
                     <div className="relative">
                         <Avatar className="w-12 h-12">
-                            <AvatarImage src={author.avatar} />
+                            <AvatarImage src={getAvatarUrl(author.avatar) || "/images/Avatar.jpg"} />
                             <AvatarFallback>
                                 {author.name.split(" ").map(n => n[0]).join("")}
                             </AvatarFallback>

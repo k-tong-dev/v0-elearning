@@ -63,7 +63,7 @@ export function DockIcon({ children, className, mouseX, onClick, label, active }
             onClick={onClick}
             className={cn(
                 "relative flex items-center justify-center rounded-xl text-gray-400 bg-white/20 shadow-md transition-colors duration-200",
-                active ? "bg-gradient-to-r from-cyan-500 to-emerald-500 shadow-lg shadow-cyan-500/25 after:w-1.5 after:h-1.5 after:rounded-full after:bg-gray-400 after:absolute after:-bottom-2.5 after:z-10" : "hover:bg-gray-400/70 hover:text-white hover-group:text-white",
+                active ? "bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg shadow-blue-500/25 after:w-1.5 after:h-1.5 after:rounded-full after:bg-gray-400 after:absolute after:-bottom-2.5 after:z-10" : "hover:bg-gray-400/70 hover:text-white hover-group:text-white",
                 className
             )}
         >

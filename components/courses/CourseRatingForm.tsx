@@ -93,7 +93,7 @@ export function CourseRatingForm({
     }
 
     return (
-        <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+        <Card className="liquid-glass-card">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Star className="w-5 h-5 text-yellow-500" />
@@ -132,7 +132,7 @@ export function CourseRatingForm({
                     <Button
                         type="submit"
                         disabled={hasRated || isLoading || isSubmitting || currentRating === 0}
-                        className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
+                        className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                     >
                         {isSubmitting ? (
                             <div className="flex items-center gap-2">

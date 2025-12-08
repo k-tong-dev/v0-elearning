@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { BookOpen } from "lucide-react"
 
 interface BioFieldProps {
-    bio: string
+    bio: string | undefined // Bio can be undefined
     onBioChange: (value: string) => void
 }
 
@@ -19,7 +19,7 @@ export function BioField({ bio, onBioChange }: BioFieldProps) {
             </Label>
             <Textarea
                 id="bio"
-                value={bio}
+                value={bio || ""} // Ensure it's an empty string if undefined
                 onChange={(e) => onBioChange(e.target.value)}
                 placeholder="Tell us a little about yourself..."
                 className="min-h-[100px]"

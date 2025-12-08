@@ -18,7 +18,7 @@ interface UserRecentActivityProps {
 
 export function UserRecentActivity({ recentActivity, userRole }: UserRecentActivityProps) {
     return (
-        <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+        <Card className="liquid-glass-card">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-green-500" />

@@ -53,23 +53,28 @@ export function HeroCompany() {
     }, [companies.length])
 
     return (
-        <section className="relative py-16 bg-gradient-to-br from-background via-muted/20 to-background overflow-hidden">
-            {/* Background decorative elements */}
-            <div className="absolute inset-0">
-                <div className="absolute top-10 left-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
-                <div className="absolute bottom-10 right-10 w-40 h-40 bg-accent/5 rounded-full blur-3xl" />
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-secondary/3 rounded-full blur-3xl" />
-            </div>
+        <section className="relative py-32 bg-white dark:bg-slate-950 overflow-hidden">
+            {/* Light/Dark Mode Background */}
+            <div 
+                className="absolute inset-0 dark:opacity-30 opacity-10"
+                style={{
+                    backgroundImage: `
+                        radial-gradient(circle at 30% 50%, rgba(0, 0, 0, 0.03) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(0, 0, 0, 0.02) 0%, transparent 50%)
+                    `,
+                    backgroundSize: "100% 100%",
+                }}
+            />
 
-            <div className="container mt-[100px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="text-center mb-12">
                     <div
                         className={`transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
                     >
-                        <h2 className="text-3xl sm:text-4xl font-bold font-saira gradient-text mb-4 text-balance uppercase tracking-wide">
+                        <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-slate-900 dark:text-white uppercase tracking-wide">
                             Trusted by Industry Leaders
                         </h2>
-                        <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
+                        <p className="text-lg text-slate-600 dark:text-gray-300 max-w-2xl mx-auto text-pretty">
                             Join thousands of professionals from top companies who advance their careers with our platform
                         </p>
                     </div>
@@ -77,12 +82,12 @@ export function HeroCompany() {
 
                 {/* Mobile marquee for screens < 640px */}
                 <div className="block sm:hidden">
-                    <div className="marquee-container bg-card/50 backdrop-blur-sm rounded-2xl border border-border/50 py-6">
+                    <div className="marquee-container bg-white/80 dark:liquid-glass-card backdrop-blur-xl rounded-2xl py-6 border border-slate-200 dark:border-white/20">
                         <div className="marquee-scroll gap-8">
                             {[...companies, ...companies].map((company, index) => (
                                 <div
                                     key={`${company.name}-${index}`}
-                                    className="flex items-center gap-3 px-6 py-3 bg-background/80 rounded-xl border border-border/30 backdrop-blur-sm flex-shrink-0 hover:bg-accent/10 transition-colors"
+                                    className="flex items-center gap-3 px-6 py-3 liquid-glass-surface rounded-xl flex-shrink-0 hover:bg-white/5 transition-colors"
                                 >
                                     <div className="relative">
                                         <img
@@ -92,8 +97,8 @@ export function HeroCompany() {
                                         />
                                     </div>
                                     <div className="text-left">
-                                        <div className="font-semibold text-foreground text-sm">{company.name}</div>
-                                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <div className="font-semibold text-slate-900 dark:text-white text-sm">{company.name}</div>
+                                        <div className="text-xs text-slate-600 dark:text-gray-400 flex items-center gap-1">
                                             <company.icon className="w-3 h-3" />
                                             {company.metric}
                                         </div>
@@ -114,14 +119,14 @@ export function HeroCompany() {
                             return (
                                 <div
                                     key={company.name}
-                                    className={`company-card group relative p-6 rounded-2xl border transition-all duration-500 ${
+                                    className={`company-card group relative p-6 rounded-3xl liquid-glass-card transition-all duration-500 ${
                                         isActive
-                                            ? "bg-card border-accent/50 shadow-lg shadow-accent/20"
-                                            : "bg-card/50 border-border/30 hover:border-accent/30"
+                                            ? "border-blue-500/50 shadow-lg shadow-blue-500/20 scale-105"
+                                            : "border-white/10 hover:border-white/30"
                                     }`}
                                 >
                                     {/* Shimmer effect for active card */}
-                                    {isActive && <div className="absolute inset-0 shimmer-bg rounded-2xl opacity-50" />}
+                                    {isActive && <div className="absolute inset-0 liquid-shimmer rounded-3xl opacity-50" />}
 
                                     <div className="relative z-10 flex flex-col items-center text-center space-y-4">
                                         <div
@@ -131,14 +136,14 @@ export function HeroCompany() {
                                         >
                                             <div
                                                 className={`absolute inset-0 bg-gradient-to-r ${company.gradient} rounded-xl opacity-0 blur-xl transition-opacity duration-500 ${
-                                                    isActive ? "opacity-30" : "group-hover:opacity-20"
+                                                    isActive ? "opacity-40" : "group-hover:opacity-20"
                                                 }`}
                                             />
-                                            <div className="relative bg-background/80 backdrop-blur-sm rounded-xl p-3 border border-border/50">
+                                            <div className="relative liquid-glass-surface rounded-xl p-3">
                                                 <img
                                                     src={company.logo || "/placeholder.svg"}
                                                     alt={`${company.name} logo`}
-                                                    className="h-10 w-auto filter brightness-90 group-hover:brightness-110 transition-all"
+                                                    className="h-12 w-auto filter brightness-90 group-hover:brightness-110 transition-all"
                                                 />
                                             </div>
                                         </div>
@@ -146,14 +151,14 @@ export function HeroCompany() {
                                         <div className="space-y-2">
                                             <h3
                                                 className={`font-bold transition-colors duration-500 ${
-                                                    isActive ? "text-accent" : "text-foreground group-hover:text-accent"
+                                                    isActive ? "text-blue-500 dark:text-blue-500" : "text-slate-900 dark:text-white group-hover:text-blue-500 dark:group-hover:text-blue-500"
                                                 }`}
                                             >
                                                 {company.name}
                                             </h3>
                                             <div
                                                 className={`flex items-center justify-center gap-1 text-sm transition-colors duration-500 ${
-                                                    isActive ? "text-accent/80" : "text-muted-foreground group-hover:text-accent/80"
+                                                    isActive ? "text-blue-500 dark:text-blue-500" : "text-slate-600 dark:text-gray-400 group-hover:text-blue-500 dark:group-hover:text-blue-500"
                                                 }`}
                                             >
                                                 <IconComponent className="w-4 h-4" />
@@ -173,8 +178,8 @@ export function HeroCompany() {
                                 key={index}
                                 className={`h-2 rounded-full transition-all duration-500 ${
                                     index === activeCompanyIndex
-                                        ? "w-8 bg-accent shadow-lg shadow-accent/50"
-                                        : "w-2 bg-muted hover:bg-accent/50"
+                                        ? "w-8 bg-blue-500 shadow-lg shadow-blue-500/50"
+                                        : "w-2 bg-white/20 hover:bg-blue-500/50"
                                 }`}
                             />
                         ))}
@@ -195,11 +200,11 @@ export function HeroCompany() {
                     ].map((stat, index) => (
                         <div
                             key={stat.label}
-                            className="text-center p-4 rounded-xl bg-card/30 backdrop-blur-sm border border-border/20"
+                            className="text-center p-6 liquid-glass-card"
                         >
-                            <stat.icon className="w-6 h-6 mx-auto mb-2 text-accent" />
-                            <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                            <div className="text-sm text-muted-foreground">{stat.label}</div>
+                            <stat.icon className="w-8 h-8 mx-auto mb-3 text-blue-500 dark:text-blue-500" />
+                            <div className="text-3xl font-bold text-slate-900 dark:text-white">{stat.value}</div>
+                            <div className="text-sm text-slate-600 dark:text-gray-400 mt-2">{stat.label}</div>
                         </div>
                     ))}
                 </div>

@@ -48,7 +48,7 @@ export function ForumPostHeader({
                                 }: ForumPostHeaderProps) {
     return (
         <div className="relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-emerald-500"></div>
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500"></div>
 
             <div className="p-6 pb-4">
                 <div className="flex items-start justify-between">
@@ -64,7 +64,7 @@ export function ForumPostHeader({
                         <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                                 <h1 className="text-2xl font-bold">{post.title}</h1>
-                                {post.isPinned && <Badge variant="outline" className="text-cyan-500">Pinned</Badge>}
+                                {post.isPinned && <Badge variant="outline" className="text-blue-500">Pinned</Badge>}
                                 {post.isAnswered && <Badge className="bg-green-500 text-white">Answered</Badge>}
                             </div>
 

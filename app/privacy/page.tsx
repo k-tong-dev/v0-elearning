@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Shield } from "lucide-react";
-import { HeaderDark } from "@/components/ui/headers/HeaderDark";
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra";
 import { Footer } from "@/components/ui/footers/footer";
 import {BackgroundBeamsWithCollision} from "@/components/ui/backgrounds/background-beams-with-collision";
 
@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
                     >
                         <div className="text-center space-y-4">
                             <Shield className="mx-auto w-16 h-16 text-primary" />
-                            <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+                            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                 Privacy Policy
                             </h1>
                             <p className="text-muted-foreground">
@@ -30,7 +30,7 @@ export default function PrivacyPolicyPage() {
 
                         <section className="prose dark:prose-invert max-w-none space-y-6">
                             <p>
-                                Your privacy is important to us. This Privacy Policy explains how CamEdu ("we," "us," or "our") collects, uses, discloses, and protects your information when you use our website, products, and services (collectively, the "Services").
+                                Your privacy is important to us. This Privacy Policy explains how NEXT4LEARN ("we," "us," or "our") collects, uses, discloses, and protects your information when you use our website, products, and services (collectively, the "Services").
                             </p>
 
                             <h2>1. Information We Collect</h2>

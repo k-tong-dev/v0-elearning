@@ -51,13 +51,13 @@ export function DraggableDialog({
                     ref={dragHandleRef}
                     {...listeners}
                     {...attributes}
-                    className="flex items-center justify-center h-10 bg-gradient-to-r from-cyan-500 to-emerald-500 cursor-move text-white text-sm font-medium rounded-t-2xl"
+                    className="flex items-center justify-center h-10 bg-gradient-to-r from-blue-500 to-purple-500 cursor-move text-white text-sm font-medium rounded-t-2xl"
                 >
                     <GripVertical className="w-5 h-5 mr-1" />
                     Drag to Move
                 </div>
                 <DialogHeader className="p-6 pb-4">
-                    <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-cyan-600 via-emerald-600 to-cyan-600 bg-clip-text text-transparent text-center">
+                    <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent text-center">
                         {title}
                     </DialogTitle>
                     <DialogDescription className="text-sm text-muted-foreground text-center mt-1">

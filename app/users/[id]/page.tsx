@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { Footer } from "@/components/ui/footers/footer"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -18,6 +18,8 @@ import { UserRecentActivity } from "@/components/user-profile/UserRecentActivity
 import { UserRecentPosts } from "@/components/user-profile/UserRecentPosts"
 import { UserAchievements } from "@/components/user-profile/UserAchievements"
 import { UserCoursesOverview } from "@/components/user-profile/UserCoursesOverview"
+import { UserInstructors } from "@/components/user-profile/UserInstructors"
+import { getInstructors, Instructor } from "@/integrations/strapi/instructor"
 import { BadgeDefinition } from "@/types/db"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -433,6 +435,7 @@ export default function UserProfilePage() {
     const { id } = useParams()
     const router = useRouter()
     const [user, setUser] = useState<UserProfile | null>(null)
+    const [userInstructors, setUserInstructors] = useState<Instructor[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isFollowing, setIsFollowing] = useState(false)
     const [activeTab, setActiveTab] = useState("overview")
@@ -535,6 +538,14 @@ export default function UserProfilePage() {
                 }
 
                 setUser(mockUser)
+
+                // Fetch user's instructors
+                try {
+                    const instructors = await getInstructors(id as string)
+                    setUserInstructors(instructors)
+                } catch (error) {
+                    console.error("Error fetching user instructors:", error)
+                }
             } catch (error: any) {
                 console.error("Failed to fetch profile data:", {
                     message: error.message,
@@ -591,7 +602,7 @@ export default function UserProfilePage() {
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500"></div>
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
             </div>
         )
     }
@@ -599,7 +610,7 @@ export default function UserProfilePage() {
     if (!user) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-                <HeaderDark />
+                <HeaderUltra />
                 <div className="container mx-auto px-4 py-8 pt-24 text-center">
                     <h1 className="text-2xl font-bold mb-4">User not found</h1>
                     <Button onClick={() => router.back()}>Go Back</Button>
@@ -622,7 +633,7 @@ export default function UserProfilePage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-            <HeaderDark />
+            <HeaderUltra />
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
                 {/* Back Button */}
                 <motion.div
@@ -693,6 +704,7 @@ export default function UserProfilePage() {
                         <UserProfileStats userStats={user.stats} />
                         <UserFollowStats followers={user.stats.followers} following={user.stats.following} />
                         {user.skills && <UserSkills skills={user.skills} />}
+                        {userInstructors.length > 0 && <UserInstructors instructors={userInstructors} />}
                     </motion.div>
 
                     {/* Main Content - Tabs */}

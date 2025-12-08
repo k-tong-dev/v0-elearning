@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { HeaderDark } from "@/components/ui/headers/HeaderDark"
+import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { Footer } from "@/components/ui/footers/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -139,10 +139,10 @@ export default function CourseEditPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-      <HeaderDark />
+      <HeaderUltra />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
-        {/* HeaderDark */}
+        {/* HeaderUltra */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -158,7 +158,7 @@ export default function CourseEditPage() {
               Back
             </Button>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Edit Course
               </h1>
               <p className="text-muted-foreground">
@@ -492,7 +492,7 @@ export default function CourseEditPage() {
                     <Button 
                       onClick={handleSave} 
                       disabled={isLoading}
-                      className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
+                      className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                     >
                       {isLoading ? (
                         <div className="flex items-center gap-2">

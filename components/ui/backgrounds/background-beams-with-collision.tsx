@@ -71,9 +71,9 @@ export const BackgroundBeamsWithCollision = ({
             ref={parentRef}
             className={cn(
                 "h-96 md:h-[40rem] bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-950 dark:to-neutral-800 relative flex items-center w-full justify-center overflow-hidden",
-                // h-screen if you want bigger
                 className
             )}
+            style={{ pointerEvents: "none" }}
         >
             {beams.map((beam) => (
                 <CollisionMechanism
@@ -83,8 +83,9 @@ export const BackgroundBeamsWithCollision = ({
                     parentRef={parentRef}
                 />
             ))}
-
-            {children}
+            <div className="relative z-10 w-full pointer-events-auto">
+                {children}
+            </div>
             <div
                 ref={containerRef}
                 className="absolute bottom-0 bg-neutral-100 w-full inset-x-0 pointer-events-none"
@@ -100,8 +101,8 @@ export const BackgroundBeamsWithCollision = ({
 const CollisionMechanism = React.forwardRef<
     HTMLDivElement,
     {
-        containerRef: React.RefObject<HTMLDivElement>;
-        parentRef: React.RefObject<HTMLDivElement>;
+        containerRef: React.RefObject<HTMLDivElement | null>;
+        parentRef: React.RefObject<HTMLDivElement | null>;
         beamOptions?: {
             initialX?: number;
             translateX?: number;
@@ -200,7 +201,7 @@ const CollisionMechanism = React.forwardRef<
                     repeatDelay: beamOptions.repeatDelay || 0,
                 }}
                 className={cn(
-                    "absolute left-0 top-20 m-auto h-14 w-px rounded-full bg-gradient-to-t from-indigo-500 via-purple-500 to-transparent",
+                    "absolute left-0 top-20 m-auto h-14 w-px rounded-full bg-gradient-to-t from-indigo-500 via-purple-500 to-transparent pointer-events-none",
                     beamOptions.className
                 )}
             />
@@ -233,7 +234,7 @@ const Explosion = ({ ...props }: React.HTMLProps<HTMLDivElement>) => {
     }));
 
     return (
-        <div {...props} className={cn("absolute z-50 h-2 w-2", props.className)}>
+        <div {...props} className={cn("absolute z-50 h-2 w-2 pointer-events-none", props.className)}>
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

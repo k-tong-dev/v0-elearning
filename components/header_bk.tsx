@@ -33,6 +33,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from "sonner"
 import {Modal, ModalBody, ModalContent, ModalFooter, ModalTrigger} from "@/components/ui/aceternity/animated-modal";
 import {motion} from "motion/react";
+import { AdvancedSearchModal } from "@/components/ui/search/AdvancedSearchModal"
 
 export function Header() {
     const router = useRouter()
@@ -41,6 +42,7 @@ export function Header() {
     const [isScrolled, setIsScrolled] = useState(false)
     const [isExploreOpen, setIsExploreOpen] = useState(false)
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+    const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
 
     useEffect(() => {
         const handleScroll = () => {
@@ -105,8 +107,8 @@ export function Header() {
         try {
             if (navigator.share) {
                 await navigator.share({
-                    title: 'CamEducation',
-                    text: 'Check out CamEducation - the best online learning platform!',
+                    title: 'NEXT4LEARN',
+                    text: 'Check out NEXT4LEARN - the best online learning platform!',
                     url: window.location.origin,
                 })
                 toast.success('Shared successfully!', {
@@ -168,8 +170,7 @@ export function Header() {
     }
 
     const handleSearch = () => {
-        console.log("[v0] Search button clicked from header")
-        // Add search modal or redirect to search page
+        setIsSearchModalOpen(true)
     }
 
     const exploreItems = [
@@ -213,7 +214,7 @@ export function Header() {
             description: "Reach out to our team",
             href: "/contact",
             icon: Phone,
-            color: "text-cyan-500",
+            color: "text-blue-500",
         },
     ]
 
@@ -232,26 +233,26 @@ export function Header() {
                                 <BookOpen className="w-5 h-5 text-primary-foreground" />
                             </div>
                             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                                CamEdu
+                                NEXT4LEARN
                             </span>
                         </Link>
 
                         {/* Desktop Navigation */}
                         <nav className="hidden md:flex items-center space-x-8">
-                            <Link href="/" className="text-foreground hover:text-cyan-600 transition-colors duration-200">
+                            <Link href="/" className="text-foreground hover:text-blue-500 transition-colors duration-200">
                                 Home
                             </Link>
-                            <Link href="/courses" className="text-foreground hover:text-cyan-600 transition-colors duration-200">
+                            <Link href="/courses" className="text-foreground hover:text-blue-500 transition-colors duration-200">
                                 Courses
                             </Link>
                             <DropdownMenu open={isExploreOpen} onOpenChange={setIsExploreOpen}>
-                                <DropdownMenuTrigger className="flex items-center gap-1 text-foreground hover:text-cyan-600 transition-all duration-200 hover:scale-105">
+                                <DropdownMenuTrigger className="flex items-center gap-1 text-foreground hover:text-blue-500 transition-all duration-200 hover:scale-105">
                                     Explore
                                     <ChevronDown
                                         className={`w-4 h-4 transition-transform duration-200 ${isExploreOpen ? "rotate-180" : ""}`}
                                     />
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-96 p-3 glass-enhanced border-0 shadow-2xl">
+                                <DropdownMenuContent className="w-96 p-3 liquid-glass border-0 shadow-2xl">
                                     <div className="grid grid-cols-2 gap-2">
                                         {exploreItems.map((item) => {
                                             const IconComponent = item.icon
@@ -265,7 +266,7 @@ export function Header() {
                                                             <IconComponent
                                                                 className={`w-5 h-5 ${item.color} group-hover:scale-110 transition-transform duration-200`}
                                                             />
-                                                            <span className="font-semibold text-sm group-hover:text-cyan-600 transition-colors duration-200">
+                                                            <span className="font-semibold text-sm group-hover:text-blue-500 transition-colors duration-200">
                                                                 {item.title}
                                                             </span>
                                                         </div>
@@ -279,10 +280,10 @@ export function Header() {
                                     </div>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Link href="/pricing" className="text-foreground hover:text-cyan-600 transition-colors duration-200">
+                            <Link href="/pricing" className="text-foreground hover:text-blue-500 transition-colors duration-200">
                                 Partner & Price
                             </Link>
-                            <Link href="/contact" className="text-foreground hover:text-cyan-600 transition-colors duration-200">
+                            <Link href="/contact" className="text-foreground hover:text-blue-500 transition-colors duration-200">
                                 Contact
                             </Link>
                         </nav>
@@ -308,7 +309,7 @@ export function Header() {
                                             />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-56 mt-2 glass-enhanced" align="end" side="bottom"> {/* Glass effect applied */}
+                                    <DropdownMenuContent className="w-56 mt-2 liquid-glass" align="end" side="bottom"> {/* Glass effect applied */}
                                         <div className="flex items-center justify-start gap-2 p-2">
                                             <div className="flex flex-col space-y-1 leading-none">
                                                 <p className="font-medium">{user.name}</p>
@@ -352,10 +353,10 @@ export function Header() {
                                 <>
                                     <Button
                                         onClick={handleGetStartedClick}
-                                        className="rounded-full relative bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white px-6 py-2 transition-all duration-300 hover:shadow-lg hover:shadow-orange-400/25 overflow-hidden group"
+                                        className="rounded-full relative bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-2 transition-all duration-300 hover:shadow-lg hover:shadow-orange-400/25 overflow-hidden group"
                                     >
                                         <span className="relative z-10">Get Started</span>
-                                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     </Button>
                                 </>
                             )}
@@ -378,12 +379,12 @@ export function Header() {
                     {isMenuOpen && (
                         <div className="md:hidden absolute top-16 left-0 right-0 bg-background/95 backdrop-blur-md border-b border-border animate-slide-in-up">
                             <nav className="flex flex-col space-y-1 p-4">
-                                <Link href="/" className="text-foreground hover:text-cyan-600 transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20">
+                                <Link href="/" className="text-foreground hover:text-blue-500 transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20">
                                     Home
                                 </Link>
                                 <Link
                                     href="/courses"
-                                    className="text-foreground hover:text-cyan-600 transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
+                                    className="text-foreground hover:text-blue-500 transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
                                 >
                                     Courses
                                 </Link>
@@ -396,7 +397,7 @@ export function Header() {
                                                 <Link
                                                     key={item.title}
                                                     href={item.href}
-                                                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-cyan-600 transition-colors duration-200 py-2 px-3 rounded-md"
+                                                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-blue-500 transition-colors duration-200 py-2 px-3 rounded-md"
                                                 >
                                                     <IconComponent className={`w-4 h-4 ${item.color}`} />
                                                     {item.title}
@@ -407,13 +408,13 @@ export function Header() {
                                 </div>
                                 <Link
                                     href="/pricing"
-                                    className="text-foreground hover:text-cyan-600 transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
+                                    className="text-foreground hover:text-blue-500 transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
                                 >
                                     Partner & Price
                                 </Link>
                                 <Link
                                     href="/contact"
-                                    className="text-foreground hover:text-cyan-600 transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
+                                    className="text-foreground hover:text-blue-500 transition-colors duration-200 py-2 px-3 rounded-md hover:bg-accent/20"
                                 >
                                     Contact
                                 </Link>
@@ -477,7 +478,7 @@ export function Header() {
                                         <>
                                             <Button
                                                 onClick={handleGetStartedClick}
-                                                className="rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white"
+                                                className="rounded-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
                                             >
                                                 Get Started
                                             </Button>
@@ -489,6 +490,12 @@ export function Header() {
                     )}
                 </div>
             </header>
+            
+            {/* Advanced Search Modal */}
+            <AdvancedSearchModal 
+                isOpen={isSearchModalOpen}
+                onClose={() => setIsSearchModalOpen(false)}
+            />
         </>
     )
 }

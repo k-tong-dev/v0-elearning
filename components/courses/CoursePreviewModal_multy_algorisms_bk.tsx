@@ -114,7 +114,7 @@ export const CoursePreviewModal: React.FC<CoursePreviewModalProps> = ({
 
                             {/* Info Section */}
                             <div className="p-6 text-center">
-                                <h2 className="text-xl md:text-2xl font-semibold mb-2 bg-gradient-to-r from-cyan-500 to-emerald-500 bg-clip-text text-transparent">
+                                <h2 className="text-xl md:text-2xl font-semibold mb-2 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
                                     Course Preview
                                 </h2>
                                 <p className="text-muted-foreground text-sm md:text-base mb-4">
@@ -122,7 +122,7 @@ export const CoursePreviewModal: React.FC<CoursePreviewModalProps> = ({
                                 </p>
                                 <Button
                                     onClick={onClose}
-                                    className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white hover:opacity-90 rounded-full px-6 py-2"
+                                    className="bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:opacity-90 rounded-full px-6 py-2"
                                 >
                                     Close Preview
                                 </Button>

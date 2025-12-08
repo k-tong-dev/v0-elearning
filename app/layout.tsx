@@ -4,26 +4,32 @@ import {GeistSans} from "geist/font/sans"
 import {GeistMono} from "geist/font/mono"
 import {ThemeProvider} from "@/components/theme-provider"
 import { AuthProvider } from "@/hooks/use-auth"
+import { CartProvider } from "@/contexts/CartContext"
 import { AuthRedirector } from "@/components/AuthRedirector" // Import the new AuthRedirector
 import { CookieConsent } from '@/components/CookieConsent';
 
 import "./globals.css"
 import "./fonts.css"
+import "@/styles/glass.style.css"
+import "@/styles/liquid-glass.css"
+import "@/styles/ultra-liquid-toast.css"
 
-import { Toaster } from "sonner"
+import { UltraLiquidToaster } from "@/components/ui/ultra-liquid-toast"
 import { ChatWidget } from "@/components/chat-widget"
+import { ActivityTracker } from "@/components/ActivityTracker"
+import { NetworkStatusMonitor } from "@/components/NetworkStatusMonitor"
 
 
 export const metadata: Metadata = {
-    title: "CamEducation",
+    title: "NEXT4LEARN",
     description: "Modern eLearning platform with cutting-edge courses and interactive learning experiences",
     generator: "Tong",
     appleWebApp: true,
-    publisher: "CamEducation",
+    publisher: "NEXT4LEARN",
     appLinks: {},
-    applicationName: "CamEducation",
+    applicationName: "NEXT4LEARN",
     classification: 'My Classification',
-    abstract: 'CamEducation',
+    abstract: 'NEXT4LEARN',
     authors: {
         name: "CMU Team Project Final Year 2025",
         url: "https://khontong.vercel.app",
@@ -48,15 +54,23 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
+        <head>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossOrigin="anonymous" referrerPolicy="no-referrer" />
+        </head>
         <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange={false}>
             <AuthProvider>
-                <Toaster position="top-center" richColors/>
-                <AuthRedirector>
-                    <CookieConsent/>
-                    {children}
-                    <ChatWidget />
-                </AuthRedirector>
+                <CartProvider>
+                    <ActivityTracker />
+                    <NetworkStatusMonitor />
+                    <UltraLiquidToaster />
+                    <AuthRedirector>
+                        <CookieConsent/>
+                        <div id="modal-root"></div>
+                        {children}
+                        <ChatWidget />
+                    </AuthRedirector>
+                </CartProvider>
             </AuthProvider>
         </ThemeProvider>
         </body>

@@ -47,7 +47,7 @@ const roleColors = {
   instructor: "from-blue-500 to-purple-500",
   admin: "from-red-500 to-pink-500", 
   expert: "from-yellow-500 to-orange-500",
-  mentor: "from-green-500 to-emerald-500",
+  mentor: "from-green-500 to-purple-500",
   student: "from-gray-500 to-slate-500"
 }
 
@@ -128,7 +128,7 @@ export function RippleAvatar({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            <div className="w-10 h-10 rounded-full border-2 border-cyan-400/50" />
+            <div className="w-10 h-10 rounded-full border-2 border-blue-500/50" />
           </motion.div>
         ))}
       </AnimatePresence>
@@ -194,7 +194,7 @@ export function RippleAvatar({
           }}
         >
           <motion.div
-            className="absolute top-0 left-1/2 w-1 h-1 bg-cyan-400 rounded-full"
+            className="absolute top-0 left-1/2 w-1 h-1 bg-blue-500 rounded-full"
             animate={{
               y: [0, -10, 0],
               opacity: [0, 1, 0],
@@ -207,7 +207,7 @@ export function RippleAvatar({
             }}
           />
           <motion.div
-            className="absolute top-1/4 right-0 w-1 h-1 bg-emerald-400 rounded-full"
+            className="absolute top-1/4 right-0 w-1 h-1 bg-blue-500 rounded-full"
             animate={{
               x: [0, 10, 0],
               opacity: [0, 1, 0],

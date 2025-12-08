@@ -121,7 +121,7 @@ export function DashboardCombinedEnrollments({ recentEnrollments, myLearningProg
                             setViewMode('my-students');
                             setSearchQuery(""); // Clear search when switching views
                         }}
-                        className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white"
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
                     >
                         <Users className="w-4 h-4 mr-2" />
                         Students in My Courses
@@ -141,7 +141,7 @@ export function DashboardCombinedEnrollments({ recentEnrollments, myLearningProg
             </div>
 
             {/* Search and Filters for the active view */}
-            <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+            <Card className="liquid-glass-card">
                 <CardContent className="p-6 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="relative md:col-span-1">
@@ -193,7 +193,7 @@ export function DashboardCombinedEnrollments({ recentEnrollments, myLearningProg
 
 
             {viewMode === 'my-students' && (
-                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Users className="w-5 h-5" />
@@ -258,7 +258,7 @@ export function DashboardCombinedEnrollments({ recentEnrollments, myLearningProg
             )}
 
             {viewMode === 'my-courses' && (
-                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <BookOpen className="w-5 h-5" />
@@ -279,7 +279,7 @@ export function DashboardCombinedEnrollments({ recentEnrollments, myLearningProg
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {filteredAndSortedMyCourses.map((course, index) => {
                                     const TypeIcon = getTypeIcon(course.type);
-                                    const progressColor = course.progress === 100 ? 'bg-green-500' : 'bg-gradient-to-r from-cyan-500 to-emerald-500';
+                                    const progressColor = course.progress === 100 ? 'bg-green-500' : 'bg-gradient-to-r from-blue-500 to-purple-500';
                                     return (
                                         <motion.div
                                             key={course.id}
@@ -289,7 +289,7 @@ export function DashboardCombinedEnrollments({ recentEnrollments, myLearningProg
                                             className="group"
                                         >
                                             <Card
-                                                className="h-full flex flex-col justify-between glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden"
+                                                className="h-full flex flex-col justify-between liquid-glass-card cursor-pointer overflow-hidden"
                                                 onClick={() => router.push(`/courses/${course.id}`)}
                                             >
                                                 <div className="relative">

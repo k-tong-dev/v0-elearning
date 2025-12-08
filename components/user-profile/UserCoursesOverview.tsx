@@ -20,7 +20,7 @@ export function UserCoursesOverview({ coursesEnrolled, coursesCreated, userRole 
     return (
         <div className="space-y-6 mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <BookOpen className="w-5 h-5 text-blue-500" />
@@ -31,12 +31,12 @@ export function UserCoursesOverview({ coursesEnrolled, coursesCreated, userRole 
                         <div className="text-center py-8">
                             <div className="text-4xl font-bold text-blue-500 mb-2">{coursesEnrolled}</div>
                             <p className="text-muted-foreground text-lg">Active Enrollments</p>
-                            <Button className="mt-4 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600" onClick={() => router.push('/courses')}>View All Courses</Button>
+                            <Button className="mt-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600" onClick={() => router.push('/courses')}>View All Courses</Button>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="glass-enhanced hover:scale-[1.005] hover:shadow-xl transition-all duration-300">
+                <Card className="liquid-glass-card">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Award className="w-5 h-5 text-purple-500" />

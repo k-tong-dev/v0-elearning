@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Bug, Send, Loader2, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { Bug, Send, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +22,7 @@ interface ReportIssueFormProps {
 
 export function ReportIssueForm({ initialTitle, initialDescription, onSuccess, onCancel }: ReportIssueFormProps) {
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
 
     const [title, setTitle] = useState(initialTitle || "");
     const [description, setDescription] = useState(initialDescription || "");
@@ -47,13 +47,23 @@ export function ReportIssueForm({ initialTitle, initialDescription, onSuccess, o
             return;
         }
 
+        if (!user?.id) {
+            setError("You must be logged in to report an issue.");
+            setLoading(false);
+            toast.error("Please log in to report an issue.", {
+                position: "top-center",
+            });
+            return;
+        }
+
         try {
             const payload = {
                 title,
                 description,
-                user: user?.id ? parseInt(user.id) : undefined,
-                internal_noted: "Reported via frontend form.",
+                user: parseInt(user.id), // Ensure user is set, not null
             };
+            
+            console.log("[ReportIssueForm] Submitting report:", payload);
             await reportIssue(payload);
 
             setSuccess(true);
@@ -68,8 +78,16 @@ export function ReportIssueForm({ initialTitle, initialDescription, onSuccess, o
             });
             setTitle("");
             setDescription("");
-            onSuccess?.();
-            setTimeout(() => router.push("/"), 3000);
+            
+            // Refresh user data to get new report
+            await refreshUser();
+            
+            // Only redirect if not in dashboard (onSuccess will handle refresh)
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                setTimeout(() => router.push("/"), 3000);
+            }
         } catch (err: any) {
             console.error("Failed to submit report:", err);
             setError(err.message || "Failed to submit report. Please try again.");
@@ -87,27 +105,28 @@ export function ReportIssueForm({ initialTitle, initialDescription, onSuccess, o
     };
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 50 }}
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="w-full max-w-md bg-card rounded-2xl shadow-xl border border-border p-8 space-y-6"
+            transition={{ duration: 0.3 }}
+            className="w-full space-y-6"
         >
-            <div className="text-center space-y-4">
-                <Bug className="mx-auto w-16 h-16 text-red-500" />
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+            <div className="text-center space-y-3 pb-4 border-b border-border">
+                <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-red-500/10 to-orange-500/10 flex items-center justify-center mb-2">
+                    <Bug className="w-8 h-8 text-red-500" />
+                </div>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
                     Report an Issue
                 </h2>
-                <p className="text-muted-foreground">
-                    Tell us what went wrong so we can fix it.
+                <p className="text-sm text-muted-foreground">
+                    Tell us what went wrong so we can fix it quickly
                 </p>
             </div>
 
             <form onSubmit={handleSubmitReport} className="space-y-5">
                 <div className="space-y-2">
-                    <Label htmlFor="title" className="flex items-center gap-2 text-sm font-medium">
-                        <Bug className="w-4 h-4 text-red-500" />
-                        Issue Title
+                    <Label htmlFor="title" className="text-sm font-semibold">
+                        Issue Title <span className="text-red-500">*</span>
                     </Label>
                     <Input
                         id="title"
@@ -116,24 +135,26 @@ export function ReportIssueForm({ initialTitle, initialDescription, onSuccess, o
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         required
-                        className="h-12 transition-all duration-200 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 pl-4 text-base border-2 hover:border-red-300"
+                        className="h-11 transition-all duration-200 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
                     />
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="description" className="flex items-center gap-2 text-sm font-medium">
-                        <AlertCircle className="w-4 h-4 text-red-500" />
-                        Description
+                    <Label htmlFor="description" className="text-sm font-semibold">
+                        Description <span className="text-red-500">*</span>
                     </Label>
                     <Textarea
                         id="description"
-                        placeholder="Please describe the issue in detail..."
+                        placeholder="Please describe the issue in detail. Include steps to reproduce, expected behavior, and what actually happened..."
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         required
-                        rows={5}
-                        className="min-h-[120px] transition-all duration-200 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 p-4 text-base border-2 hover:border-red-300"
+                        rows={6}
+                        className="min-h-[140px] transition-all duration-200 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 resize-none"
                     />
+                    <p className="text-xs text-muted-foreground">
+                        {description.length}/500 characters
+                    </p>
                 </div>
 
                 {error && (
@@ -158,31 +179,37 @@ export function ReportIssueForm({ initialTitle, initialDescription, onSuccess, o
                     </motion.div>
                 )}
 
-                <Button
-                    type="submit"
-                    disabled={loading || success}
-                    className="w-full h-12 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold rounded-lg shadow-md transition-all hover:shadow-lg"
-                >
-                    {loading ? (
-                        <div className="flex items-center gap-2">
-                            <Loader2 className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            Sending Report...
-                        </div>
-                    ) : (
-                        <>
-                            Send Report
-                            <Send className="w-4 h-4 ml-2" />
-                        </>
+                <div className="flex gap-3 pt-2">
+                    {onCancel && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onCancel}
+                            disabled={loading || success}
+                            className="flex-1"
+                        >
+                            Cancel
+                        </Button>
                     )}
-                </Button>
+                    <Button
+                        type="submit"
+                        disabled={loading || success || !title || !description}
+                        className="flex-1 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold shadow-md transition-all hover:shadow-lg"
+                    >
+                        {loading ? (
+                            <div className="flex items-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Sending...
+                            </div>
+                        ) : (
+                            <>
+                                <Send className="w-4 h-4 mr-2" />
+                                Submit Report
+                            </>
+                        )}
+                    </Button>
+                </div>
             </form>
-
-            <p className="text-center text-sm text-muted-foreground">
-                <Link href="/" className="text-primary hover:underline">
-                    <ArrowLeft className="w-4 h-4 mr-1 inline-block" />
-                    Back to Home
-                </Link>
-            </p>
         </motion.div>
     );
 }

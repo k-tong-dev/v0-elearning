@@ -1,63 +1,676 @@
 "use client"
 
-import React from "react"
+import React, { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Plus, BookOpen, FileText, Video, Link as LinkIcon, Target, Star } from "lucide-react"
-import { motion } from "framer-motion"
+import { Input } from "@/components/ui/input"
+import { 
+    Plus, BookOpen, Video, Loader2, Edit, Eye, Search, 
+    Filter, X, ChevronDown, Tag, Award, Layers, Target
+} from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { getDashboardCourseCourses, CourseCourse } from "@/integrations/strapi/courseCourse"
+import { useAuth } from "@/hooks/use-auth"
+import { getAccessToken } from "@/lib/cookies"
+import ReactPlayer from "react-player"
+import { CoursePreview, getCoursePreview, getCoursePreviewUrl } from "@/integrations/strapi/coursePreview"
+import { getCourseCategories, CourseCategory } from "@/integrations/strapi/courseCategory"
+import { getBadges, Badge as BadgeType } from "@/integrations/strapi/badge"
+import { getSkills, Skill } from "@/integrations/strapi/skill"
+import { strapi } from "@/integrations/strapi/client"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
+import { Checkbox } from "@/components/ui/checkbox"
 
-interface Course {
-    id: string
-    title: string
-    description: string
-    type: "PDF" | "Video" | "Link" | "Interactive"
-    status: "draft" | "published" | "archived"
-    price: number
-    enrollments: number
-    rating: number
-    createdAt: string
-    lastUpdated: string
-    thumbnailUrl: string
+interface CourseWithPreview extends CourseCourse {
+    course_preview?: (CoursePreview | { id: number }) | null;
 }
 
 interface DashboardMyCoursesProps {
-    myCourses: Course[]
+    myCourses?: CourseCourse[]
     onCreateCourse: () => void
-    showCreateButton: boolean; // New prop to control button visibility
+    onEditCourse?: (courseId: number | string) => void
+    showCreateButton: boolean
 }
 
-export function DashboardMyCourses({ myCourses, onCreateCourse, showCreateButton }: DashboardMyCoursesProps) {
+export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onEditCourse, showCreateButton }: DashboardMyCoursesProps) {
     const router = useRouter()
+    const { user } = useAuth()
+    const [courses, setCourses] = useState<CourseWithPreview[]>(propCourses || [])
+    const [filteredCourses, setFilteredCourses] = useState<CourseWithPreview[]>([])
+    const [loading, setLoading] = useState(!propCourses)
+    const [error, setError] = useState<string | null>(null)
+
+    // Search and filter states
+    const [searchQuery, setSearchQuery] = useState("")
+    const [selectedCategories, setSelectedCategories] = useState<number[]>([])
+    const [selectedTags, setSelectedTags] = useState<number[]>([])
+    const [selectedBadges, setSelectedBadges] = useState<number[]>([])
+    const [selectedSkills, setSelectedSkills] = useState<number[]>([])
+    const [showFilters, setShowFilters] = useState(false)
+
+    // Filter options
+    const [categories, setCategories] = useState<CourseCategory[]>([])
+    const [tags, setTags] = useState<any[]>([])
+    const [badges, setBadges] = useState<BadgeType[]>([])
+    const [skills, setSkills] = useState<Skill[]>([])
+
+    // Fetch filter options
+    useEffect(() => {
+        const fetchFilterOptions = async () => {
+            try {
+                const [cats, bgs, sks] = await Promise.all([
+                    getCourseCategories(),
+                    getBadges(),
+                    getSkills(),
+                ])
+                setCategories(cats)
+                setBadges(bgs)
+                setSkills(sks)
+
+                // Fetch course tags
+                try {
+                    const accessToken = getAccessToken()
+                    if (!accessToken) {
+                        console.warn("[Dashboard] Skipping tag fetch - user is not authenticated")
+                    } else {
+                        const tagsResponse = await strapi.get(`/api/course-tages?populate=*`)
+                        const tagsData = tagsResponse.data
+                        setTags((tagsData.data || []).map((item: any) => ({
+                            id: item.id,
+                            name: item.name,
+                        })))
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch tags:", e)
+                }
+            } catch (error) {
+                console.error("Failed to fetch filter options:", error)
+            }
+        }
+        fetchFilterOptions()
+    }, [])
+
+    // Fetch courses dynamically if not provided
+    useEffect(() => {
+        const fetchCourses = async () => {
+            if (propCourses) {
+                setCourses(propCourses)
+                setFilteredCourses(propCourses)
+                return
+            }
+
+            if (!user?.id) {
+                setLoading(false)
+                return
+            }
+
+            const ownerIdNumeric = Number(user.id)
+            const ownerDocumentId = typeof user.documentId === "string" ? user.documentId : undefined
+            if (!Number.isFinite(ownerIdNumeric) && !ownerDocumentId) {
+                console.warn("[Dashboard] Invalid user id, cannot load courses")
+                setError("Unable to determine your account id. Please sign in again.")
+                setLoading(false)
+                return
+            }
+
+            try {
+                setLoading(true)
+                const accessToken = getAccessToken()
+                if (!accessToken) {
+                    console.warn("[Dashboard] Cannot load courses - user is not authenticated")
+                    setError("Please sign in again to load your courses.")
+                    setLoading(false)
+                    return
+                }
+                
+                const params = new URLSearchParams()
+                if (Number.isFinite(ownerIdNumeric)) {
+                    params.append("filters[owner][id][$eq]", ownerIdNumeric.toString())
+                } else if (ownerDocumentId) {
+                    params.append("filters[owner][documentId][$eq]", ownerDocumentId)
+                }
+                params.append("populate", "*")
+                params.append("sort", "createdAt:desc")
+
+                const response = await strapi.get(`/api/course-courses?${params.toString()}`)
+                const data = response.data || {}
+                const coursesData = data.data || []
+
+                if (coursesData.length === 0) {
+                    console.log("No courses found, trying fallback...");
+                    const allCourses = await getDashboardCourseCourses({
+                        ownerId: Number.isFinite(ownerIdNumeric) ? ownerIdNumeric : undefined,
+                        ownerDocumentId: !Number.isFinite(ownerIdNumeric) ? ownerDocumentId : undefined,
+                    })
+                    const coursesWithPreviews = await Promise.all(allCourses.map(async (course) => {
+                        const courseWithPreview: CourseWithPreview = { ...course };
+                        if (course.course_preview?.id) {
+                            try {
+                                const preview = await getCoursePreview(course.course_preview.id);
+                                courseWithPreview.course_preview = preview;
+                            } catch (e) {
+                                console.error("Failed to fetch preview for course", course.id, e);
+                            }
+                        }
+                        return courseWithPreview;
+                    }));
+                    setCourses(coursesWithPreviews)
+                    setLoading(false)
+                    return;
+                }
+                
+                const fetchedCourses = await Promise.all(coursesData.map(async (item: any) => {
+                    const course: CourseWithPreview = {
+                        id: item.id,
+                        documentId: item.documentId,
+                        name: item.name,
+                        description: item.description,
+                        Price: item.Price || 0,
+                        is_paid: item.is_paid || false,
+                        course_status: item.course_status || "draft",
+                        active: item.active ?? true,
+                        enrollment_count: item.enrollment_count || 0,
+                        preview_available: item.preview_available || false,
+                        preview_url: item.preview_url,
+                        discount_type: item.discount_type || null,
+                        discount_percentage: item.discount_percentage || 0,
+                        discount_fix_price: item.discount_fix_price || 0,
+                        duration_minutes: item.duration_minutes || 0,
+                        purchase_count: item.purchase_count || 0,
+                        revenue_generated: item.revenue_generated || 0,
+                        course_categories: item.course_categories?.data || item.course_categories || [],
+                        course_tages: item.course_tages?.data || item.course_tages || [],
+                        course_badges: item.course_badges?.data || item.course_badges || [],
+                        relevant_skills: item.relevant_skills?.data || item.relevant_skills || [],
+                        createdAt: item.createdAt,
+                        updatedAt: item.updatedAt,
+                    };
+                    const previewData = item.course_preview?.data || item.course_preview;
+                    if (previewData && previewData.id) {
+                        try {
+                            const preview = await getCoursePreview(item.course_preview.id)
+                            course.course_preview = preview;
+                        } catch (e) {
+                            console.error("Failed to fetch preview for course", item.id, e);
+                        }
+                    }
+                    
+                    return course;
+                }));
+                setCourses(fetchedCourses)
+                setFilteredCourses(fetchedCourses)
+            } catch (error) {
+                console.error("Failed to fetch courses:", error)
+                setError("Failed to load courses. Please try again later.")
+                try {
+                    const allCourses = await getDashboardCourseCourses({
+                        ownerId: Number.isFinite(ownerIdNumeric) ? ownerIdNumeric : undefined,
+                        ownerDocumentId: !Number.isFinite(ownerIdNumeric) ? ownerDocumentId : undefined,
+                    })
+                    const coursesWithPreviews = await Promise.all(allCourses.map(async (course) => {
+                        const courseWithPreview: CourseWithPreview = { ...course };
+                        if (course.course_preview?.id) {
+                            try {
+                                const preview = await getCoursePreview(course.course_preview.id);
+                                courseWithPreview.course_preview = preview;
+                            } catch (e) {
+                                console.error("Failed to fetch preview for course", course.id, e);
+                            }
+                        }
+                        return courseWithPreview;
+                        }));
+                        setCourses(coursesWithPreviews)
+                        setFilteredCourses(coursesWithPreviews)
+                    } catch (e) {
+                        console.error("Failed to fetch all courses:", e)
+                        setCourses([])
+                        setFilteredCourses([])
+                    }
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchCourses()
+    }, [user?.id, propCourses])
+
+    // Filter courses based on search and filters
+    useEffect(() => {
+        let filtered = [...courses]
+
+        // Search filter
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase()
+            filtered = filtered.filter(course => 
+                course.name?.toLowerCase().includes(query) ||
+                course.description?.toLowerCase().includes(query)
+            )
+        }
+
+        // Category filter
+        if (selectedCategories.length > 0) {
+            filtered = filtered.filter(course => {
+                const courseCategoryIds = (course.course_categories || []).map((c: any) => c.id || c)
+                return selectedCategories.some(catId => courseCategoryIds.includes(catId))
+            })
+        }
+
+        // Tag filter
+        if (selectedTags.length > 0) {
+            filtered = filtered.filter(course => {
+                const courseTagIds = (course.course_tages || []).map((t: any) => t.id || t)
+                return selectedTags.some(tagId => courseTagIds.includes(tagId))
+            })
+        }
+
+        // Badge filter
+        if (selectedBadges.length > 0) {
+            filtered = filtered.filter(course => {
+                const courseBadgeIds = (course.course_badges || []).map((b: any) => b.id || b)
+                return selectedBadges.some(badgeId => courseBadgeIds.includes(badgeId))
+            })
+        }
+
+        // Skill filter
+        if (selectedSkills.length > 0) {
+            filtered = filtered.filter(course => {
+                const courseSkillIds = (course.relevant_skills || []).map((s: any) => s.id || s)
+                return selectedSkills.some(skillId => courseSkillIds.includes(skillId))
+            })
+        }
+
+        setFilteredCourses(filtered)
+    }, [courses, searchQuery, selectedCategories, selectedTags, selectedBadges, selectedSkills])
 
     const getStatusColor = (status: string) => {
         switch (status) {
             case "published": return "bg-green-500"
             case "draft": return "bg-yellow-500"
-            case "archived": return "bg-gray-500"
+            case "cancel": return "bg-red-500"
             default: return "bg-gray-500"
         }
     }
 
-    const getTypeIcon = (type: string) => {
-        switch (type) {
-            case "Video": return Video
-            case "PDF": return FileText
-            case "Link": return LinkIcon
-            case "Interactive": return Target
-            default: return BookOpen
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case "published": return "Published"
+            case "draft": return "Draft"
+            case "cancel": return "Canceled"
+            default: return status
         }
+    }
+
+    const handleEdit = (course: CourseCourse) => {
+        if (onEditCourse) {
+            onEditCourse(course.id)
+        } else {
+            router.push(`/dashboard?tab=my-courses&edit=${course.id}`)
+        }
+    }
+
+    const handleView = (course: CourseCourse) => {
+        router.push(`/courses/${course.id}`)
+    }
+
+    const clearFilters = () => {
+        setSearchQuery("")
+        setSelectedCategories([])
+        setSelectedTags([])
+        setSelectedBadges([])
+        setSelectedSkills([])
+    }
+
+    const hasActiveFilters = searchQuery || 
+        selectedCategories.length > 0 || 
+        selectedTags.length > 0 || 
+        selectedBadges.length > 0 || 
+        selectedSkills.length > 0
+
+    // Component to render course preview
+    const CoursePreviewDisplay = ({ course }: { course: CourseWithPreview }) => {
+        const playerRef = useRef<any>(null);
+        const videoElementRef = useRef<HTMLVideoElement | null>(null);
+        const [hasError, setHasError] = useState(false);
+        const [isPlaying, setIsPlaying] = useState(false);
+        const [isMounted, setIsMounted] = useState(false);
+        const previewEntity = (course.course_preview && "types" in course.course_preview)
+            ? (course.course_preview as CoursePreview)
+            : null;
+
+        // Use getCoursePreviewUrl helper to extract URL from nested structure
+        // This handles: type=image -> image.url, type=video -> video.url, type=url -> url
+        const previewUrl = getCoursePreviewUrl(previewEntity) || course.preview_url;
+        const previewType = previewEntity?.types;
+
+        // Handle mount and cleanup
+        useEffect(() => {
+            let isActive = true;
+            setIsMounted(true);
+
+            const timer = setTimeout(() => {
+                if (isActive) {
+                    setIsPlaying(true);
+                }
+            }, 500);
+
+            return () => {
+                isActive = false;
+                clearTimeout(timer);
+                setIsMounted(false);
+                setIsPlaying(false);
+
+                if (playerRef.current) {
+                    try {
+                        const player = playerRef.current as any;
+                        if (player.setPlaying) {
+                            player.setPlaying(false);
+                        }
+                        if (player.getInternalPlayer) {
+                            const internalPlayer = player.getInternalPlayer();
+                            if (internalPlayer && typeof internalPlayer.pause === 'function') {
+                                try {
+                                    internalPlayer.pause();
+                                } catch (e) {
+                                    // Ignore pause errors
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        // Ignore cleanup errors
+                    }
+                }
+
+                if (videoElementRef.current) {
+                    try {
+                        videoElementRef.current.pause();
+                        videoElementRef.current.currentTime = 0;
+                    } catch (error) {
+                        // ignore cleanup errors
+                    }
+                }
+            };
+        }, []);
+
+        // If no preview available, show placeholder
+        if (!previewUrl) {
+            return (
+                <div className="relative aspect-[16/9] w-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                    <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+                </div>
+            );
+        }
+
+        // Image preview - getCoursePreviewUrl already extracts from image.url when type=image
+        if (previewType === "image") {
+            return (
+                <div className="relative aspect-[16/9] w-full overflow-hidden">
+                    <img
+                        src={previewUrl}
+                        alt={course.name || "Course preview"}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        onError={() => setHasError(true)}
+                    />
+                    {hasError && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                            <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+                        </div>
+                    )}
+                    {/* Minimal overlay - only at bottom for text readability */}
+                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                </div>
+            );
+        }
+
+        // Video or URL preview - getCoursePreviewUrl already extracts from video.url when type=video
+        const isStreamingVideo = previewUrl.includes('youtube.com') ||
+                          previewUrl.includes('youtu.be') ||
+                          previewUrl.includes('vimeo.com');
+        const isDirectVideoFile = previewUrl.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i) !== null || (previewType === "video" && !isStreamingVideo);
+        const isImageUrl = previewUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
+        const shouldLimitTo30s = (isStreamingVideo || isDirectVideoFile || previewType === "video") && !isImageUrl;
+
+        if (isImageUrl && previewType !== "video" && previewType !== "url") {
+            // Image URL - use img tag
+            return (
+                <div className="relative aspect-[16/9] w-full overflow-hidden">
+                    <img
+                        src={previewUrl}
+                        alt={course.name || "Course preview"}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        onError={() => setHasError(true)}
+                    />
+                    {hasError && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                            <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+                        </div>
+                    )}
+                    {/* Minimal overlay - only at bottom for text readability */}
+                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                </div>
+            );
+        } else if (isDirectVideoFile) {
+            return (
+                <div className="relative aspect-[16/9] w-full bg-black overflow-hidden">
+                    <video
+                        ref={videoElementRef}
+                        src={previewUrl}
+                        className="w-full h-full object-cover"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        controls={false}
+                        onCanPlay={() => setHasError(false)}
+                        onTimeUpdate={(event) => {
+                            if (!shouldLimitTo30s) return;
+                            const video = event.currentTarget;
+                            if (video.currentTime >= 30) {
+                                video.currentTime = 0;
+                            }
+                        }}
+                        onError={(event) => {
+                            console.error("HTML5 video error:", event);
+                            setHasError(true);
+                            try {
+                                event?.currentTarget?.pause?.();
+                            } catch (err) {
+                                // ignore
+                            }
+                        }}
+                    />
+                    {hasError && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                            <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+                        </div>
+                    )}
+                    {/* Minimal overlay - only at bottom for text readability */}
+                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                </div>
+            );
+        } else if (isStreamingVideo || previewType === "video" || previewType === "url") {
+            // Video URL - use ReactPlayer
+            return (
+                <div className="relative aspect-[16/9] w-full bg-black overflow-hidden">
+                    {isMounted && (
+                        <ReactPlayer
+                            ref={playerRef}
+                            src={previewUrl}
+                            playing={isPlaying && isMounted}
+                            loop={true}
+                            muted={true}
+                            controls={false}
+                            width="100%"
+                            height="100%"
+                            style={{ position: 'absolute', top: 0, left: 0 }}
+                            config={{
+                                youtube: {
+                                    playerVars: {
+                                        autoplay: 0,
+                                        controls: 0,
+                                        loop: 1,
+                                        start: 0,
+                                        end: shouldLimitTo30s ? 30 : undefined,
+                                        modestbranding: 1,
+                                        rel: 0,
+                                        playsinline: 1,
+                                    },
+                                },
+                                vimeo: {
+                                    playerOptions: {
+                                        autoplay: false,
+                                        loop: true,
+                                        muted: true,
+                                        controls: false,
+                                        responsive: true,
+                                    },
+                                },
+                            } as any}
+                            onProgress={(state: any) => {
+                                if (!isMounted) return;
+                                if (shouldLimitTo30s && state?.playedSeconds >= 30 && playerRef.current) {
+                                    playerRef.current.seekTo(0, 'seconds');
+                                }
+                            }}
+                            onError={(error) => {
+                                console.error("ReactPlayer error:", error);
+                                setHasError(true);
+                                setIsPlaying(false);
+                            }}
+                            onReady={() => {
+                                if (!isMounted) return;
+                                setHasError(false);
+                                setTimeout(() => {
+                                    if (isMounted) {
+                                        setIsPlaying(true);
+                                    }
+                                }, 100);
+                            }}
+                        />
+                    )}
+                    {hasError && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                            <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+                        </div>
+                    )}
+                    {/* Minimal overlay - only at bottom for text readability */}
+                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                </div>
+            );
+        }
+
+        // Fallback to placeholder
+        return (
+            <div className="relative aspect-[16/9] w-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                <BookOpen className="w-16 h-16 text-slate-400 dark:text-slate-600" />
+            </div>
+        );
+    };
+
+    // Filter Popover Component
+    const FilterPopover = ({ 
+        label, 
+        icon: Icon, 
+        options, 
+        selected, 
+        onSelectionChange 
+    }: { 
+        label: string
+        icon: any
+        options: Array<{ id: number; name: string }>
+        selected: number[]
+        onSelectionChange: (ids: number[]) => void
+    }) => {
+        const [open, setOpen] = useState(false)
+
+        const toggleOption = (id: number) => {
+            if (selected.includes(id)) {
+                onSelectionChange(selected.filter(s => s !== id))
+            } else {
+                onSelectionChange([...selected, id])
+            }
+        }
+
+        return (
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className={`h-9 ${selected.length > 0 ? 'bg-primary/10 border-primary' : ''}`}
+                    >
+                        <Icon className="w-4 h-4 mr-2" />
+                        {label}
+                        {selected.length > 0 && (
+                            <Badge variant="secondary" className="ml-2 h-5 px-1.5">
+                                {selected.length}
+                            </Badge>
+                        )}
+                        <ChevronDown className="w-4 h-4 ml-2" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-0 border-0" align="start">
+                    <Command>
+                        <CommandInput placeholder={`Search ${label.toLowerCase()}...`} />
+                        <CommandList>
+                            <CommandEmpty>No {label.toLowerCase()} found.</CommandEmpty>
+                            <CommandGroup>
+                                {options.map((option) => (
+                                    <CommandItem
+                                        key={option.id}
+                                        onSelect={() => toggleOption(option.id)}
+                                        className="flex items-center space-x-2 cursor-pointer"
+                                    >
+                                        <Checkbox
+                                            checked={selected.includes(option.id)}
+                                            onCheckedChange={() => toggleOption(option.id)}
+                                        />
+                                        <span>{option.name}</span>
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
+        )
+    }
+
+    if (loading) {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-3xl font-bold">My Courses</h2>
+                </div>
+                <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+            </div>
+        )
     }
 
     return (
         <div className="space-y-6">
+            {/* Header */}
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">My Courses</h2>
+                <h2 className="text-xl font-normal uppercase tracking-widest text-gray-700">My Courses</h2>
                 {showCreateButton && (
                     <Button
                         onClick={onCreateCourse}
-                        className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg"
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         Create New Course
@@ -65,84 +678,250 @@ export function DashboardMyCourses({ myCourses, onCreateCourse, showCreateButton
                 )}
             </div>
 
+            {/* Search and Filters */}
+            <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search courses..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10"
+                        />
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                        <FilterPopover
+                            label="Categories"
+                            icon={Layers}
+                            options={categories}
+                            selected={selectedCategories}
+                            onSelectionChange={setSelectedCategories}
+                        />
+                        <FilterPopover
+                            label="Tags"
+                            icon={Tag}
+                            options={tags}
+                            selected={selectedTags}
+                            onSelectionChange={setSelectedTags}
+                        />
+                        <FilterPopover
+                            label="Badges"
+                            icon={Award}
+                            options={badges}
+                            selected={selectedBadges}
+                            onSelectionChange={setSelectedBadges}
+                        />
+                        <FilterPopover
+                            label="Skills"
+                            icon={Target}
+                            options={skills}
+                            selected={selectedSkills}
+                            onSelectionChange={setSelectedSkills}
+                        />
+                        {hasActiveFilters && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearFilters}
+                                className="h-9"
+                            >
+                                <X className="w-4 h-4 mr-2" />
+                                Clear
+                            </Button>
+                        )}
+                    </div>
+                </div>
+
+                {hasActiveFilters && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>Showing {filteredCourses.length} of {courses.length} courses</span>
+                    </div>
+                )}
+            </div>
+
+            {/* Course Grid */}
+            {filteredCourses.length === 0 ? (
+                <div className="text-center py-16 border border-dashed rounded-xl bg-muted/20">
+                    <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-50 text-muted-foreground" />
+                    <p className="text-lg font-medium mb-2">
+                        {hasActiveFilters ? "No courses match your filters" : "No courses yet"}
+                    </p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        {hasActiveFilters 
+                            ? "Try adjusting your search or filters" 
+                            : "Create your first course to get started."}
+                    </p>
+                    {showCreateButton && !hasActiveFilters && (
+                        <Button onClick={onCreateCourse} className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Create New Course
+                        </Button>
+                    )}
+                </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {myCourses.map((course, index) => {
-                    const TypeIcon = getTypeIcon(course.type)
-                    return (
+                    <AnimatePresence>
+                        {filteredCourses.map((course, index) => (
                         <motion.div
                             key={course.id}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 * index }}
-                        >
-                            <Card className="glass-enhanced hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
-                                <div className="relative">
-                                    <img
-                                        src={course.thumbnailUrl}
-                                        alt={course.title}
-                                        className="w-full h-40 object-cover rounded-t-lg"
-                                    />
-                                    <div className="absolute top-2 left-2">
-                                        <Badge className={getStatusColor(course.status) + " text-white"}>
-                                            {course.status}
-                                        </Badge>
-                                    </div>
-                                    <div className="absolute top-2 right-2">
-                                        <Badge variant="outline" className="bg-background/90">
-                                            <TypeIcon className="w-3 h-3 mr-1" />
-                                            {course.type}
-                                        </Badge>
-                                    </div>
-                                </div>
-
-                                <CardContent className="p-6">
-                                    <h3 className="font-semibold mb-2 line-clamp-1">{course.title}</h3>
-                                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                                        {course.description}
-                                    </p>
-
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span>Price: <span className="font-bold">${course.price}</span></span>
-                                            <span>Enrollments: {course.enrollments}</span>
-                                        </div>
-
-                                        {course.rating > 0 && (
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex items-center">
-                                                    {Array.from({ length: 5 }, (_, i) => (
-                                                        <Star key={i} className={`w-4 h-4 ${i < Math.floor(course.rating) ? 'text-yellow-500 fill-current' : 'text-gray-300'}`} />
-                                                    ))}
-                                                </div>
-                                                <span className="text-sm">{course.rating}</span>
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ delay: 0.05 * index }}
+                            >
+                                <Card className="group relative overflow-visible border
+                                border-slate-200 dark:border-white/20 bg-gradient-to-br
+                                from-white/20 via-white/10 to-white/5
+                                dark:from-white/10 dark:via-white/5 dark:to-white/[0.03]
+                                 shadow-lg dark:shadow-[0_8px_32px_0_rgba(255,255,255,0.1)]
+                                 hover:shadow-xl dark:hover:shadow-[0_16px_48px_0_rgba(255,255,255,0.2)]
+                                 hover:border-blue-400 dark:hover:border-white/40 transition-all
+                                 duration-700 hover:-translate-y-2 rounded-2xl h-full flex flex-col p-0">
+                                    {/* Multiple layered glass effects */}
+                                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-2xl" />
+                                    <div className="absolute inset-0 bg-gradient-to-tl from-pink-400/10 via-transparent to-purple-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-2xl" />
+                                    
+                                    {/* Preview Header */}
+                                    <div className="relative overflow-hidden rounded-t-2xl">
+                                        <div className="aspect-[16/9] relative">
+                                            <CoursePreviewDisplay course={course} />
+                                            {/* Multi-layer gradient overlays */}
+                                            {/*<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />*/}
+                                            {/*<div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-transparent to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />*/}
+                                            
+                                            {/* Badges container */}
+                                            <div className="absolute top-4 left-4 right-4 flex items-start justify-between gap-2 z-10">
+                                                <Badge className={`${getStatusColor(course.course_status || "draft")} text-white text-xs font-medium px-2 py-0.5 backdrop-blur-xl border border-white/40 shadow-lg`}>
+                                                    {getStatusLabel(course.course_status || "draft")}
+                                                </Badge>
+                                                {course.preview_available && (
+                                                    <Badge variant="outline" className="bg-gradient-to-r from-white/25 to-white/15 backdrop-blur-xl border border-white/40 text-white text-xs shadow-lg">
+                                                        <Eye className="w-3 h-3 mr-1" />
+                                                        Preview
+                                                    </Badge>
+                                                )}
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Course Content */}
+                                    <CardContent className="p-6 space-y-4 flex-1 flex flex-col relative z-10">
+                                        {/* Title with gradient hover */}
+                                        <h3 className="text-slate-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 font-semibold text-lg">
+                                            {course.name || "Untitled Course"}
+                                        </h3>
+                                        
+                                        <p className="text-slate-600 dark:text-gray-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors duration-300 text-sm line-clamp-2 flex-1">
+                                            {course.description || "No description provided."}
+                                        </p>
+
+                                        {/* Course Meta Tags */}
+                                        {((course.course_categories && course.course_categories.length > 0) || (course.course_tages && course.course_tages.length > 0)) && (
+                                            <div className="flex flex-wrap gap-2">
+                                                {course.course_categories?.slice(0, 2).map((cat: any) => (
+                                                    <Badge key={cat.id || cat} className="bg-gradient-to-r from-white/25 to-white/15 backdrop-blur-xl border border-white/40 text-white text-xs shadow-lg">
+                                                        {cat.name || cat}
+                                                    </Badge>
+                                                ))}
+                                                {course.course_tages?.slice(0, 1).map((tag: any) => (
+                                                    <Badge key={tag.id || tag} className="bg-gradient-to-r from-blue-500/30 to-purple-500/30 backdrop-blur-xl border border-blue-400/40 text-white text-xs shadow-lg">
+                                                        {tag.name || tag}
+                                                    </Badge>
+                                                ))}
+                                        </div>
                                         )}
 
-                                        <div className="flex gap-2">
+                                        {/* Price with Discount - Dynamic Calculation */}
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                {(() => {
+                                                    const hasDiscount = course.discount_type && course.Price > 0;
+                                                    let finalPrice = course.Price || 0;
+                                                    let discountAmount = 0;
+                                                    let discountLabel = "";
+                                                    
+                                                    if (hasDiscount) {
+                                                        const discountPercentage = course.discount_percentage || (course as any).discount_percentage || 0;
+                                                        if (course.discount_type === "percentage" && discountPercentage) {
+                                                            discountAmount = course.Price * (discountPercentage / 100);
+                                                            finalPrice = course.Price - discountAmount;
+                                                            discountLabel = `-${discountPercentage}%`;
+                                                        } else if (course.discount_type === "fix_price" && course.discount_fix_price) {
+                                                            discountAmount = course.discount_fix_price;
+                                                            finalPrice = course.Price - discountAmount;
+                                                            discountLabel = `-$${course.discount_fix_price.toFixed(2)}`;
+                                                        }
+                                                        finalPrice = Math.max(0, finalPrice);
+                                                    }
+                                                    
+                                                    return hasDiscount ? (
+                                                        <>
+                                                            <div className="flex items-baseline gap-2">
+                                                                <span className="text-lg font-bold text-slate-900 dark:text-white">
+                                                                    ${finalPrice.toFixed(2)}
+                                                                </span>
+                                                                <span className="text-sm text-slate-400 dark:text-white/50 line-through">
+                                                                    ${course.Price.toFixed(2)}
+                                                                </span>
+                                                            </div>
+                                                            <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs px-2 py-0.5 shadow-sm">
+                                                                {discountLabel || "Sale"}
+                                                            </Badge>
+                                                        </>
+                                                    ) : (
+                                                        <div className="text-lg font-bold text-slate-900 dark:text-white">
+                                                            {course.Price > 0 ? `$${course.Price.toFixed(2)}` : "Free"}
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="bg-slate-50 dark:bg-white/5 backdrop-blur-sm border border-slate-200 dark:border-white/10 rounded-xl p-3 group-hover:bg-slate-100 dark:group-hover:bg-white/10 group-hover:border-blue-400 dark:group-hover:border-white/20 transition-all duration-300">
+                                                    <div className="text-xs text-slate-500 dark:text-white/50 mb-1">Enrollments</div>
+                                                    <div className="font-semibold text-slate-900 dark:text-white">{course.enrollment_count || 0}</div>
+                                                </div>
+                                                {course.duration_minutes > 0 && (
+                                                    <div className="bg-slate-50 dark:bg-white/5 backdrop-blur-sm border border-slate-200 dark:border-white/10 rounded-xl p-3 group-hover:bg-slate-100 dark:group-hover:bg-white/10 group-hover:border-blue-400 dark:group-hover:border-white/20 transition-all duration-300">
+                                                        <div className="text-xs text-slate-500 dark:text-white/50 mb-1">Duration</div>
+                                                        <div className="font-semibold text-slate-900 dark:text-white">
+                                                            {course.duration_minutes < 60 
+                                                                ? `${course.duration_minutes}m`
+                                                                : `${Math.floor(course.duration_minutes / 60)}h ${course.duration_minutes % 60}m`}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Action Buttons */}
+                                        <div className="flex gap-2 pt-2 mt-auto">
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                className="flex-1"
-                                                onClick={() => router.push(`/courses/${course.id}/edit`)}
+                                                className="flex-1 border-slate-200 dark:border-white/20 hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-300"
+                                                onClick={() => handleEdit(course)}
                                             >
+                                                <Edit className="w-4 h-4 mr-1" />
                                                 Edit
                                             </Button>
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                className="flex-1"
-                                                onClick={() => router.push(`/courses/${course.id}`)}
+                                                className="flex-1 border-slate-200 dark:border-white/20 hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-300"
+                                                onClick={() => handleView(course)}
                                             >
+                                                <Eye className="w-4 h-4 mr-1" />
                                                 View
                                             </Button>
-                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>
                         </motion.div>
-                    )
-                })}
+                        ))}
+                    </AnimatePresence>
             </div>
+            )}
         </div>
     )
 }

@@ -3,15 +3,41 @@ export function getAvatarUrl(avatar: any): string | null {
 
     const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || "";
 
-    if (typeof avatar === "string") {
-        if (avatar.startsWith("http")) return avatar;
-        return baseUrl + avatar;
-    }
+    const resolveUrl = (value: any): string | null => {
+        if (!value) return null;
 
-    const url =
-        avatar?.formats?.medium?.url ||
-        avatar?.formats?.small?.url ||
-        avatar?.url;
+        if (typeof value === "string") {
+            if (value.startsWith("http")) return value;
+            return baseUrl ? `${baseUrl}${value}` : value;
+        }
 
-    return url ? baseUrl + url : null;
+        if (Array.isArray(value)) {
+            for (const item of value) {
+                const resolved = resolveUrl(item);
+                if (resolved) return resolved;
+            }
+            return null;
+        }
+
+        const node =
+            value?.data?.attributes ||
+            value?.data ||
+            value?.attributes ||
+            value;
+
+        const url =
+            node?.formats?.medium?.url ||
+            node?.formats?.small?.url ||
+            node?.formats?.thumbnail?.url ||
+            node?.url;
+
+        if (typeof url === "string") {
+            if (url.startsWith("http")) return url;
+            return baseUrl ? `${baseUrl}${url}` : url;
+        }
+
+        return null;
+    };
+
+    return resolveUrl(avatar);
 }
