@@ -1,14 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, Clock, Eye, Heart, MessageCircle, TrendingUp, Award, Tag } from "lucide-react";
+import { Star, Clock, Eye, Heart, TrendingUp, Award, Tag } from "lucide-react";
 import { BlogPost, BlogCategory } from "@/types/blog";
 import { getAvatarUrl } from "@/lib/getAvatarUrl";
+import { useAuth } from "@/hooks/use-auth";
+import { isBlogFavorite, createBlogFavorite, deleteBlogFavorite, getUserBlogFavorites } from "@/integrations/strapi/blogFavorites";
+import { toast } from "sonner";
 
 interface BlogPostCardProps {
     post: BlogPost;
@@ -20,12 +23,56 @@ interface BlogPostCardProps {
 
 export function BlogPostCard({ post, categories, formatDate, isFeatured = false, delay = 0 }: BlogPostCardProps) {
     const router = useRouter();
+    const { user: currentUser } = useAuth();
     const category = categories.find(c => c.id === post.category) || post.categoryData;
+    const [isFavorited, setIsFavorited] = useState(false);
+    const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+
+    // Check if blog is favorited
+    useEffect(() => {
+        if (currentUser?.id && post.id) {
+            isBlogFavorite(currentUser.id, post.id).then(setIsFavorited).catch(() => {});
+        }
+    }, [currentUser?.id, post.id]);
 
     const handlePostClick = () => {
         // Use documentId first (prevents duplicates), then slug, then id
         const postId = post.documentId || post.slug || post.id;
         router.push(`/blog/${postId}`);
+    };
+
+    const handleFavoriteClick = async (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent navigation when clicking heart
+        
+        if (!currentUser?.id || !post.id || isTogglingFavorite) {
+            if (!currentUser) {
+                toast.error("Please log in to favorite blogs");
+            }
+            return;
+        }
+
+        setIsTogglingFavorite(true);
+        try {
+            if (isFavorited) {
+                const favorites = await getUserBlogFavorites(currentUser.id);
+                const favoriteEntry = favorites.find(fav => fav.blogPostId === Number(post.id));
+                
+                if (favoriteEntry) {
+                    await deleteBlogFavorite(favoriteEntry.id, favoriteEntry.documentId);
+                    setIsFavorited(false);
+                    toast.success("Removed from favorites");
+                }
+            } else {
+                await createBlogFavorite(currentUser.id, post.id);
+                setIsFavorited(true);
+                toast.success("Added to favorites");
+            }
+        } catch (error: any) {
+            console.error("Error toggling favorite:", error);
+            toast.error(error.message || "Failed to update favorite status");
+        } finally {
+            setIsTogglingFavorite(false);
+        }
     };
 
     return (
@@ -41,11 +88,11 @@ export function BlogPostCard({ post, categories, formatDate, isFeatured = false,
             >
                 <div className="relative">
                     {post.coverImage && typeof post.coverImage === 'string' && post.coverImage.trim() !== '' ? (
-                        <img
+                    <img
                             src={post.coverImage}
-                            alt={post.title}
-                            className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
+                        alt={post.title}
+                        className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
                     ) : (
                         <div className="w-full h-48 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 group-hover:scale-110 transition-transform duration-500 relative overflow-hidden">
                             {/* Animated gradient overlay for depth */}
@@ -72,7 +119,7 @@ export function BlogPostCard({ post, categories, formatDate, isFeatured = false,
                         )}
                     </div>
                     {post.coverImage && (
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     )}
                 </div>
 
@@ -113,14 +160,17 @@ export function BlogPostCard({ post, categories, formatDate, isFeatured = false,
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <span className="flex items-center gap-1">
-                                    <Heart className="w-3 h-3" />
+                                <button
+                                    onClick={handleFavoriteClick}
+                                    disabled={isTogglingFavorite}
+                                    className={`flex items-center gap-1 hover:opacity-70 transition-opacity ${
+                                        isFavorited ? 'text-red-500' : 'text-muted-foreground'
+                                    } ${isTogglingFavorite ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                                >
+                                    <Heart className={`w-3 h-3 ${isFavorited ? 'fill-red-500' : ''}`} />
                                     {post.likes}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <MessageCircle className="w-3 h-3" />
-                                    {post.comments}
-                                </span>
+                                </button>
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-1 mt-2">

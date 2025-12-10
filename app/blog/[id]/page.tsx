@@ -43,6 +43,9 @@ import {
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner" // Import toast for notifications
+import { useAuth } from "@/hooks/use-auth"
+import { followUser, unfollowUser, isFollowingUser } from "@/integrations/strapi/user"
+import { isBlogFavorite, createBlogFavorite, deleteBlogFavorite, getUserBlogFavorites } from "@/integrations/strapi/blogFavorites"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,12 +106,16 @@ export default function BlogDetailPage() {
   const router = useRouter()
   const params = useParams()
   const postId = params?.id as string
+  const { user: currentUser } = useAuth()
 
   const [post, setPost] = useState<BlogPost | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [isLiked, setIsLiked] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
+  const [isFavorited, setIsFavorited] = useState(false)
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false)
   const [isFollowingAuthor, setIsFollowingAuthor] = useState(false)
+  const [isTogglingFollow, setIsTogglingFollow] = useState(false)
   const [newCommentContent, setNewCommentContent] = useState("")
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState("")
@@ -265,6 +272,26 @@ export default function BlogDetailPage() {
               setRelatedPosts([]);
             }
           }
+
+          // Check if current user is following the author
+          if (currentUser?.id && post.author.id) {
+            try {
+              const following = await isFollowingUser(post.author.id, currentUser.id);
+              setIsFollowingAuthor(following);
+            } catch (error) {
+              console.warn("Error checking follow status:", error);
+            }
+          }
+
+          // Check if blog is favorited
+          if (currentUser?.id && numericId) {
+            try {
+              const favorited = await isBlogFavorite(currentUser.id, numericId);
+              setIsFavorited(favorited);
+            } catch (error) {
+              console.warn("Error checking favorite status:", error);
+            }
+          }
         }
       } catch (error) {
         console.error("Error fetching blog post:", error);
@@ -274,7 +301,7 @@ export default function BlogDetailPage() {
     }
     
     fetchBlogPost();
-  }, [postId]);
+  }, [postId, currentUser?.id]);
 
   // Increment views when blog post is viewed (once per session)
   useEffect(() => {
@@ -296,17 +323,32 @@ export default function BlogDetailPage() {
 
   // Related posts are now fetched dynamically from Strapi (stored in state)
 
-  const handleLike = () => {
-    setIsLiked(!isLiked)
-    setPost(prev => prev ? { ...prev, likes: prev.likes + (isLiked ? -1 : 1) } : null)
-    toast.success(isLiked ? "Unliked post" : "Liked post!", {
-      position: "top-center",
-      action: {
-        label: "Close",
-        onClick: () => {},
-      },
-      closeButton: false,
-    })
+  const handleLike = async () => {
+    if (!currentUser?.id || !postNumericId || isTogglingFavorite) return;
+
+    setIsTogglingFavorite(true);
+    try {
+      if (isFavorited) {
+        // Get favorite entry to delete
+        const favorites = await getUserBlogFavorites(currentUser.id);
+        const favoriteEntry = favorites.find(fav => fav.blogPostId === postNumericId);
+        
+        if (favoriteEntry) {
+          await deleteBlogFavorite(favoriteEntry.id, favoriteEntry.documentId);
+          setIsFavorited(false);
+          toast.success("Removed from favorites");
+        }
+      } else {
+        await createBlogFavorite(currentUser.id, postNumericId);
+        setIsFavorited(true);
+        toast.success("Added to favorites");
+      }
+    } catch (error: any) {
+      console.error("Error toggling favorite:", error);
+      toast.error(error.message || "Failed to update favorite status");
+    } finally {
+      setIsTogglingFavorite(false);
+    }
   }
 
   const handleBookmark = () => {
@@ -571,16 +613,34 @@ export default function BlogDetailPage() {
     router.push(`/users/${userId}`)
   }
 
-  const handleFollowAuthor = () => {
-    setIsFollowingAuthor(!isFollowingAuthor)
-    toast.success(isFollowingAuthor ? "Unfollowed author" : "Following author!", {
-      position: "top-center",
-      action: {
-        label: "Close",
-        onClick: () => {},
-      },
-      closeButton: false,
-    })
+  const handleFollowAuthor = async () => {
+    if (!currentUser?.id || !post?.author.id || isTogglingFollow) return;
+
+    setIsTogglingFollow(true);
+    try {
+      if (isFollowingAuthor) {
+        const success = await unfollowUser(post.author.id, currentUser.id);
+        if (success) {
+          setIsFollowingAuthor(false);
+          toast.success(`Unfollowed ${post.author.name}`);
+        } else {
+          toast.error("Failed to unfollow author");
+        }
+      } else {
+        const success = await followUser(post.author.id, currentUser.id);
+        if (success) {
+          setIsFollowingAuthor(true);
+          toast.success(`Following ${post.author.name}`);
+        } else {
+          toast.error("Failed to follow author");
+        }
+      }
+    } catch (error: any) {
+      console.error("Error toggling follow:", error);
+      toast.error(error.message || "Failed to update follow status");
+    } finally {
+      setIsTogglingFollow(false);
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -847,12 +907,12 @@ export default function BlogDetailPage() {
                 <div className="relative w-full h-64 md:h-96 rounded-xl overflow-hidden mb-8">
                   {post.coverImage && typeof post.coverImage === 'string' && post.coverImage.trim() !== '' ? (
                     <>
-                      <img
-                          src={post.coverImage}
-                          alt={post.title}
-                          className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <img
+                      src={post.coverImage}
+                      alt={post.title}
+                      className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     </>
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative overflow-hidden">
@@ -952,10 +1012,11 @@ export default function BlogDetailPage() {
                         variant="ghost"
                         size="sm"
                         onClick={handleLike}
-                        className={`${isLiked ? 'text-red-500' : ''}`}
+                        disabled={isTogglingFavorite || !currentUser}
+                        className={`${isFavorited ? 'text-red-500' : ''}`}
                     >
-                      <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-red-500' : ''}`} />
-                      {post.likes}
+                      <Heart className={`w-4 h-4 mr-2 ${isFavorited ? 'fill-red-500' : ''}`} />
+                      {isTogglingFavorite ? "..." : post.likes}
                     </Button>
 
                     <Button
@@ -1051,8 +1112,18 @@ export default function BlogDetailPage() {
                         </div>
                       </div>
 
-                      <Button onClick={handleFollowAuthor}>
-                        {isFollowingAuthor ? "Following" : "Follow"}
+                      <Button 
+                        onClick={handleFollowAuthor}
+                        disabled={isTogglingFollow || !currentUser}
+                        variant={isFollowingAuthor ? "outline" : "default"}
+                      >
+                        {isTogglingFollow ? (
+                          "Loading..."
+                        ) : isFollowingAuthor ? (
+                          "Following"
+                        ) : (
+                          "Follow"
+                        )}
                       </Button>
                     </div>
               </motion.div>

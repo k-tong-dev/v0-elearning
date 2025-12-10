@@ -518,9 +518,9 @@ async function resolveDocumentId(collection: string, id: string | number): Promi
         } else {
             // For documentId (string), try direct lookup
             try {
-                const response = await strapiPublic.get(`/api/${collection}/${id}?fields[0]=documentId`);
-                const docId = response.data?.data?.documentId ?? response.data?.data?.attributes?.documentId;
-                return docId || null;
+        const response = await strapiPublic.get(`/api/${collection}/${id}?fields[0]=documentId`);
+        const docId = response.data?.data?.documentId ?? response.data?.data?.attributes?.documentId;
+        return docId || null;
             } catch (directError: any) {
                 // If direct lookup fails, try filtering by documentId
                 if (directError.response?.status === 404) {
@@ -581,9 +581,9 @@ export async function createForumPost(data: {
             }
         } else {
             // Try to get current authenticated user
-            try {
-                const userResponse = await strapi.get('/api/users/me?fields[0]=id&fields[1]=documentId');
-                const user = userResponse.data?.data ?? userResponse.data;
+        try {
+            const userResponse = await strapi.get('/api/users/me?fields[0]=id&fields[1]=documentId');
+            const user = userResponse.data?.data ?? userResponse.data;
                 authorNumericId = user?.id ? (typeof user.id === 'number' ? user.id : parseInt(String(user.id))) : null;
                 authorDocumentId = user?.documentId ?? null;
                 
@@ -597,12 +597,12 @@ export async function createForumPost(data: {
                     } catch (error) {
                         console.warn('Failed to resolve author numeric ID:', error);
                     }
-                }
-            } catch (userError: any) {
+            }
+        } catch (userError: any) {
                 // User not authenticated - log error but allow post creation
                 console.warn('User not authenticated, creating post without author:', userError.message);
                 // Continue without author - Strapi might allow this or set a default
-            }
+        }
         }
         
         const payload: any = {
@@ -960,14 +960,14 @@ export async function incrementForumPostViews(id: string | number): Promise<void
             
             // Update views and lastActivity using documentId
             await strapi.put(`/api/forum-forums/${documentId}`, {
-                data: {
-                    views: currentViews + 1,
-                    lastActivity: new Date().toISOString(),
-                }
-            });
-            
+            data: {
+                views: currentViews + 1,
+                lastActivity: new Date().toISOString(),
+            }
+        });
+        
             // Clear cache to ensure fresh data on next fetch
-            strapiResponseCache.clear();
+        strapiResponseCache.clear();
         } catch (updateError: any) {
             // If lightweight fetch fails, try with public API (might not have auth)
             if (updateError.response?.status === 401 || updateError.response?.status === 403) {
@@ -1010,7 +1010,7 @@ export async function createForumComment(
             postDocId = await resolveDocumentId('forum-forums', forumPostId);
             
             // If that fails, try fetching the post directly to get documentId
-            if (!postDocId) {
+        if (!postDocId) {
                 try {
                     const post = await getForumPost(forumPostId);
                     if (post && post.documentId) {
@@ -1121,27 +1121,27 @@ export async function createForumComment(
                         `/api/forum-comments/${createdCommentId}?${populateParams.toString()}`
                     );
                 }
-                
-                // Update post replies count (non-blocking)
-                try {
-                    const post = await getForumPost(forumPostId);
-                    if (post) {
+        
+        // Update post replies count (non-blocking)
+        try {
+            const post = await getForumPost(forumPostId);
+            if (post) {
                         const postId = post.documentId || forumPostId;
                         await strapi.put(`/api/forum-forums/${postId}`, {
-                            data: {
-                                repliesCount: (post.repliesCount || 0) + 1,
-                                lastActivity: new Date().toISOString(),
-                            }
-                        });
+                    data: {
+                        repliesCount: (post.repliesCount || 0) + 1,
+                        lastActivity: new Date().toISOString(),
                     }
-                } catch (updateError) {
-                    console.warn('Failed to update post replies count:', updateError);
-                    // Don't throw - comment was created successfully
-                }
+                });
+            }
+        } catch (updateError) {
+            console.warn('Failed to update post replies count:', updateError);
+            // Don't throw - comment was created successfully
+        }
 
-                // Clear cache
-                strapiResponseCache.clear();
-                
+        // Clear cache
+        strapiResponseCache.clear();
+        
                 // Return the populated comment
                 return commentResponse.data?.data ?? createdComment;
             } catch (fetchError) {
@@ -1425,6 +1425,180 @@ export async function updateForumComment(
 /**
  * Get forum categories (if using dynamic categories)
  */
+/**
+ * Like a forum post
+ */
+export async function likeForumPost(postId: string | number): Promise<any> {
+    try {
+        // Resolve documentId for the post
+        const postDocId = await resolveDocumentId('forum-forums', postId);
+        if (!postDocId) {
+            throw new Error(`Failed to resolve post documentId for ID: ${postId}`);
+        }
+        
+        // Fetch current post to get current likes/dislikes count
+        try {
+            const postResponse = await strapiPublic.get(`/api/forum-forums/${postDocId}?fields[0]=likes&fields[1]=dislikes&fields[2]=liked&fields[3]=dislike`);
+            const currentPost = postResponse.data?.data;
+            const currentLikes = currentPost?.attributes?.likes ?? currentPost?.attributes?.liked ?? currentPost?.likes ?? currentPost?.liked ?? 0;
+            const currentDislikes = currentPost?.attributes?.dislikes ?? currentPost?.attributes?.dislike ?? currentPost?.dislikes ?? currentPost?.dislike ?? 0;
+            
+            // Increment likes, and if there were dislikes, decrement them (user switching from dislike to like)
+            const newLikes = currentLikes + 1;
+            const newDislikes = Math.max(0, currentDislikes - 1); // Prevent negative
+            
+            // Update the post
+            const updateResponse = await strapi.put(`/api/forum-forums/${postDocId}`, {
+                data: {
+                    likes: newLikes,
+                    dislikes: newDislikes,
+                }
+            });
+            
+            // Clear cache
+            strapiResponseCache.clear();
+            
+            return {
+                ...updateResponse.data?.data,
+                likes: newLikes,
+                dislikes: newDislikes,
+            };
+        } catch (fetchError: any) {
+            console.error('Error fetching current post likes:', fetchError);
+            // Try to update anyway with optimistic increment
+            const updateResponse = await strapi.put(`/api/forum-forums/${postDocId}`, {
+                data: {
+                    likes: { $inc: 1 }, // Increment operator if supported
+                }
+            });
+            strapiResponseCache.clear();
+            return updateResponse.data?.data;
+        }
+    } catch (error: any) {
+        console.error(`Error liking forum post ${postId}:`, error);
+        throw new Error(error.response?.data?.error?.message ?? 'Failed to like post');
+    }
+}
+
+/**
+ * Dislike a forum post
+ */
+export async function dislikeForumPost(postId: string | number): Promise<any> {
+    try {
+        // Resolve documentId for the post
+        const postDocId = await resolveDocumentId('forum-forums', postId);
+        if (!postDocId) {
+            throw new Error(`Failed to resolve post documentId for ID: ${postId}`);
+        }
+        
+        // Fetch current post to get current likes/dislikes count
+        try {
+            const postResponse = await strapiPublic.get(`/api/forum-forums/${postDocId}?fields[0]=likes&fields[1]=dislikes&fields[2]=liked&fields[3]=dislike`);
+            const currentPost = postResponse.data?.data;
+            const currentLikes = currentPost?.attributes?.likes ?? currentPost?.attributes?.liked ?? currentPost?.likes ?? currentPost?.liked ?? 0;
+            const currentDislikes = currentPost?.attributes?.dislikes ?? currentPost?.attributes?.dislike ?? currentPost?.dislikes ?? currentPost?.dislike ?? 0;
+            
+            // Increment dislikes, and if there were likes, decrement them (user switching from like to dislike)
+            const newDislikes = currentDislikes + 1;
+            const newLikes = Math.max(0, currentLikes - 1); // Prevent negative
+            
+            // Update the post
+            const updateResponse = await strapi.put(`/api/forum-forums/${postDocId}`, {
+                data: {
+                    likes: newLikes,
+                    dislikes: newDislikes,
+                }
+            });
+            
+            // Clear cache
+            strapiResponseCache.clear();
+            
+            return {
+                ...updateResponse.data?.data,
+                likes: newLikes,
+                dislikes: newDislikes,
+            };
+        } catch (fetchError: any) {
+            console.error('Error fetching current post dislikes:', fetchError);
+            // Try to update anyway with optimistic increment
+            const updateResponse = await strapi.put(`/api/forum-forums/${postDocId}`, {
+                data: {
+                    dislikes: { $inc: 1 }, // Increment operator if supported
+                }
+            });
+            strapiResponseCache.clear();
+            return updateResponse.data?.data;
+        }
+    } catch (error: any) {
+        console.error(`Error disliking forum post ${postId}:`, error);
+        throw new Error(error.response?.data?.error?.message ?? 'Failed to dislike post');
+    }
+}
+
+/**
+ * Unlike a forum post (toggle off)
+ */
+export async function unlikeForumPost(postId: string | number): Promise<any> {
+    try {
+        const postDocId = await resolveDocumentId('forum-forums', postId);
+        if (!postDocId) {
+            throw new Error(`Failed to resolve post documentId for ID: ${postId}`);
+        }
+        
+        const postResponse = await strapiPublic.get(`/api/forum-forums/${postDocId}?fields[0]=likes`);
+        const currentPost = postResponse.data?.data;
+        const currentLikes = currentPost?.attributes?.likes ?? currentPost?.attributes?.liked ?? currentPost?.likes ?? currentPost?.liked ?? 0;
+        const newLikes = Math.max(0, currentLikes - 1);
+        
+        const updateResponse = await strapi.put(`/api/forum-forums/${postDocId}`, {
+            data: {
+                likes: newLikes,
+            }
+        });
+        
+        strapiResponseCache.clear();
+        return {
+            ...updateResponse.data?.data,
+            likes: newLikes,
+        };
+    } catch (error: any) {
+        console.error(`Error unliking forum post ${postId}:`, error);
+        throw new Error(error.response?.data?.error?.message ?? 'Failed to unlike post');
+    }
+}
+
+/**
+ * Undislike a forum post (toggle off)
+ */
+export async function undislikeForumPost(postId: string | number): Promise<any> {
+    try {
+        const postDocId = await resolveDocumentId('forum-forums', postId);
+        if (!postDocId) {
+            throw new Error(`Failed to resolve post documentId for ID: ${postId}`);
+        }
+        
+        const postResponse = await strapiPublic.get(`/api/forum-forums/${postDocId}?fields[0]=dislikes`);
+        const currentPost = postResponse.data?.data;
+        const currentDislikes = currentPost?.attributes?.dislikes ?? currentPost?.attributes?.dislike ?? currentPost?.dislikes ?? currentPost?.dislike ?? 0;
+        const newDislikes = Math.max(0, currentDislikes - 1);
+        
+        const updateResponse = await strapi.put(`/api/forum-forums/${postDocId}`, {
+            data: {
+                dislikes: newDislikes,
+            }
+        });
+        
+        strapiResponseCache.clear();
+        return {
+            ...updateResponse.data?.data,
+            dislikes: newDislikes,
+        };
+    } catch (error: any) {
+        console.error(`Error undisliking forum post ${postId}:`, error);
+        throw new Error(error.response?.data?.error?.message ?? 'Failed to undislike post');
+    }
+}
+
 /**
  * Get forum statistics (total posts, published, pinned)
  */

@@ -60,11 +60,11 @@ export function LatestArticlesSection({
                                     <div className="md:flex">
                                         <div className="md:w-1/3 relative">
                                             {post.coverImage && typeof post.coverImage === 'string' && post.coverImage.trim() !== '' ? (
-                                                <img
+                                            <img
                                                     src={post.coverImage}
-                                                    alt={post.title}
-                                                    className="w-full h-48 md:h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                />
+                                                alt={post.title}
+                                                className="w-full h-48 md:h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                            />
                                             ) : (
                                                 <div className="w-full h-48 md:h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 group-hover:scale-110 transition-transform duration-500 relative overflow-hidden">
                                                     {/* Animated gradient overlay for depth */}

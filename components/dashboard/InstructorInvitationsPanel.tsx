@@ -102,13 +102,7 @@ export function InstructorInvitationsPanel({
             }
             received = Array.from(receivedMap.values());
             
-            // Sort by invited_at (most recent first)
-            received.sort((a, b) => {
-                const dateA = a.invited_at ? new Date(a.invited_at).getTime() : 0;
-                const dateB = b.invited_at ? new Date(b.invited_at).getTime() : 0;
-                return dateB - dateA;
-            });
-            
+
             // Get sent invitations - need to get instructor's user ID first
             // Use the first instructor to get the user ID (all instructors should belong to the same user)
             let sent: InstructorInvitation[] = [];

@@ -6,16 +6,51 @@ async function resolveDocumentIdByNumericId(
     collection: string,
     numericId: number,
 ): Promise<string | null> {
-    const query = [`filters[id][$eq]=${numericId}`, "fields[0]=documentId"].join("&")
-    const url = `/api/${collection}?${query}`
+    // Request both id and documentId to ensure we get the correct item
+    const query = [
+        `filters[id][$eq]=${numericId}`,
+        "fields[0]=id",
+        "fields[1]=documentId"
+    ].join("&")
+    // Users collection has a different base path (/api/users) and returns an array directly
+    const url = collection === "users" ? `/api/users?${query}` : `/api/${collection}?${query}`
     try {
         const response = await strapi.get(url)
-        const items = response.data?.data ?? []
-        if (items.length > 0) {
-            return items[0].documentId
+        const items = Array.isArray(response.data)
+            ? response.data
+            : (response.data?.data ?? [])
+
+        // Find the matching item by numeric id to avoid accidental mismatches
+        const item = items.find((it: any) => {
+            const rawId = it?.id ?? it?.attributes?.id
+            return Number(rawId) === numericId
+        }) ?? items[0]
+
+        if (item) {
+            // In Strapi v5, documentId is directly on the item
+            // Also check attributes in case of different response structure
+            const documentId = item.documentId || item.attributes?.documentId
+            
+            // Validate that we got the right item by checking numeric id matches
+            const itemId = item.id || item.attributes?.id
+            if (itemId && Number(itemId) !== numericId) {
+                console.warn(`ID mismatch: expected ${numericId}, got ${itemId}`)
+                return null
+            }
+            
+            if (documentId && typeof documentId === 'string') {
+                return documentId
+            }
+            console.warn(`DocumentId not found for ${collection} id ${numericId}. Item:`, item)
+        } else {
+            console.warn(`No items found for ${collection} with id ${numericId}`)
         }
-    } catch (error) {
-        console.warn(`Failed to resolve documentId for ${collection}`, error)
+    } catch (error: any) {
+        console.error(`Failed to resolve documentId for ${collection} id ${numericId}:`, {
+            error: error?.message,
+            response: error?.response?.data,
+            status: error?.response?.status
+        })
     }
     return null
 }
@@ -79,8 +114,20 @@ export async function createUserWishlist(userId: string | number, courseId: stri
 
     try {
         const query = buildPopulateQuery()
-        const userDocId = await resolveDocumentIdByNumericId("users", numericUserId)
+        
+        // Resolve documentIds - these are REQUIRED for Strapi v5 relations
+        let userDocId = await resolveDocumentIdByNumericId("users", numericUserId)
         const courseDocId = await resolveDocumentIdByNumericId("course-courses", numericCourseId)
+
+        // Fallback: fetch current user by /users/me (works only for the authenticated user)
+        if (!userDocId) {
+            try {
+                const meResponse = await strapi.get(`/api/users/me?fields[0]=documentId`)
+                userDocId = meResponse.data?.documentId || null
+            } catch (err) {
+                console.warn("Failed to resolve user documentId via /users/me fallback", err)
+            }
+        }
 
         console.log("[createUserWishlist] Resolved IDs:", {
             userId: numericUserId,
@@ -89,20 +136,25 @@ export async function createUserWishlist(userId: string | number, courseId: stri
             courseDocId
         })
 
+        // Validate that documentIds were resolved - Strapi v5 requires documentId for relations
+        if (!userDocId) {
+            throw new Error(`Failed to resolve documentId for user with id: ${numericUserId}`)
+        }
+        if (!courseDocId) {
+            throw new Error(`Failed to resolve documentId for course with id: ${numericCourseId}`)
+        }
+
+        // Always use documentId for relations in Strapi v5
         const payload: any = {
-            user: userDocId
-                ? { connect: [{ documentId: userDocId }] }
-                : numericUserId,
-            course_course: courseDocId
-                ? { connect: [{ documentId: courseDocId }] }
-                : numericCourseId,
+            data: {
+                user: { connect: [{ documentId: userDocId }] },
+                course_course: { connect: [{ documentId: courseDocId }] },
+            }
         }
 
         console.log("[createUserWishlist] Payload:", payload)
 
-        const response = await strapi.post(`/api/user-wishlists?${query}`, {
-            data: payload,
-        })
+        const response = await strapi.post(`/api/user-wishlists?${query}`, payload)
         
         console.log("[createUserWishlist] Response:", response.data)
         

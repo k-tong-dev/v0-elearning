@@ -22,7 +22,7 @@ import { ForumReportDialog } from "@/components/forum/ForumReportDialog"
 import { ForumPost, User, Comment, Reply } from "@/types/forum"
 import ShareForm from "@/components/ui/share-form";
 import ReportForm from "@/components/ui/report-form";
-import { getForumPost, incrementForumPostViews, createForumComment, getForumPosts, getForumCategories, likeForumComment, dislikeForumComment, unlikeForumComment, undislikeForumComment, updateForumCommentContent, deleteForumComment, type ForumPost as StrapiForumPost, type ForumCategory } from "@/integrations/strapi/forum"
+import { getForumPost, incrementForumPostViews, createForumComment, getForumPosts, getForumCategories, likeForumComment, dislikeForumComment, unlikeForumComment, undislikeForumComment, updateForumCommentContent, deleteForumComment, likeForumPost, dislikeForumPost, unlikeForumPost, undislikeForumPost, type ForumPost as StrapiForumPost, type ForumCategory } from "@/integrations/strapi/forum"
 import { formatDistanceToNow } from "date-fns"
 import { Loader2, Edit } from "lucide-react"
 import { getAvatarUrl } from "@/lib/getAvatarUrl"
@@ -393,6 +393,21 @@ export default function ForumDetailPage() {
                     comments,
                 };
                 
+                // Check localStorage for user's like/dislike state
+                if (user?.id && typeof window !== 'undefined') {
+                    const likeKey = `forum_post_like_${user.id}_${stableId}`;
+                    const dislikeKey = `forum_post_dislike_${user.id}_${stableId}`;
+                    const hasLiked = localStorage.getItem(likeKey) === 'true';
+                    const hasDisliked = localStorage.getItem(dislikeKey) === 'true';
+                    if (hasLiked) {
+                        uiPost.isLiked = true;
+                        uiPost.isDisliked = false;
+                    } else if (hasDisliked) {
+                        uiPost.isDisliked = true;
+                        uiPost.isLiked = false;
+                    }
+                }
+                
                 // Add description and documentId to post object for later use
                 (uiPost as any).description = strapiPost.description || "";
                 (uiPost as any).documentId = strapiPost.documentId || strapiPost.id.toString();
@@ -440,24 +455,140 @@ export default function ForumDetailPage() {
         fetchPost();
     }, [id]);
 
-    const handleLikePost = () => {
+    const handleLikePost = async () => {
+        if (!post || !id) return;
+        
+        const wasLiked = post.isLiked;
+        const wasDisliked = post.isDisliked;
+        
+        // Optimistic update
         setPost(prev => prev ? {
             ...prev,
             likes: prev.isLiked ? prev.likes - 1 : prev.likes + 1,
             dislikes: prev.isDisliked ? prev.dislikes - 1 : prev.dislikes,
             isLiked: !prev.isLiked,
             isDisliked: false
-        } : null)
+        } : null);
+        
+        // Track in localStorage
+        if (user?.id && typeof window !== 'undefined') {
+            const likeKey = `forum_post_like_${user.id}_${id}`;
+            const dislikeKey = `forum_post_dislike_${user.id}_${id}`;
+            if (wasLiked) {
+                localStorage.removeItem(likeKey);
+            } else {
+                localStorage.setItem(likeKey, 'true');
+                localStorage.removeItem(dislikeKey);
+            }
+        }
+        
+        try {
+            if (wasLiked) {
+                // Unlike
+                await unlikeForumPost(id);
+            } else {
+                // Like
+                await likeForumPost(id);
+            }
+        } catch (error: any) {
+            console.error('Error updating like:', error);
+            // Revert optimistic update on error
+            setPost(prev => prev ? {
+                ...prev,
+                likes: wasLiked ? prev.likes + 1 : prev.likes - 1,
+                dislikes: wasDisliked ? prev.dislikes + 1 : prev.dislikes,
+                isLiked: wasLiked,
+                isDisliked: wasDisliked
+            } : null);
+            
+            // Revert localStorage
+            if (user?.id && typeof window !== 'undefined') {
+                const likeKey = `forum_post_like_${user.id}_${id}`;
+                const dislikeKey = `forum_post_dislike_${user.id}_${id}`;
+                if (wasLiked) {
+                    localStorage.setItem(likeKey, 'true');
+                } else {
+                    localStorage.removeItem(likeKey);
+                    if (wasDisliked) {
+                        localStorage.setItem(dislikeKey, 'true');
+                    }
+                }
+            }
+            
+            toast.error("Failed to update like. Please try again.", {
+                position: "top-center",
+                action: { label: "Close", onClick: () => {} },
+                closeButton: false,
+            });
+        }
     }
 
-    const handleDislikePost = () => {
+    const handleDislikePost = async () => {
+        if (!post || !id) return;
+        
+        const wasLiked = post.isLiked;
+        const wasDisliked = post.isDisliked;
+        
+        // Optimistic update
         setPost(prev => prev ? {
             ...prev,
             dislikes: prev.isDisliked ? prev.dislikes - 1 : prev.dislikes + 1,
             likes: prev.isLiked ? prev.likes - 1 : prev.likes,
             isDisliked: !prev.isDisliked,
             isLiked: false
-        } : null)
+        } : null);
+        
+        // Track in localStorage
+        if (user?.id && typeof window !== 'undefined') {
+            const likeKey = `forum_post_like_${user.id}_${id}`;
+            const dislikeKey = `forum_post_dislike_${user.id}_${id}`;
+            if (wasDisliked) {
+                localStorage.removeItem(dislikeKey);
+            } else {
+                localStorage.setItem(dislikeKey, 'true');
+                localStorage.removeItem(likeKey);
+            }
+        }
+        
+        try {
+            if (wasDisliked) {
+                // Undislike
+                await undislikeForumPost(id);
+            } else {
+                // Dislike
+                await dislikeForumPost(id);
+            }
+        } catch (error: any) {
+            console.error('Error updating dislike:', error);
+            // Revert optimistic update on error
+            setPost(prev => prev ? {
+                ...prev,
+                dislikes: wasDisliked ? prev.dislikes + 1 : prev.dislikes - 1,
+                likes: wasLiked ? prev.likes + 1 : prev.likes,
+                isDisliked: wasDisliked,
+                isLiked: wasLiked
+            } : null);
+            
+            // Revert localStorage
+            if (user?.id && typeof window !== 'undefined') {
+                const likeKey = `forum_post_like_${user.id}_${id}`;
+                const dislikeKey = `forum_post_dislike_${user.id}_${id}`;
+                if (wasDisliked) {
+                    localStorage.setItem(dislikeKey, 'true');
+                } else {
+                    localStorage.removeItem(dislikeKey);
+                    if (wasLiked) {
+                        localStorage.setItem(likeKey, 'true');
+                    }
+                }
+            }
+            
+            toast.error("Failed to update dislike. Please try again.", {
+                position: "top-center",
+                action: { label: "Close", onClick: () => {} },
+                closeButton: false,
+            });
+        }
     }
 
     const handleBookmarkPost = () => {

@@ -58,18 +58,6 @@ export function BlogSidebar({
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-
-                        <Select value={sortBy} onValueChange={setSortBy}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="recent">Most Recent</SelectItem>
-                                <SelectItem value="popular">Most Popular</SelectItem>
-                                <SelectItem value="views">Most Viewed</SelectItem>
-                                <SelectItem value="oldest">Oldest First</SelectItem>
-                            </SelectContent>
-                        </Select>
                     </CardContent>
                 </Card>
             </motion.div>

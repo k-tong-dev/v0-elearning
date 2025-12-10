@@ -516,29 +516,29 @@ export function BlogEditForm({ postId, categories, onCancel, onSuccess }: BlogEd
       </div>
 
       {/* Submit Buttons */}
-      <div className="flex gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">
-        <Button 
-          type="submit" 
-          disabled={isSubmitting} 
-          className="flex-1 h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Updating...
-            </>
-          ) : (
-            "Update Post"
-          )}
-        </Button>
-        <Button 
+      <div className="flex justify-end gap-4 pt-6  border-slate-200 dark:border-slate-700">
+        <Button
           type="button" 
           variant="outline" 
           onClick={onCancel} 
           disabled={isSubmitting}
-          className="h-12 px-8 text-base"
+          className="py-3 px-8 text-base"
         >
           Cancel
+        </Button>
+        <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex py-3 text-md text-white font-normal bg-green-600 shadow-none hover:shadow-none"
+        >
+          {isSubmitting ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Updating...
+              </>
+          ) : (
+              "Update Post"
+          )}
         </Button>
       </div>
     </form>

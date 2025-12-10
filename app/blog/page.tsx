@@ -20,7 +20,7 @@ import { BlogCreateForm } from "@/components/blog/BlogCreateForm";
 import { BlogPost, BlogCategory } from "@/types/blog";
 
 // Import Strapi functions
-import { getBlogPosts, getBlogCategories, BlogPost as StrapiBlogPost } from "@/integrations/strapi/blog";
+import { getBlogPosts, BlogPost as StrapiBlogPost } from "@/integrations/strapi/blog";
 import { getBlogCategories as getStrapiCategories, BlogCategory as StrapiBlogCategory } from "@/integrations/strapi/blogCategory";
 
 export default function BlogPage() {

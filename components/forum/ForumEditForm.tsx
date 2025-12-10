@@ -512,38 +512,39 @@ export function ForumEditForm({ post, categories, onCancel, onSuccess }: ForumEd
             </div>
 
             {/* Submit Buttons */}
-            <div className="flex gap-4 pt-6 border-t">
-              <Button 
-                type="submit" 
-                disabled={isSubmitting} 
-                className="group relative flex-1 h-16 overflow-hidden text-base font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-500 hover:via-purple-500 hover:to-pink-500 text-white shadow-2xl shadow-purple-500/50 hover:shadow-purple-600/60 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
-              >
-                {/* Animated background shine effect */}
-                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
-                
-                {isSubmitting ? (
-                  <span className="relative flex items-center justify-center gap-3">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Updating Discussion...</span>
-                  </span>
-                ) : (
-                  <span className="relative flex items-center justify-center gap-3">
-                    <div className="p-1.5 rounded-full bg-white/20 backdrop-blur-sm">
-                      <CheckCircle2 className="w-5 h-5" />
-                    </div>
-                    <span className="text-lg">Update Discussion</span>
-                    <Sparkles className="w-4 h-4 opacity-80" />
-                  </span>
-                )}
-              </Button>
+            <div className="flex gap-4 p-3 border-t justify-end">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={onCancel} 
                 disabled={isSubmitting}
-                className="h-16 px-10 border-2 border-border hover:bg-muted/80 hover:border-muted-foreground/50 transition-all duration-200 font-medium"
+                className="py-3 px-10 border-0 font-normal"
               >
                 Cancel
+              </Button>
+              <Button
+                  type="submit"
+                  size={"sm"}
+                  disabled={isSubmitting}
+                  className="px-5 py-3 group relative overflow-hidden font-normal shadow-none hover:shadow-none
+                          bg-gray-400/30 text-white max-w-fit rounded-lg"
+              >
+                {/* Animated background shine effect */}
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+
+                {isSubmitting ? (
+                    <span className="relative flex items-center justify-center gap-3">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Updating Discussion...</span>
+                  </span>
+                ) : (
+                    <span className="relative h-full flex items-center justify-center gap-3">
+                      <div className="p-1.5 max-h-fit rounded-full bg-green-500 backdrop-blur-sm">
+                        <CheckCircle2 className="w-3 h-3" />
+                      </div>
+                      <span className="text-md">Save</span>
+                  </span>
+                )}
               </Button>
             </div>
           </form>

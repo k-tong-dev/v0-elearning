@@ -50,17 +50,44 @@ interface UserProfileHeaderProps {
 
 export function UserProfileHeader({ user, isFollowing, setIsFollowing }: UserProfileHeaderProps) {
     const router = useRouter()
+    const [isTogglingFollow, setIsTogglingFollow] = useState(false)
 
-    const handleFollow = () => {
-        setIsFollowing(!isFollowing)
-        toast.success(isFollowing ? "Unfollowed user" : "Following user!", {
-            position: "top-center",
-            action: {
-                label: "Close",
-                onClick: () => {},
-            },
-            closeButton: false,
-        })
+    const handleFollow = async () => {
+        // Get current user ID from localStorage or context
+        // For now, we'll need to pass it as a prop or get it from context
+        const currentUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+        if (!currentUserId || !user.id) {
+            toast.error("Please log in to follow users");
+            return;
+        }
+
+        setIsTogglingFollow(true);
+        try {
+            const { followUser, unfollowUser } = await import('@/integrations/strapi/user');
+            
+            if (isFollowing) {
+                const success = await unfollowUser(user.id, currentUserId);
+                if (success) {
+                    setIsFollowing(false);
+                    toast.success(`Unfollowed ${user.name}`);
+                } else {
+                    toast.error("Failed to unfollow user");
+                }
+            } else {
+                const success = await followUser(user.id, currentUserId);
+                if (success) {
+                    setIsFollowing(true);
+                    toast.success(`Following ${user.name}`);
+                } else {
+                    toast.error("Failed to follow user");
+                }
+            }
+        } catch (error: any) {
+            console.error("Error toggling follow:", error);
+            toast.error(error.message || "Failed to update follow status");
+        } finally {
+            setIsTogglingFollow(false);
+        }
     }
 
     const handleMessage = () => {
@@ -167,12 +194,13 @@ export function UserProfileHeader({ user, isFollowing, setIsFollowing }: UserPro
                             <div className="flex items-center gap-3">
                                 <Button
                                     onClick={handleFollow}
+                                    disabled={isTogglingFollow}
                                     className={isFollowing
                                         ? "bg-gray-500 hover:bg-gray-600 text-white"
                                         : "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
                                     }
                                 >
-                                    {isFollowing ? "Following" : "Follow"}
+                                    {isTogglingFollow ? "Loading..." : isFollowing ? "Following" : "Follow"}
                                 </Button>
                                 <Button variant="outline" onClick={handleMessage}>
                                     <MessageCircle className="w-4 h-4 mr-2" />

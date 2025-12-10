@@ -21,6 +21,7 @@ import { DashboardFriends } from "@/components/dashboard/DashboardFriends"
 import { DashboardCertificates } from "@/components/dashboard/DashboardCertificates"
 import { DashboardViewCard } from "@/components/dashboard/DashboardViewCard"
 import { DashboardFavorites } from "@/components/dashboard/DashboardFavorites"
+import { DashboardBlogFavorites } from "@/components/dashboard/DashboardBlogFavorites"
 import { User as StrapiUser } from "@/types/user"
 import { getUserSubscription } from "@/integrations/strapi/subscription"
 import {BookOpen, DollarSign, MessageCircle, Star, ThumbsUp, Users} from "lucide-react"
@@ -546,10 +547,7 @@ function DashboardContent() {
                             </TabsContent>
 
                             <TabsContent value="wishlist-blogs" className="mt-0">
-                                <div className="rounded-xl border border-border/50 bg-card/50 p-8">
-                                    <h2 className="text-2xl font-bold mb-4">Saved Blogs</h2>
-                                    <p className="text-muted-foreground">Your saved blog articles will appear here</p>
-                                </div>
+                                <DashboardBlogFavorites />
                             </TabsContent>
 
                             <TabsContent value="wishlist-career" className="mt-0">

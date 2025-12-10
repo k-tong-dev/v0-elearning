@@ -420,17 +420,6 @@ export default function ForumPage() {
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                         />
                                     </div>
-                                    <ShadcnSelect value={sortBy} onValueChange={(value) => setSortBy(value as typeof sortBy)}>
-                                        <SelectTrigger className="w-full md:w-48">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <ShadcnSelectItem value="recent">Most Recent</ShadcnSelectItem>
-                                            <ShadcnSelectItem value="popular">Most Popular</ShadcnSelectItem>
-                                            <ShadcnSelectItem value="views">Most Viewed</ShadcnSelectItem>
-                                            <ShadcnSelectItem value="replies">Most Replies</ShadcnSelectItem>
-                                        </SelectContent>
-                                    </ShadcnSelect>
                                 </div>
                             </CardContent>
                         </Card>
