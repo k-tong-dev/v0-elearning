@@ -85,8 +85,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid price" }, { status: 400 });
     }
 
-    // Check if already purchased - use documentId as primary identifier
+    // Use documentId as primary identifier if available, otherwise fallback to numeric ID
     const courseIdentifier = course.documentId || course.id;
+
+    // Check if already purchased
     const alreadyPurchased = await checkUserPurchasedCourse(user.id.toString(), courseIdentifier);
     if (alreadyPurchased) {
       return NextResponse.json({ error: "Course already purchased" }, { status: 400 });
@@ -99,8 +101,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Create purchase transaction in pending state
-    // Use documentId as primary identifier if available, otherwise fallback to numeric ID
-    const courseIdentifier = course.documentId || course.id;
     const purchaseTx = await createPurchaseTransaction({
       user: user.id.toString(),
       instructor: instructorId.toString(),
@@ -113,9 +113,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to create transaction" }, { status: 500 });
     }
 
-    // Build return/cancel URLs - use documentId as primary identifier
+    // Build return/cancel URLs
     const origin = request.headers.get("origin") || new URL(request.url).origin;
-    const courseIdentifier = course.documentId || course.id;
     const returnUrl = `${origin}/checkout?paypal_order_id={{ORDER_ID}}&course=${courseIdentifier}&success=true`;
     const cancelUrl = `${origin}/checkout?course=${courseIdentifier}&cancelled=true`;
 
