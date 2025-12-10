@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button, Card, CardBody, CardHeader, Divider } from "@heroui/react"
@@ -150,7 +150,7 @@ function PaymentForm({ course, onSuccess }: { course: CheckoutCourse; onSuccess:
   )
 }
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isAuthenticated, user } = useAuth()
@@ -225,7 +225,7 @@ export default function CheckoutPage() {
         }
 
         const checkoutCourse: CheckoutCourse = {
-          courseId: courseData.id,
+          courseId: courseData.documentId || courseData.id, // Prefer documentId as primary identifier
           title: courseData.name,
           description: courseData.description || '',
           image: courseData.preview_url || '',
@@ -246,7 +246,7 @@ export default function CheckoutPage() {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                courseId: courseData.id,
+                courseId: courseData.documentId || courseData.id, // Prefer documentId
                 amount: currentPrice,
                 currency: checkoutCourse.currency,
               }),
@@ -660,5 +660,13 @@ export default function CheckoutPage() {
 
       <Footer />
     </div>
+  )
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading checkout...</div>}>
+      <CheckoutContent />
+    </Suspense>
   )
 }

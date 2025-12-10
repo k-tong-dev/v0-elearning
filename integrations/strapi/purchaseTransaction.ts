@@ -136,7 +136,21 @@ export async function createPurchaseTransaction(
 
         let courseConnect = undefined;
         if (data.course_course) {
-            const courseDocId = await resolveDocumentIdByNumericId("course-courses", data.course_course);
+            // Check if course_course is already a documentId (string UUID-like) or numeric ID
+            const isDocumentId = typeof data.course_course === 'string' && !/^\d+$/.test(data.course_course);
+            let courseDocId: string | null = null;
+            
+            if (isDocumentId) {
+                // Already a documentId, use it directly
+                courseDocId = data.course_course;
+            } else {
+                // Numeric ID, resolve to documentId
+                const numericId = typeof data.course_course === 'string' ? Number(data.course_course) : data.course_course;
+                if (!isNaN(numericId)) {
+                    courseDocId = await resolveDocumentIdByNumericId("course-courses", numericId);
+                }
+            }
+            
             if (courseDocId) {
                 courseConnect = { connect: [{ documentId: courseDocId }] };
             }
@@ -229,10 +243,23 @@ export async function updatePurchaseTransaction(id: string, data: Partial<Purcha
     }
 }
 
-export async function checkUserPurchasedCourse(userId: string, courseId: string): Promise<boolean> {
+export async function checkUserPurchasedCourse(userId: string, courseId: string | number): Promise<boolean> {
     try {
+        // Check if courseId is a documentId (string UUID-like) or numeric ID
+        const isDocumentId = typeof courseId === 'string' && !/^\d+$/.test(courseId);
+        
+        let filterQuery: string;
+        if (isDocumentId) {
+            // Use documentId filter for course
+            filterQuery = `filters[user][id][$eq]=${userId}&filters[course_course][documentId][$eq]=${courseId}&filters[state][$eq]=completed&populate=*`;
+        } else {
+            // Use numeric ID filter for course
+            const numericCourseId = typeof courseId === 'string' ? Number(courseId) : courseId;
+            filterQuery = `filters[user][id][$eq]=${userId}&filters[course_course][id][$eq]=${numericCourseId}&filters[state][$eq]=completed&populate=*`;
+        }
+        
         const response = await strapiPublic.get(
-            `/api/purchase-transactions?filters[user][id][$eq]=${userId}&filters[course_course][id][$eq]=${courseId}&filters[state][$eq]=completed&populate=*`
+            `/api/purchase-transactions?${filterQuery}`
         );
         return response.data.data && response.data.data.length > 0;
     } catch (error) {

@@ -67,9 +67,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Use documentId as primary identifier if available, otherwise fallback to numeric ID
+    const courseIdentifier = course.documentId || course.id;
+
     // Check if user already purchased this course
     const { checkUserPurchasedCourse } = await import('@/integrations/strapi/purchaseTransaction');
-    const alreadyPurchased = await checkUserPurchasedCourse(user.id.toString(), courseId);
+    const alreadyPurchased = await checkUserPurchasedCourse(user.id.toString(), courseIdentifier);
     if (alreadyPurchased) {
       return NextResponse.json(
         { error: 'You have already purchased this course' },
@@ -93,7 +96,7 @@ export async function POST(request: NextRequest) {
     const purchaseTransaction = await createPurchaseTransaction({
       user: user.id.toString(),
       instructor: instructorId.toString(),
-      course_course: courseId,
+      course_course: courseIdentifier,
       amount_paid: amount,
       state: 'pending',
     });

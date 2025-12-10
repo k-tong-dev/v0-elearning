@@ -523,24 +523,47 @@ export async function getCourseCourses(): Promise<CourseCourse[]> {
 
 export async function getCourseCourse(id: string | number): Promise<CourseCourse | null> {
     try {
-        // Always use numeric id, not documentId
-        // In Strapi v5, numeric IDs must use filter queries, not path parameters
-        const numericId = typeof id === 'string' ? Number(id) : id;
-        if (isNaN(numericId)) {
-            console.error("getCourseCourse: Invalid ID - must be numeric, got:", id);
+        let item: any;
+        
+        // Check if id is a documentId (string UUID-like) or numeric ID
+        const isDocumentId = typeof id === 'string' && !/^\d+$/.test(id);
+        
+        if (isDocumentId) {
+            // Use documentId directly in URL path (Strapi v5 preferred method)
+            const response = await strapiPublic.get(`/api/course-courses/${id}?populate=*`);
+            item = response.data.data;
+        } else {
+            // Numeric ID: resolve to documentId first, or use filter query as fallback
+            const numericId = typeof id === 'string' ? Number(id) : id;
+            if (isNaN(numericId)) {
+                console.error("getCourseCourse: Invalid ID format, got:", id);
+                return null;
+            }
+            
+            // Try to resolve documentId from numeric ID
+            const documentId = await resolveDocumentIdByNumericId("course-courses", numericId);
+            
+            if (documentId) {
+                // Use documentId in URL path
+                const response = await strapiPublic.get(`/api/course-courses/${documentId}?populate=*`);
+                item = response.data.data;
+            } else {
+                // Fallback to filter query if documentId resolution fails
+                const params = new URLSearchParams()
+                params.append('populate', '*')
+                params.append('filters[id][$eq]', numericId.toString())
+                const response = await strapiPublic.get(`/api/course-courses?${params.toString()}`);
+                const data = response.data.data;
+                if (!data || data.length === 0) {
+                    return null;
+                }
+                item = data[0];
+            }
+        }
+        
+        if (!item) {
             return null;
         }
-        // Use filter query for numeric ID (Strapi v5 doesn't support numeric ID in URL path)
-        // Use populate=* for all relations (this should include company)
-        const params = new URLSearchParams()
-        params.append('populate', '*')
-        params.append('filters[id][$eq]', numericId.toString())
-        const response = await strapiPublic.get(`/api/course-courses?${params.toString()}`);
-        const data = response.data.data;
-        if (!data || data.length === 0) {
-            return null;
-        }
-        const item = data[0];
         
         // Extract course_preview - handle both direct object and nested data structure
         const coursePreview = item.course_preview?.data || item.course_preview;

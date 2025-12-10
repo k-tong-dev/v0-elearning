@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Mail, CheckCircle, Loader2, ArrowLeft, ArrowRight, Sparkles, ShieldCheck, TimerReset } from "lucide-react";
@@ -16,7 +16,7 @@ import { OtpInput } from "@/components/ui/otp-input";
 import { BackgroundBeamsWithCollision } from "@/components/ui/backgrounds/background-beams-with-collision";
 import { ErrorModal } from "@/components/ui/ErrorModal";
 
-export default function VerifyOtpPage() {
+function VerifyOtpContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const email = searchParams.get("email");
@@ -446,5 +446,13 @@ export default function VerifyOtpPage() {
                 />
             </div>
         </BackgroundBeamsWithCollision>
+    );
+}
+
+export default function VerifyOtpPage() {
+    return (
+        <Suspense fallback={<PageLoading message="Loading verification..." />}>
+            <VerifyOtpContent />
+        </Suspense>
     );
 }

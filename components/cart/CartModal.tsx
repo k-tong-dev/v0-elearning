@@ -410,9 +410,12 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
         setIsProcessing(true)
         
         try {
+            // Use documentId as primary identifier if available, otherwise fallback to numeric ID
+            const courseIdentifier = selectedItem.courseDocumentId || selectedItem.courseId
+            
             // Navigate to checkout page with selected course data
             const checkoutData = {
-                courseId: selectedItem.courseId,
+                courseId: courseIdentifier, // Prefer documentId
                 cartItemId: selectedItem.strapiCartItemId,
                 title: selectedItem.title,
                 description: selectedItem.description,
@@ -425,8 +428,9 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
             // Store in sessionStorage for checkout page to access
             sessionStorage.setItem('checkoutCourse', JSON.stringify(checkoutData))
             
+            // Navigate to checkout with course identifier in URL
             onClose()
-            router.push('/checkout')
+            router.push(`/checkout?course=${courseIdentifier}`)
         } catch (error) {
             console.error("Failed to initiate checkout:", error)
             toast.error("Failed to proceed to checkout")

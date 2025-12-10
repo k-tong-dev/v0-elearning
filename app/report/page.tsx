@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ReportIssueForm } from "@/components/report/ReportIssueForm";
+import { PageLoading } from "@/components/page-loading";
 
-export default function ReportPage() {
+function ReportContent() {
     const searchParams = useSearchParams();
     const initialTitle = searchParams.get("title") || undefined;
     const initialDescription = searchParams.get("error") || undefined;
@@ -17,5 +18,13 @@ export default function ReportPage() {
                 // You can add onSuccess/onCancel handlers here if needed for page-specific logic
             />
         </div>
+    );
+}
+
+export default function ReportPage() {
+    return (
+        <Suspense fallback={<PageLoading message="Loading report form..." />}>
+            <ReportContent />
+        </Suspense>
     );
 }
