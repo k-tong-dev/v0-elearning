@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, ArrowRight, Loader2, AlertCircle, Eye, EyeOff, ArrowLeft, ShieldCheck, Key, Sparkles } from "lucide-react";
@@ -15,7 +15,7 @@ import { PageLoading } from "@/components/page-loading";
 import { ErrorModal } from "@/components/ui/ErrorModal";
 import { BackgroundBeamsWithCollision } from "@/components/ui/backgrounds/background-beams-with-collision";
 
-export default function PasswordConfirmationPage() {
+function PasswordConfirmationContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const email = searchParams.get("email");
@@ -285,5 +285,13 @@ export default function PasswordConfirmationPage() {
                 />
             </div>
         </BackgroundBeamsWithCollision>
+    );
+}
+
+export default function PasswordConfirmationPage() {
+    return (
+        <Suspense fallback={<PageLoading message="Loading password confirmation..." />}>
+            <PasswordConfirmationContent />
+        </Suspense>
     );
 }
