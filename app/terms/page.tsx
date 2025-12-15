@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { BookOpen } from "lucide-react";
 import { HeaderUltra } from "@/components/ui/headers/HeaderUltra";
 import { Footer } from "@/components/ui/footers/footer";
-import {BackgroundBeamsWithCollision} from "@/components/ui/backgrounds/background-beams-with-collision";
 
 export default function TermsOfServicePage() {
     return (

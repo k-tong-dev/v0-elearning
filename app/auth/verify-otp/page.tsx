@@ -272,7 +272,7 @@ function VerifyOtpContent() {
     }
 
     return (
-        <BackgroundBeamsWithCollision className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
+        <div className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
             <div className="relative min-h-screen w-full overflow-auto p-6 md:p-8">
                 <div className="pointer-events-none absolute inset-0">
                     <motion.div
@@ -453,7 +453,7 @@ function VerifyOtpContent() {
                     reportIssueDescription={modalErrorDetails.message}
                 />
             </div>
-        </BackgroundBeamsWithCollision>
+        </div>
     );
 }
 

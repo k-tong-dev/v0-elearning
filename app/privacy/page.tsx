@@ -5,11 +5,10 @@ import { motion } from "framer-motion";
 import { Shield } from "lucide-react";
 import { HeaderUltra } from "@/components/ui/headers/HeaderUltra";
 import { Footer } from "@/components/ui/footers/footer";
-import {BackgroundBeamsWithCollision} from "@/components/ui/backgrounds/background-beams-with-collision";
 
 export default function PrivacyPolicyPage() {
     return (
-        <BackgroundBeamsWithCollision className="min-h-screen via-background overflow-scroll scrollbar-hide items-start">
+        <div className="min-h-screen via-background overflow-scroll scrollbar-hide items-start">
             <div className="min-h-screen flex flex-col bg-transparent overflow-scroll scrollbar-hide items-start">
                 <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-16 mt-16 bg-transparent shadow-lg overflow-scroll scrollbar-hide">
                     <motion.div
@@ -115,6 +114,6 @@ export default function PrivacyPolicyPage() {
                     </motion.div>
                 </main>
             </div>
-        </BackgroundBeamsWithCollision>
+        </div>
     );
 }
