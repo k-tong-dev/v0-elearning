@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { User, Lock, Users, Sliders, Target, BookOpen, Award } from "lucide-react"
@@ -57,7 +57,7 @@ const stepDescriptions = [
 ]
 const stepIcons = [Lock, User, Users, Target, BookOpen, Sliders, Award]
 
-export default function MultiStepSignupPage() {
+function SignupPageContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { user: authUser, refreshUser, userContext, isLoading: authLoading } = useAuth()
@@ -859,5 +859,13 @@ export default function MultiStepSignupPage() {
                     />
                 </div>
             </div>
+    )
+}
+
+export default function MultiStepSignupPage() {
+    return (
+        <Suspense fallback={<PageLoading message="Loading signup form..." />}>
+            <SignupPageContent />
+        </Suspense>
     )
 }
