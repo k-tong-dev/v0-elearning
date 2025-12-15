@@ -142,9 +142,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 setIsLoading(false)
             }
         } else {
-            // Guest: Load from localStorage
+            // User not authenticated - clear authenticated cart
+            console.log("[CartContext] User not authenticated, clearing cart")
+            setItems([])
+            
+            // Only load from localStorage for true guests (never logged in)
+            // Check if there's a saved guest cart
             const savedCart = localStorage.getItem("cart")
-            if (savedCart) {
+            if (savedCart && !user) {
+                // Only load if no user was previously set (true guest, not logged out user)
                 try {
                     const parsed = JSON.parse(savedCart)
                     // Validate and filter out invalid items

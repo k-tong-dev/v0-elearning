@@ -64,6 +64,35 @@ export function CharacterStep({
         return <PageLoading message="Loading characters..." />
     }
 
+    if (charactorsError) {
+        return (
+            <motion.section
+                initial={{ opacity: 0, y: 25 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative overflow-hidden rounded-3xl border border-red-200 bg-red-50/50 dark:bg-red-950/20 backdrop-blur-2xl p-6 sm:p-8"
+            >
+                <div className="text-center space-y-4">
+                    <p className="text-red-600 dark:text-red-400">Failed to load role options. Please refresh the page.</p>
+                    <p className="text-sm text-slate-500">{charactorsError}</p>
+                </div>
+            </motion.section>
+        )
+    }
+
+    if (!charactorOptions || charactorOptions.length === 0) {
+        return (
+            <motion.section
+                initial={{ opacity: 0, y: 25 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative overflow-hidden rounded-3xl border border-white/30 bg-white/85 dark:bg-slate-950/70 backdrop-blur-2xl p-6 sm:p-8"
+            >
+                <div className="text-center space-y-4">
+                    <p className="text-slate-600 dark:text-slate-300">Loading role options...</p>
+                </div>
+            </motion.section>
+        )
+    }
+
     return (
         <motion.section
             initial={{ opacity: 0, y: 25, scale: 0.97 }}

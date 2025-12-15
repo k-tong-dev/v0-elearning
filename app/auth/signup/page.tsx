@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useMemo, useRef } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { User, Lock, Users, Sliders, Target, BookOpen, Award } from "lucide-react"
 import { toast } from "sonner"
@@ -26,6 +26,7 @@ import type { Default } from "@/types/user"
 import { useStrapi } from "@/hooks/use-strapi"
 import { useAuth } from "@/hooks/use-auth"
 import { ErrorModal } from "@/components/ui/ErrorModal"
+import { getEmailForOTP } from "@/lib/cookies"
 
 interface SignupFormData {
     email: string
@@ -58,6 +59,7 @@ const stepIcons = [Lock, User, Users, Target, BookOpen, Sliders, Award]
 
 export default function MultiStepSignupPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const { user: authUser, refreshUser, userContext, isLoading: authLoading } = useAuth()
     const [currentStep, setCurrentStep] = useState(1)
     const [stepDirection, setStepDirection] = useState<1 | -1>(1)
@@ -89,6 +91,23 @@ export default function MultiStepSignupPage() {
             window.localStorage.removeItem("onboardingComplete")
         }
     }, [])
+
+    // Immediately populate email from URL params or cookie on mount
+    useEffect(() => {
+        if (formData.email) return // Already has email, skip
+        
+        const emailFromUrl = searchParams.get("email")
+        const emailFromCookie = getEmailForOTP()
+        const emailFromAuth = authUser?.email
+        const email = emailFromUrl || emailFromAuth || emailFromCookie
+        
+        if (email) {
+            setFormData((prev) => ({
+                ...prev,
+                email: email,
+            }))
+        }
+    }, [searchParams, authUser?.email, formData.email])
 
     const {
         data: charactorsData,
@@ -122,29 +141,75 @@ export default function MultiStepSignupPage() {
     } = useStrapi<{ data: Default[] }>(strapiOptionsNoToast)
 
     useEffect(() => {
-        if (!authLoading && authUser?.supabaseId && authUser.email) {
-            if (authUser.id && currentStep < totalSteps) {
-                console.log("[Signup] User has Strapi ID but signup incomplete, staying on page...")
-            } else if (authUser.id === null) {
-                setFormData((prev) => ({
-                    ...prev,
-                    email: authUser.email!,
-                    supabaseUserId: authUser.supabaseId!,
-                }))
-                fetchCharactors("/api/charactors", true)
-                fetchGoals("/api/learning-goals", true)
-                fetchStyles("/api/prefer-to-learns", true)
-                fetchTopics("/api/interesteds", true)
-                fetchBadges("/api/badges", true)
+        // Get email from multiple sources (URL params, authUser, or cookie)
+        const emailFromUrl = searchParams.get("email")
+        const emailFromCookie = getEmailForOTP()
+        const emailFromAuth = authUser?.email
+        const email = emailFromUrl || emailFromAuth || emailFromCookie || ""
+        
+        // Get supabaseId from authUser
+        const supabaseId = authUser?.supabaseId
+
+        if (!authLoading) {
+            // If we have email and supabaseId, proceed with signup
+            if (email && supabaseId) {
+                // Always populate form with email and supabaseId if not already set
+                if (!formData.email || !formData.supabaseUserId) {
+                    setFormData((prev) => ({
+                        ...prev,
+                        email: email,
+                        supabaseUserId: supabaseId,
+                    }))
+                }
+                
+                // If user has Strapi ID but signup incomplete, allow them to continue
+                if (authUser?.id && currentStep < totalSteps) {
+                    console.log("[Signup] User has Strapi ID but signup incomplete, allowing completion...")
+                    // Set strapiUserId so the form knows which user to update
+                    if (!strapiUserId) {
+                        setStrapiUserId(authUser.id.toString())
+                    }
+                }
+            } else if (!email || !supabaseId) {
+                // Missing required info - show error only if we're sure auth is loaded
+                if (authLoading === false) {
+                    setModalErrorDetails({
+                        title: "Registration Error",
+                        message: "User ID or email is missing. Please start your registration by entering your email.",
+                    })
+                    setIsErrorModalOpen(true)
+                }
             }
-        } else if (!authLoading && (!authUser?.supabaseId || !authUser.email)) {
-            setModalErrorDetails({
-                title: "Registration Error",
-                message: "User ID or email is missing. Please start your registration by entering your email.",
-            })
-            setIsErrorModalOpen(true)
         }
-    }, [authUser, authLoading, fetchCharactors, fetchGoals, fetchStyles, fetchTopics, fetchBadges, currentStep])
+    }, [authUser, authLoading, searchParams, currentStep, fetchCharactors, fetchGoals, fetchStyles, fetchTopics, fetchBadges])
+
+    // Separate effect to fetch signup step data when email/supabaseId are available
+    // Use a ref to track if we've already initiated fetches to avoid duplicate calls
+    const dataFetchedRef = useRef(false)
+    
+    useEffect(() => {
+        const emailFromUrl = searchParams.get("email")
+        const emailFromCookie = getEmailForOTP()
+        const emailFromAuth = authUser?.email
+        const email = emailFromUrl || emailFromAuth || emailFromCookie || ""
+        const supabaseId = authUser?.supabaseId
+
+        // Only fetch if we have email and supabaseId, auth is loaded, and haven't fetched yet
+        if (email && supabaseId && !authLoading && !dataFetchedRef.current) {
+            // Fetch all data needed for signup steps
+            fetchCharactors("/api/charactors", true)
+            fetchGoals("/api/learning-goals", true)
+            fetchStyles("/api/prefer-to-learns", true)
+            fetchTopics("/api/interesteds", true)
+            fetchBadges("/api/badges", true)
+            dataFetchedRef.current = true
+        }
+        
+        // Reset the ref if email/supabaseId change (new user)
+        if (!email || !supabaseId) {
+            dataFetchedRef.current = false
+        }
+    }, [authUser?.email, authUser?.supabaseId, authLoading, searchParams, fetchCharactors, fetchGoals, fetchStyles, fetchTopics, fetchBadges])
 
     const handleStepDataUpdate = (stepData: Partial<SignupFormData>) => {
         setFormData((prev) => ({ ...prev, ...stepData }))
@@ -166,6 +231,21 @@ export default function MultiStepSignupPage() {
 
         try {
             if (currentStep === 1) {
+                // Get email from multiple sources (formData, URL params, authUser, or cookie)
+                const emailFromUrl = searchParams.get("email")
+                const emailFromCookie = getEmailForOTP()
+                const emailFromAuth = authUser?.email
+                const emailToUse = formData.email || emailFromUrl || emailFromAuth || emailFromCookie
+                
+                if (!emailToUse) {
+                    throw new Error("Email is required. Please start your registration by entering your email.")
+                }
+                
+                // Update formData if email was found from other sources
+                if (!formData.email && emailToUse) {
+                    setFormData((prev) => ({ ...prev, email: emailToUse }))
+                }
+                
                 if (formData.password !== formData.confirmPassword) {
                     throw new Error("Passwords do not match.")
                 }
@@ -175,7 +255,7 @@ export default function MultiStepSignupPage() {
 
                 const { jwt, user: strapiUser } = await registerAccount({
                     username: formData.username,
-                    email: formData.email,
+                    email: emailToUse, // Use the resolved email
                     password: formData.password,
                 })
                 setStrapiUserId(strapiUser.id.toString())

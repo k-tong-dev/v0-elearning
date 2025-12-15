@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { checkStrapiUserExists } from "@/integrations/strapi/utils";
+import { checkStrapiUserExists, getStrapiUserByEmail } from "@/integrations/strapi/utils";
 import { storeEmailForOTP } from "@/lib/cookies"; // Import cookie utility
 import Link from "next/link";
 import { ErrorModal } from "@/components/ui/ErrorModal";
@@ -32,17 +32,30 @@ export default function EmailAuthPage() {
             const userExistsInStrapi = await checkStrapiUserExists(email);
 
             if (userExistsInStrapi) {
-                toast.info("Welcome back! Please confirm your password.", {
-                    position: "top-center",
-                    action: {
-                        label: "Close",
-                        onClick: () => {},
-                    },
-                    closeButton: false,
-                });
-                router.push(`/auth/password-confirmation?email=${encodeURIComponent(email)}`);
-                return;
+                // Check if user is a Google OAuth user (they don't have passwords)
+                const strapiUser = await getStrapiUserByEmail(email);
+                const isGoogleUser = strapiUser?.provider === 'google';
+
+                if (isGoogleUser) {
+                    // Google OAuth users don't have passwords, allow OTP login
+                    console.log("[Email Auth] User exists but is Google OAuth user, allowing OTP login");
+                    // Continue to OTP flow below
+                } else {
+                    // User exists and has password, redirect to password confirmation
+                    toast.info("Welcome back! Please confirm your password.", {
+                        position: "top-center",
+                        action: {
+                            label: "Close",
+                            onClick: () => {},
+                        },
+                        closeButton: false,
+                    });
+                    router.push(`/auth/password-confirmation?email=${encodeURIComponent(email)}`);
+                    return;
+                }
             }
+            
+            // Send OTP for new users or Google OAuth users
             const { error: otpError } = await supabase.auth.signInWithOtp({
                 email,
                 options: {

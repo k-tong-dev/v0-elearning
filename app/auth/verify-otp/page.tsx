@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { storeEmailForOTP } from "@/lib/cookies";
 import { useAuth } from "@/hooks/use-auth";
+import { getStrapiUserByEmail, storeAccessToken } from "@/integrations/strapi/utils";
 import Link from "next/link";
 import { PageLoading } from "@/components/page-loading";
 import { OtpInput } from "@/components/ui/otp-input";
@@ -115,11 +116,29 @@ function VerifyOtpContent() {
             }
 
             if (sessionData.session?.user) {
-                console.log("[OTP] Session found, redirecting to next step...");
+                console.log("[OTP] Session found, checking if user exists in Strapi...");
+                
                 if (isResetFlow) {
                     router.push("/auth/update-password?mode=reset");
                     return;
                 }
+                
+                // Check if user already exists in Strapi
+                const existingStrapiUser = await getStrapiUserByEmail(email);
+                
+                if (existingStrapiUser) {
+                    console.log("[OTP] User exists in Strapi, logging in directly...");
+                    // User exists, refresh auth context which will sync with Strapi
+                    await refreshUser();
+                    toast.success("Welcome back! Logging you in...", {
+                        position: "top-center",
+                    });
+                    router.push("/");
+                    return;
+                }
+                
+                // New user, redirect to signup
+                console.log("[OTP] New user, redirecting to signup...");
                 storeEmailForOTP(email);
                 router.push(`/auth/signup?email=${encodeURIComponent(email)}`);
                 return;
@@ -136,11 +155,26 @@ function VerifyOtpContent() {
                     return false;
                 }
                 if (retrySessionData.session?.user) {
-                    console.log("[OTP] Session found on retry, redirecting to next step...");
+                    console.log("[OTP] Session found on retry, checking if user exists...");
                     if (isResetFlow) {
                         router.push("/auth/update-password?mode=reset");
                         return true;
                     }
+                    
+                    // Check if user already exists in Strapi
+                    const existingStrapiUser = await getStrapiUserByEmail(email);
+                    
+                    if (existingStrapiUser) {
+                        console.log("[OTP] User exists in Strapi, logging in directly...");
+                        await refreshUser();
+                        toast.success("Welcome back! Logging you in...", {
+                            position: "top-center",
+                        });
+                        router.push("/");
+                        return true;
+                    }
+                    
+                    // New user, redirect to signup
                     storeEmailForOTP(email);
                     router.push(`/auth/signup?email=${encodeURIComponent(email)}`);
                     return true;
@@ -158,12 +192,27 @@ function VerifyOtpContent() {
             }
 
             console.log("[OTP] No session found after retries, setting up auth state listener...");
-            const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+            const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
                 if (session?.user) {
-                    console.log("[OTP] Session detected via auth state change, redirecting...");
+                    console.log("[OTP] Session detected via auth state change, checking if user exists...");
                     if (isResetFlow) {
                         router.push("/auth/update-password?mode=reset");
+                        listener.subscription.unsubscribe();
+                        return;
+                    }
+                    
+                    // Check if user already exists in Strapi
+                    const existingStrapiUser = await getStrapiUserByEmail(email);
+                    
+                    if (existingStrapiUser) {
+                        console.log("[OTP] User exists in Strapi, logging in directly...");
+                        await refreshUser();
+                        toast.success("Welcome back! Logging you in...", {
+                            position: "top-center",
+                        });
+                        router.push("/");
                     } else {
+                        // New user, redirect to signup
                         storeEmailForOTP(email);
                         router.push(`/auth/signup?email=${encodeURIComponent(email)}`);
                     }

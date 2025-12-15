@@ -67,6 +67,10 @@ export function GoogleAuthButton({ onSuccess, onError, text = "signin_with", cla
                 callback: window.handleCredentialResponse,
                 auto_select: false,
                 cancel_on_tap_outside: true,
+                // Use popup mode explicitly to avoid COOP issues
+                ux_mode: 'popup',
+                // Allow cross-origin communication
+                itp_support: true,
             });
             googleInitialized.current = true;
             renderGoogleButton();

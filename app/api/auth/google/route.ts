@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
             const username = name?.replace(/\s+/g, '_').toLowerCase() || email.split('@')[0];
             const googlePassword = process.env.GOOGLE_AUTH_BYPASS_PASSWORD || `google-oauth-${email}`;
 
+            // Register with only allowed fields (Strapi doesn't allow custom fields in registration)
             const registerResponse = await fetch(`${STRAPI_URL}/api/auth/local/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -122,22 +123,61 @@ export async function POST(request: NextRequest) {
                     username,
                     email,
                     password: googlePassword,
-                    confirmed: true,
-                    avatar,
-                    provider: 'google',
-                    supabaseId,
                 }),
             });
 
             if (!registerResponse.ok) {
                 const errorData = await registerResponse.json();
                 console.error('[Google Auth] Registration failed:', errorData);
-                throw new Error(errorData.error?.message || 'Failed to register user');
+                const errorMessage = errorData.error?.message || errorData.message || 'Failed to register user';
+                throw new Error(`Registration failed: ${errorMessage}`);
             }
 
             const registerData = await registerResponse.json();
             jwtToken = registerData.jwt;
             user = registerData.user;
+
+            // Update user with additional fields after registration
+            try {
+                const updatePayload: any = {
+                    confirmed: true,
+                    provider: 'google',
+                };
+                
+                if (supabaseId) {
+                    updatePayload.supabaseId = supabaseId;
+                }
+                
+                if (avatar) {
+                    updatePayload.avatar = avatar;
+                }
+
+                const updateResponse = await fetch(`${STRAPI_URL}/api/users/${user.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${jwtToken}`,
+                    },
+                    body: JSON.stringify(updatePayload),
+                });
+
+                if (updateResponse.ok) {
+                    const updateData = await updateResponse.json();
+                    // Handle Strapi response format (might be wrapped in data or direct)
+                    const updatedUser = updateData.data || updateData;
+                    if (updatedUser) {
+                        user = updatedUser;
+                        console.log('[Google Auth] User updated with additional fields');
+                    }
+                } else {
+                    const errorData = await updateResponse.json().catch(() => ({}));
+                    console.warn('[Google Auth] Failed to update user fields:', errorData);
+                    // Registration succeeded, so continue with basic user data
+                }
+            } catch (updateError) {
+                console.warn('[Google Auth] Error updating user fields:', updateError);
+                // Don't fail registration if update fails
+            }
         }
 
         console.log('[Google Auth] Authentication successful, newUser:', newUser, 'userId:', user.id);

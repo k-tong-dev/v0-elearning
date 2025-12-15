@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import type { User } from "@/types/user";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { getStrapiUserByEmail, storeAccessToken, getAccessToken } from "@/integrations/strapi/utils";
-import { removeAccessToken } from "@/lib/cookies";
+import { clearAuthCookies } from "@/lib/cookies";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
@@ -202,15 +202,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const logout = useCallback(async () => {
         setIsLoading(true);
         try {
+            // Sign out from Supabase
             await supabase.auth.signOut();
-            // Clear token from cookies
-            removeAccessToken();
+            
+            // Clear all authentication cookies
+            clearAuthCookies();
+            
+            // Clear localStorage cart
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem("cart");
+            }
+            
+            // Clear user state
             setUser(null);
             setIsAuthenticated(false);
+            
             toast.success("Signed out successfully");
+            
+            // Redirect to home
             router.push("/");
         } catch (error: any) {
+            console.error("[logout] Error during logout:", error);
             toast.error(error.message || "Logout failed");
+            // Even if there's an error, try to clear local state
+            clearAuthCookies();
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem("cart");
+            }
+            setUser(null);
+            setIsAuthenticated(false);
         } finally {
             setIsLoading(false);
         }
