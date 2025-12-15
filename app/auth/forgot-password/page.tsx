@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import Link from "next/link";
 import { ErrorModal } from "@/components/ui/ErrorModal";
-import { BackgroundBeamsWithCollision } from "@/components/ui/backgrounds/background-beams-with-collision";
 
 export default function ForgotPasswordPage() {
     const router = useRouter();
@@ -30,17 +29,20 @@ export default function ForgotPasswordPage() {
         setIsErrorModalOpen(false);
 
         try {
-            const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/auth/update-password`,
+            const { error: otpError } = await supabase.auth.signInWithOtp({
+                email,
+                options: {
+                    emailRedirectTo: `${window.location.origin}/auth/verify-otp?email=${encodeURIComponent(email)}&mode=reset`,
+                },
             });
 
-            if (resetError) {
-                throw resetError;
+            if (otpError) {
+                throw otpError;
             }
 
-            setMessage("Password reset link sent! Please check your email inbox.");
-            toast.success("Password reset link sent!", {
-                description: "Check your email to set a new password.",
+            setMessage("OTP sent! Enter the code to reset your password.");
+            toast.success("OTP sent!", {
+                description: "Check your email for the 6-digit code.",
                 position: "top-center",
                 action: {
                     label: "Close",
@@ -48,9 +50,10 @@ export default function ForgotPasswordPage() {
                 },
                 closeButton: false,
             });
+            router.push(`/auth/verify-otp?email=${encodeURIComponent(email)}&mode=reset`);
         } catch (err: any) {
             console.error("Password reset error:", err);
-            const errorMessage = err.message || "Failed to send password reset link. Please try again.";
+            const errorMessage = err.message || "Failed to send OTP. Please try again.";
             setError(errorMessage);
             setModalErrorDetails({
                 title: "Password Reset Error",
@@ -63,7 +66,7 @@ export default function ForgotPasswordPage() {
     };
 
     return (
-        <BackgroundBeamsWithCollision className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
+        <div className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
             <div className="relative min-h-screen w-full overflow-auto p-6 md:p-8">
                 <div className="pointer-events-none absolute inset-0">
                     <motion.div
@@ -122,7 +125,7 @@ export default function ForgotPasswordPage() {
                                 transition={{ delay: 0.55 }}
                                 className="text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-200/80 max-w-2xl leading-relaxed"
                             >
-                                Enter your email and we’ll send a secure Supabase link so you can create a new password. We protect every reset request with rate limiting and audit logging.
+                                Enter your email and we’ll send a secure 6-digit OTP to verify it’s really you before resetting your password. No reset links—just quick verification.
                             </motion.p>
 
                             <div className="grid gap-4 sm:grid-cols-2">
@@ -159,16 +162,7 @@ export default function ForgotPasswordPage() {
                         transition={{ type: "spring", stiffness: 140, damping: 22, delay: 0.3 }}
                         className="relative order-1 lg:order-2"
                     >
-                        <motion.div
-                            className="absolute -inset-[2px] rounded-[26px]"
-                            style={{
-                                background: "conic-gradient(from 0deg, rgba(59,130,246,0.6), rgba(236,72,153,0.6), rgba(124,58,237,0.6), rgba(59,130,246,0.6))",
-                                filter: "blur(12px)",
-                                opacity: 0.6,
-                            }}
-                            animate={{ rotate: [0, 180, 360] }}
-                            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                        />
+                        {/* Rotating gradient border removed */}
 
                         <div className="relative rounded-[24px] border border-white/35 bg-white/95 dark:bg-slate-950/75 backdrop-blur-2xl shadow-[0_25px_85px_-30px_rgba(59,130,246,0.5)] p-6 sm:p-8 space-y-7">
                             <div className="text-center space-y-4">
@@ -177,7 +171,7 @@ export default function ForgotPasswordPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 dark:text-white">Forgot your password?</h2>
-                                    <p className="text-sm text-slate-500 dark:text-slate-300">Enter your email and we’ll send a secure reset link.</p>
+                                    <p className="text-sm text-slate-500 dark:text-slate-300">Enter your email and we’ll send a secure one-time code.</p>
                                 </div>
                             </div>
 
@@ -225,11 +219,11 @@ export default function ForgotPasswordPage() {
                                     <span className="relative z-10 flex items-center gap-2 text-sm font-semibold">
                                         {loading ? (
                                             <>
-                                                <Loader2 className="h-5 w-5 animate-spin" /> Sending link...
+                                                <Loader2 className="h-5 w-5 animate-spin" /> Sending OTP...
                                             </>
                                         ) : (
                                             <>
-                                                Send reset link <ArrowRight className="h-4 w-4" />
+                                                Send OTP <ArrowRight className="h-4 w-4" />
                                             </>
                                         )}
                                     </span>
@@ -266,6 +260,6 @@ export default function ForgotPasswordPage() {
                     reportIssueDescription={modalErrorDetails.message}
                 />
             </div>
-        </BackgroundBeamsWithCollision>
+        </div>
     );
 }

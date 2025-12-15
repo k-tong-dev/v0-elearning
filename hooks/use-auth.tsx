@@ -167,6 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ 
                     email: supabaseUser.email,
+                    supabaseId: supabaseUser.id,
                     name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name,
                     avatar: supabaseUser.user_metadata?.avatar_url || supabaseUser.user_metadata?.picture
                 }),

@@ -13,7 +13,6 @@ import { useAuth } from "@/hooks/use-auth";
 import Link from "next/link";
 import { PageLoading } from "@/components/page-loading";
 import { ErrorModal } from "@/components/ui/ErrorModal";
-import { BackgroundBeamsWithCollision } from "@/components/ui/backgrounds/background-beams-with-collision";
 
 function PasswordConfirmationContent() {
     const router = useRouter();
@@ -124,7 +123,7 @@ function PasswordConfirmationContent() {
     }
 
     return (
-        <BackgroundBeamsWithCollision className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
+        <div className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
             <div className="relative min-h-screen w-full px-4 py-12 sm:py-16">
                 <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 lg:flex-row lg:items-center lg:gap-16">
                     <motion.section
@@ -169,16 +168,7 @@ function PasswordConfirmationContent() {
                         transition={{ type: "spring", stiffness: 120, damping: 20, delay: 0.3 }}
                         className="relative order-1 lg:order-2 flex-1"
                     >
-                        <motion.div
-                            className="absolute -inset-[2px] rounded-[28px]"
-                            style={{
-                                background: "conic-gradient(from 180deg at 50% 50%, rgba(59,130,246,0.6), rgba(236,72,153,0.6), rgba(124,58,237,0.6), rgba(59,130,246,0.6))",
-                                filter: "blur(14px)",
-                                opacity: 0.65,
-                            }}
-                            animate={{ rotate: [0, 120, 240, 360] }}
-                            transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-                        />
+                        {/* Rotating gradient border removed */}
 
                         <div className="relative overflow-hidden rounded-[26px] border border-white/40 bg-white/90 p-6 sm:p-8 dark:bg-slate-950/70 backdrop-blur-2xl shadow-[0_25px_90px_-40px_rgba(59,130,246,0.55)]">
                             <div className="absolute inset-0 opacity-60" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(236,72,153,0.12) 100%)" }} />
@@ -284,7 +274,7 @@ function PasswordConfirmationContent() {
                     reportIssueDescription={modalErrorDetails.message}
                 />
             </div>
-        </BackgroundBeamsWithCollision>
+        </div>
     );
 }
 

@@ -11,7 +11,6 @@ import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/use-auth"
 import { PageLoading } from "@/components/page-loading"
-import { BackgroundBeamsWithCollision } from "@/components/ui/backgrounds/background-beams-with-collision"
 import { supabase } from "@/integrations/supabase/client"
 import { checkStrapiUserExists } from "@/integrations/strapi/utils"
 import { storeEmailForOTP } from "@/lib/cookies"
@@ -123,38 +122,9 @@ export function AuthFlowUltraV2({ initialMode = "signin", onSuccess }: AuthFlowU
     ]
 
     return (
-        <BackgroundBeamsWithCollision className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
+        <div className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
             <div ref={containerRef} className="relative min-h-screen flex items-center justify-center p-6 overflow-auto scrollbar-hide">
-                {/* Decorative layers */}
-                <div className="pointer-events-none absolute inset-0">
-                    <motion.div
-                        className="absolute -left-48 top-10 h-72 w-72 rounded-full blur-3xl"
-                        style={{ background: "radial-gradient(circle, rgba(59,130,246,0.35) 0%, transparent 65%)" }}
-                        animate={{
-                            x: [0, mousePosition.x * 0.04, 0],
-                            y: [0, mousePosition.y * 0.04, 0],
-                            scale: [0.95, 1.1, 0.95],
-                            opacity: [0.5, 0.7, 0.5],
-                        }}
-                        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                    <motion.div
-                        className="absolute -right-40 bottom-16 h-80 w-80 rounded-full blur-3xl"
-                        style={{ background: "radial-gradient(circle, rgba(236,72,153,0.3) 0%, transparent 70%)" }}
-                        animate={{
-                            x: [0, mousePosition.x * -0.03, 0],
-                            y: [0, mousePosition.y * 0.03, 0],
-                            scale: [1, 1.12, 1],
-                            opacity: [0.4, 0.6, 0.4],
-                        }}
-                        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                    <motion.div
-                        className="absolute left-1/2 top-1/2 h-[28rem] w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 blur-3xl opacity-70"
-                        animate={{ rotate: [0, 180, 360], scale: [1, 1.05, 1] }}
-                        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-                    />
-                </div>
+                {/* Decorative layers removed for a clean, static background */}
 
                 <div className="relative z-10 w-full max-w-6xl grid grid-cols-1 gap-8 md:gap-12 xl:gap-14 items-start lg:items-start lg:grid-cols-[1.05fr_1fr]">
                     {/* Hero / Copy column */}
@@ -164,15 +134,7 @@ export function AuthFlowUltraV2({ initialMode = "signin", onSuccess }: AuthFlowU
                         transition={{ type: "spring", stiffness: 120, damping: 20, delay: 0.2 }}
                         className="relative order-2 lg:order-1 rounded-3xl border border-white/20 bg-white/55 dark:bg-slate-950/40 backdrop-blur-3xl p-6 sm:p-8 lg:p-12 shadow-[0_35px_120px_-40px_rgba(59,130,246,0.45)] overflow-hidden w-full"
                     >
-                        <motion.div
-                            className="absolute inset-0 opacity-60"
-                            style={{
-                                background:
-                                    "radial-gradient(circle at 20% 20%, rgba(59,130,246,0.18) 0%, transparent 55%), radial-gradient(circle at 80% 10%, rgba(236,72,153,0.2) 0%, transparent 50%), radial-gradient(circle at 50% 80%, rgba(124,58,237,0.18) 0%, transparent 55%)",
-                            }}
-                            animate={{ opacity: [0.4, 0.65, 0.4] }}
-                            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-                        />
+                        {/* Animated gradient overlay removed */}
 
                         <div className="relative space-y-7 sm:space-y-8">
                             <motion.div
@@ -280,20 +242,11 @@ export function AuthFlowUltraV2({ initialMode = "signin", onSuccess }: AuthFlowU
                         transition={{ type: "spring", stiffness: 120, damping: 20, delay: 0.25 }}
                         className="relative order-1 lg:order-2 w-full"
                     >
-                        <motion.div
-                            className="absolute -inset-[2px] rounded-[28px]"
-                            style={{
-                                background: "conic-gradient(from 180deg at 50% 50%, rgba(59,130,246,0.6), rgba(236,72,153,0.6), rgba(124,58,237,0.6), rgba(59,130,246,0.6))",
-                                filter: "blur(14px)",
-                                opacity: 0.65,
-                            }}
-                            animate={{ rotate: [0, 90, 180, 270, 360] }}
-                            transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-                        />
+                        {/* Rotating gradient border removed */}
 
                         <div className="relative rounded-[26px] border border-white/40 bg-white/95 dark:bg-slate-950/70 backdrop-blur-2xl shadow-[0_25px_85px_-30px_rgba(59,130,246,0.55)]">
                             <div className="relative overflow-hidden rounded-[26px]">
-                                <div className="absolute inset-0 opacity-60" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(236,72,153,0.12) 100%)" }} />
+                                {/* Animated gradient overlay removed */}
 
                                 <div className="relative z-10 px-6 py-8 sm:p-9 space-y-8">
                                     <div className="text-center space-y-4">
@@ -479,7 +432,7 @@ export function AuthFlowUltraV2({ initialMode = "signin", onSuccess }: AuthFlowU
                 message={modalErrorDetails.message}
             />
             </div>
-        </BackgroundBeamsWithCollision>
+        </div>
     )
 }
 

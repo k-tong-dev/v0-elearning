@@ -13,7 +13,6 @@ import { checkStrapiUserExists } from "@/integrations/strapi/utils";
 import { storeEmailForOTP } from "@/lib/cookies"; // Import cookie utility
 import Link from "next/link";
 import { ErrorModal } from "@/components/ui/ErrorModal";
-import { BackgroundBeamsWithCollision } from "@/components/ui/backgrounds/background-beams-with-collision";
 
 export default function EmailAuthPage() {
     const router = useRouter();
@@ -82,30 +81,9 @@ export default function EmailAuthPage() {
     };
 
     return (
-        <BackgroundBeamsWithCollision className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
+        <div className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
             <div className="relative min-h-screen w-full overflow-auto p-6 md:p-8">
-                <div className="pointer-events-none absolute inset-0">
-                    <motion.div
-                        className="absolute -left-36 top-16 h-64 w-64 rounded-full blur-3xl"
-                        style={{ background: "radial-gradient(circle, rgba(59,130,246,0.35) 0%, transparent 65%)" }}
-                        animate={{
-                            x: [0, 20, -10, 0],
-                            y: [0, -15, 10, 0],
-                            opacity: [0.6, 0.8, 0.6],
-                        }}
-                        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                    <motion.div
-                        className="absolute -right-40 bottom-20 h-72 w-72 rounded-full blur-3xl"
-                        style={{ background: "radial-gradient(circle, rgba(236,72,153,0.28) 0%, transparent 70%)" }}
-                        animate={{
-                            x: [0, -25, 12, 0],
-                            y: [0, 18, -14, 0],
-                            opacity: [0.45, 0.65, 0.45],
-                        }}
-                        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                </div>
+                {/* Decorative animated gradients removed for a static background */}
 
                 <div className="relative z-10 mx-auto grid w-full max-w-5xl grid-cols-1 gap-10 lg:grid-cols-[1.1fr_0.9fr] items-start">
                     <motion.section
@@ -114,15 +92,7 @@ export default function EmailAuthPage() {
                         transition={{ type: "spring", stiffness: 140, damping: 22, delay: 0.2 }}
                         className="relative order-2 lg:order-1 rounded-3xl border border-white/20 bg-white/55 dark:bg-slate-950/40 backdrop-blur-3xl p-6 sm:p-8 lg:p-12 shadow-[0_30px_110px_-45px_rgba(59,130,246,0.45)] overflow-hidden"
                     >
-                        <motion.div
-                            className="absolute inset-0 opacity-60"
-                            style={{
-                                background:
-                                    "radial-gradient(circle at 20% 20%, rgba(59,130,246,0.18) 0%, transparent 55%), radial-gradient(circle at 82% 12%, rgba(236,72,153,0.2) 0%, transparent 52%), radial-gradient(circle at 50% 82%, rgba(124,58,237,0.17) 0%, transparent 55%)",
-                            }}
-                            animate={{ opacity: [0.45, 0.7, 0.45] }}
-                            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-                        />
+                        {/* Animated gradient overlay removed */}
 
                         <div className="relative space-y-6">
                             <motion.div
@@ -186,16 +156,7 @@ export default function EmailAuthPage() {
                         transition={{ type: "spring", stiffness: 140, damping: 22, delay: 0.3 }}
                         className="relative order-1 lg:order-2"
                     >
-                        <motion.div
-                            className="absolute -inset-[2px] rounded-[26px]"
-                            style={{
-                                background: "conic-gradient(from 0deg, rgba(59,130,246,0.6), rgba(236,72,153,0.6), rgba(124,58,237,0.6), rgba(59,130,246,0.6))",
-                                filter: "blur(12px)",
-                                opacity: 0.6,
-                            }}
-                            animate={{ rotate: [0, 180, 360] }}
-                            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                        />
+                        {/* Rotating gradient border removed */}
 
                         <div className="relative rounded-[24px] border border-white/35 bg-white/95 dark:bg-slate-950/75 backdrop-blur-2xl shadow-[0_25px_85px_-30px_rgba(59,130,246,0.5)] p-6 sm:p-8 space-y-7">
                             <div className="text-center space-y-4">
@@ -280,6 +241,6 @@ export default function EmailAuthPage() {
                     reportIssueDescription={modalErrorDetails.message}
                 />
             </div>
-        </BackgroundBeamsWithCollision>
+        </div>
     )
 }

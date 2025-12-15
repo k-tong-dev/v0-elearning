@@ -4,9 +4,32 @@ import jwt from 'jsonwebtoken';
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
 const JWT_SECRET = process.env.NEXT_PUBLIC_JWT_SECRET || 'fallback-secret';
 
+type RawStrapiUser =
+    | { id?: number | string; username?: string; email?: string; avatar?: any; provider?: string; role?: any; preferences?: any; supabaseId?: string }
+    | { id?: number | string; attributes?: any };
+
+const normalizeStrapiUser = (entry: RawStrapiUser | null | undefined) => {
+    if (!entry) return null;
+    // Handle Strapi v4 default { id, attributes: { ... } } shape
+    const attributes = (entry as any).attributes;
+    if (attributes) {
+        return {
+            id: entry.id ?? attributes.id,
+            email: attributes.email,
+            username: attributes.username,
+            avatar: attributes.avatar,
+            provider: attributes.provider,
+            role: attributes.role,
+            preferences: attributes.preferences,
+            supabaseId: attributes.supabaseId,
+        };
+    }
+    return entry as any;
+};
+
 export async function POST(request: NextRequest) {
     try {
-        const { email, name, avatar } = await request.json();
+        const { email, name, avatar, supabaseId } = await request.json();
         
         if (!email) {
             return NextResponse.json(
@@ -33,7 +56,12 @@ export async function POST(request: NextRequest) {
         }
 
         const existingUsers = await checkResponse.json();
-        const existingUser = existingUsers.length > 0 ? existingUsers[0] : null;
+        const usersArray = Array.isArray(existingUsers)
+            ? existingUsers
+            : Array.isArray(existingUsers?.data)
+                ? existingUsers.data
+                : [];
+        const existingUser = normalizeStrapiUser(usersArray[0]);
 
         let jwtToken: string;
         let user: any;
@@ -97,6 +125,7 @@ export async function POST(request: NextRequest) {
                     confirmed: true,
                     avatar,
                     provider: 'google',
+                    supabaseId,
                 }),
             });
 
@@ -113,6 +142,34 @@ export async function POST(request: NextRequest) {
 
         console.log('[Google Auth] Authentication successful, newUser:', newUser, 'userId:', user.id);
 
+        // Keep Strapi profile in sync with Supabase identity (id + provider + avatar)
+        try {
+            const normalized = normalizeStrapiUser(user);
+            const needsSync =
+                !!jwtToken &&
+                normalized &&
+                ((!normalized.supabaseId && supabaseId) ||
+                    normalized.provider !== 'google' ||
+                    (!normalized.avatar && avatar));
+
+            if (needsSync) {
+                await fetch(`${STRAPI_URL}/api/users/${normalized.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${jwtToken}`,
+                    },
+                    body: JSON.stringify({
+                        supabaseId: normalized.supabaseId || supabaseId,
+                        provider: 'google',
+                        avatar: normalized.avatar || avatar,
+                    }),
+                });
+            }
+        } catch (syncErr) {
+            console.warn('[Google Auth] Profile sync skipped:', syncErr);
+        }
+
         // Return the response with JWT token
         return NextResponse.json({
             jwt: jwtToken,
@@ -125,6 +182,7 @@ export async function POST(request: NextRequest) {
                 role: user.role,
                 preferences: user.preferences,
                 provider: user.provider || 'google',
+                supabaseId: user.supabaseId || supabaseId,
             },
             newUser,
         });

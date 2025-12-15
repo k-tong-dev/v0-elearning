@@ -25,7 +25,6 @@ import { BadgesStep } from "@/components/auth/signup-steps/BadgesStep"
 import type { Default } from "@/types/user"
 import { useStrapi } from "@/hooks/use-strapi"
 import { useAuth } from "@/hooks/use-auth"
-import { BackgroundBeamsWithCollision } from "@/components/ui/backgrounds/background-beams-with-collision"
 import { ErrorModal } from "@/components/ui/ErrorModal"
 
 interface SignupFormData {
@@ -501,7 +500,7 @@ export default function MultiStepSignupPage() {
     }
 
     return (
-        <BackgroundBeamsWithCollision className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
+        <div className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
                 <div className="h-screen min-w-[500px] sm:min-w-screen flex items-start justify-center p-4 py-12 relative
                   bg-gradient-to-br from-[#f0f9ff] via-[#e0f2fe] to-[#dbeafe]
                   overflow-y-auto scrollbar-hide
@@ -779,6 +778,6 @@ export default function MultiStepSignupPage() {
                         reportIssueDescription={modalErrorDetails.message}
                     />
                 </div>
-            </BackgroundBeamsWithCollision>
+            </div>
     )
 }

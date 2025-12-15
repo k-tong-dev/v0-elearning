@@ -13,13 +13,14 @@ import { useAuth } from "@/hooks/use-auth";
 import Link from "next/link";
 import { PageLoading } from "@/components/page-loading";
 import { OtpInput } from "@/components/ui/otp-input";
-import { BackgroundBeamsWithCollision } from "@/components/ui/backgrounds/background-beams-with-collision";
 import { ErrorModal } from "@/components/ui/ErrorModal";
 
 function VerifyOtpContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const email = searchParams.get("email");
+    const mode = searchParams.get("mode");
+    const isResetFlow = mode === "reset";
     const { user, isAuthenticated, isLoading: authLoading, refreshUser } = useAuth();
 
     const [otp, setOtp] = useState("");
@@ -61,6 +62,10 @@ function VerifyOtpContent() {
 
     useEffect(() => {
         if (!authLoading && isAuthenticated && user) {
+            if (isResetFlow) {
+                // For reset, keep user on OTP page until they proceed
+                return;
+            }
             if (user.id) {
                 router.replace("/");
             } else if (user.supabaseId && user.email) {
@@ -69,7 +74,7 @@ function VerifyOtpContent() {
         } else if (!authLoading && !user) {
             console.log("[OTP] No user session, staying on verify-otp page...");
         }
-    }, [isAuthenticated, user, authLoading, router]);
+    }, [isAuthenticated, user, authLoading, router, isResetFlow]);
 
 
     const handleOtpVerify = async (e: React.FormEvent) => {
@@ -110,7 +115,11 @@ function VerifyOtpContent() {
             }
 
             if (sessionData.session?.user) {
-                console.log("[OTP] Session found, redirecting to signup...");
+                console.log("[OTP] Session found, redirecting to next step...");
+                if (isResetFlow) {
+                    router.push("/auth/update-password?mode=reset");
+                    return;
+                }
                 storeEmailForOTP(email);
                 router.push(`/auth/signup?email=${encodeURIComponent(email)}`);
                 return;
@@ -127,7 +136,11 @@ function VerifyOtpContent() {
                     return false;
                 }
                 if (retrySessionData.session?.user) {
-                    console.log("[OTP] Session found on retry, redirecting to signup...");
+                    console.log("[OTP] Session found on retry, redirecting to next step...");
+                    if (isResetFlow) {
+                        router.push("/auth/update-password?mode=reset");
+                        return true;
+                    }
                     storeEmailForOTP(email);
                     router.push(`/auth/signup?email=${encodeURIComponent(email)}`);
                     return true;
@@ -148,8 +161,12 @@ function VerifyOtpContent() {
             const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
                 if (session?.user) {
                     console.log("[OTP] Session detected via auth state change, redirecting...");
-                    storeEmailForOTP(email);
-                    router.push(`/auth/signup?email=${encodeURIComponent(email)}`);
+                    if (isResetFlow) {
+                        router.push("/auth/update-password?mode=reset");
+                    } else {
+                        storeEmailForOTP(email);
+                        router.push(`/auth/signup?email=${encodeURIComponent(email)}`);
+                    }
                     listener.subscription.unsubscribe();
                 }
             });
@@ -184,7 +201,7 @@ function VerifyOtpContent() {
             const { error: otpError } = await supabase.auth.signInWithOtp({
                 email,
                 options: {
-                    emailRedirectTo: `${window.location.origin}/auth/verify-otp?email=${encodeURIComponent(email)}`,
+                    emailRedirectTo: `${window.location.origin}/auth/verify-otp?email=${encodeURIComponent(email)}${isResetFlow ? "&mode=reset" : ""}`,
                 },
             });
 
@@ -230,7 +247,7 @@ function VerifyOtpContent() {
 
     if (!email) {
         return (
-            <BackgroundBeamsWithCollision className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
+            <div className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
                 <div className="relative min-h-screen w-full overflow-auto p-6 flex items-center justify-center">
                     <motion.div
                         initial={{ opacity: 0, y: 40 }}
@@ -250,7 +267,7 @@ function VerifyOtpContent() {
                         </Button>
                     </motion.div>
                 </div>
-            </BackgroundBeamsWithCollision>
+            </div>
         );
     }
 
@@ -351,16 +368,7 @@ function VerifyOtpContent() {
                         transition={{ type: "spring", stiffness: 140, damping: 22, delay: 0.3 }}
                         className="relative order-1 lg:order-2"
                     >
-                        <motion.div
-                            className="absolute -inset-[2px] rounded-[26px]"
-                            style={{
-                                background: "conic-gradient(from 0deg, rgba(59,130,246,0.6), rgba(236,72,153,0.6), rgba(124,58,237,0.6), rgba(59,130,246,0.6))",
-                                filter: "blur(12px)",
-                                opacity: 0.6,
-                            }}
-                            animate={{ rotate: [0, 180, 360] }}
-                            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                        />
+                        {/* Rotating gradient border removed */}
 
                         <div className="relative rounded-[24px] border border-white/35 bg-white/95 dark:bg-slate-950/75 backdrop-blur-2xl shadow-[0_25px_85px_-30px_rgba(59,130,246,0.5)] p-6 sm:p-8 space-y-7">
                             <div className="text-center space-y-4">

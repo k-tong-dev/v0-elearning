@@ -25,7 +25,6 @@ import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/use-auth"
 import { PageLoading } from "@/components/page-loading"
-import { BackgroundBeamsWithCollision } from "@/components/ui/backgrounds/background-beams-with-collision"
 import { supabase } from "@/integrations/supabase/client"
 import { checkStrapiUserExists } from "@/integrations/strapi/utils"
 import { storeEmailForOTP } from "@/lib/cookies"
@@ -113,7 +112,7 @@ export function AuthFlowUltra({ initialMode = "signin", onSuccess }: AuthFlowUlt
     }
 
     return (
-        <BackgroundBeamsWithCollision className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
+        <div className="min-h-screen via-background overflow-hidden scrollbar-hide items-start">
             <div className="min-h-screen flex items-center justify-center via-background p-4">
                 <motion.div
                     initial={{ opacity: 0, y: 50, scale: 0.95 }}
@@ -307,7 +306,7 @@ export function AuthFlowUltra({ initialMode = "signin", onSuccess }: AuthFlowUlt
                 title={modalErrorDetails.title}
                 message={modalErrorDetails.message}
             />
-        </BackgroundBeamsWithCollision>
+        </div>
     )
 }
 
