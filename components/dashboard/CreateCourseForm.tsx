@@ -836,9 +836,32 @@ export default function CreateCourseForm({
         }
         if (selectedCertificateId) return;
         if (!certificateLibrary.length) return;
-        const editingId = certificateAttachContext.editingContent?.url
-            ? decodeCertificateRef(certificateAttachContext.editingContent.url)
-            : null;
+        
+        const editingContent = certificateAttachContext.editingContent;
+        let editingId: number | null = null;
+        
+        // Check if content has certificate relation (preferred - uses documentId)
+        if (editingContent && (editingContent as any).certificates) {
+            const certRelation = (editingContent as any).certificates;
+            const certData = Array.isArray(certRelation) ? certRelation[0] : certRelation;
+            if (certData) {
+                // Try to find by documentId first, then by id
+                const certByDocId = certificateLibrary.find(
+                    (item) => item.documentId === certData.documentId || item.documentId === certData.id
+                );
+                if (certByDocId) {
+                    editingId = certByDocId.id;
+                } else if (certData.id) {
+                    editingId = certData.id;
+                }
+            }
+        }
+        
+        // Fallback to URL-based approach
+        if (!editingId && editingContent?.url) {
+            editingId = decodeCertificateRef(editingContent.url);
+        }
+        
         const fallbackId =
             (editingId && certificateLibrary.some((item) => item.id === editingId) && editingId) ||
             certificateLibrary[0]?.id ||
@@ -1055,17 +1078,9 @@ export default function CreateCourseForm({
             if (!courseId) return;
             
             try {
-                // Ensure we use numeric id, not documentId
-                const numericId = typeof courseId === 'string' && isNaN(Number(courseId)) 
-                    ? null 
-                    : Number(courseId);
-                
-                if (!numericId || isNaN(numericId)) {
-                    toast.error("Invalid course ID. Please use numeric ID only.");
-                    return;
-                }
-                
-                const existingCourse = await getCourseCourse(numericId);
+                // getCourseCourse handles both documentId (string) and numeric id
+                // documentId is preferred for Strapi v5
+                const existingCourse = await getCourseCourse(courseId);
                 if (!existingCourse) {
                     toast.error("Course not found.");
                     return;

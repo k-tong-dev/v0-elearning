@@ -93,8 +93,9 @@ function DashboardContent() {
     const editCourseId = searchParams?.get("edit")
     const [selectedTab, setSelectedTab] = useState(initialTab)
     const [showCreateCourseForm, setShowCreateCourseForm] = useState(initialCreateCourse && initialTab === 'my-courses')
+    // Accept both documentId (string) and numeric id for backward compatibility
     const [editingCourseId, setEditingCourseId] = useState<number | string | undefined>(
-        editCourseId ? (isNaN(Number(editCourseId)) ? editCourseId : Number(editCourseId)) : undefined
+        editCourseId ? editCourseId : undefined
     )
     const [isNotificationSidebarOpen, setIsNotificationSidebarOpen] = useState(false)
     const { requestReload, ReloadConfirmDialog } = useConfirmPageReload({
@@ -363,16 +364,16 @@ function DashboardContent() {
     }
 
     const handleEditCourse = (courseId: number | string) => {
-        // Ensure we always use numeric id, not documentId
-        const numericId = typeof courseId === 'string' ? Number(courseId) : courseId;
-        if (isNaN(numericId)) {
-            console.error("Invalid course ID - must be numeric:", courseId);
+        // Accept both documentId (string) and numeric id for backward compatibility
+        // documentId is preferred for Strapi v5
+        if (!courseId) {
+            console.error("Invalid course ID:", courseId);
             return;
         }
         setSelectedTab("my-courses")
         setShowCreateCourseForm(true)
-        setEditingCourseId(numericId)
-        router.push(`/dashboard?tab=my-courses&edit=${numericId}`)
+        setEditingCourseId(courseId) // Use courseId directly (can be documentId or numeric id)
+        router.push(`/dashboard?tab=my-courses&edit=${courseId}`)
     }
 
     const handleCancelCreateCourse = () => {
@@ -395,16 +396,13 @@ function DashboardContent() {
     useEffect(() => {
         const editId = searchParams?.get("edit")
         if (editId) {
-            // Only accept numeric IDs, reject documentId strings
-            const numericId = Number(editId)
-            if (isNaN(numericId)) {
-                console.error("Invalid course ID in URL - must be numeric:", editId)
-                setEditingCourseId(undefined)
-                return
-            }
-            setEditingCourseId(numericId)
+            // Accept both documentId (string) and numeric id
+            // documentId is preferred for Strapi v5
+            setEditingCourseId(editId)
             setShowCreateCourseForm(true)
+            setSelectedTab("my-courses")
         } else if (searchParams?.get("create") !== "true") {
+            // Clear editingCourseId if edit param is removed and not creating
             setEditingCourseId(undefined)
         }
     }, [searchParams])

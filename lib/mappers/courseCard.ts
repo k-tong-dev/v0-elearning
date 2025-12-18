@@ -72,7 +72,10 @@ export const mapCourseToCard = (
         contents.length ||
         0
 
+    // Use average_rating from Strapi (auto-computed) as primary source for star ratings
+    // This is calculated from all ratings with stars (1-5) in Strapi
     const ratingSource: number | undefined =
+        course.average_rating ?? // Strapi auto-computed average rating (primary source)
         (course as any).average_rating ??
         (course as any).rating ??
         (Array.isArray((course as any).ratings) && (course as any).ratings.length
@@ -80,11 +83,13 @@ export const mapCourseToCard = (
               ((course as any).ratings.length || 1)
             : undefined)
 
-    const rating = typeof ratingSource === "number" && !Number.isNaN(ratingSource) ? ratingSource : 4.5
-    const ratingCount =
+    // Default to 0 if no rating exists (instead of 4.5) - this will show "No rating" in the UI
+    const rating = typeof ratingSource === "number" && !Number.isNaN(ratingSource) && ratingSource > 0 ? ratingSource : 0
+    // Use rating_counts from Strapi (auto-computed) instead of calculating
+    const ratingCount = course.rating_counts ?? 
         (course as any).ratings_count ??
         (course as any).review_count ??
-        (Array.isArray((course as any).ratings) ? (course as any).ratings.length : undefined)
+        (Array.isArray((course as any).ratings) ? (course as any).ratings.length : 0)
 
     const priceValue = parsePriceValue(course.Price)
 
@@ -99,6 +104,7 @@ export const mapCourseToCard = (
 
     return {
         id: course.id,
+        documentId: course.documentId, // Include documentId for stable routing
         title: course.name,
         description: course.description || "No description available",
         image: course.preview_url || "/placeholder.svg",
@@ -125,6 +131,7 @@ export const mapCourseToCard = (
         educatorId: primaryInstructor?.id?.toString() || "0",
         instructors: course.instructors?.map(inst => ({
             id: inst.id?.toString() ?? `${inst.name ?? "instructor"}-${inst.id ?? ""}`,
+            documentId: inst.documentId, // Preserve documentId for Strapi v5 compatibility
             name: inst.name,
             avatar: inst.avatar,
         })),

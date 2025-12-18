@@ -222,7 +222,11 @@ export default function ShopPage() {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.05 }}
                                 className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer ${viewMode === "list" ? "flex gap-4 p-4" : "p-4"}`}
-                                onClick={() => router.push(`/courses/${course.id}`)}
+                                onClick={() => {
+                                    // Use documentId for stable routing (Strapi v5), fallback to id
+                                    const courseIdentifier = (course as any).documentId || course.id
+                                    router.push(`/courses/${courseIdentifier}`)
+                                }}
                             >
                                 <div className={viewMode === "list" ? "w-48 h-32 relative flex-shrink-0" : "aspect-video relative mb-4"}>
                                     <Image

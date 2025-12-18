@@ -21,6 +21,7 @@ import {FaRegMoneyBillAlt} from "react-icons/fa";
 
 interface InstructorSummary {
     id: string | number
+    documentId?: string // Strapi v5 uses documentId as the primary identifier
     name?: string
     avatar?: any
 }
@@ -28,7 +29,7 @@ interface InstructorSummary {
 interface CourseCardProps {
     course: {
         id: number
-        documentId?: string
+        documentId?: string // Strapi v5 documentId for stable routing
         title: string
         description: string
         image: string
@@ -57,9 +58,9 @@ interface CourseCardProps {
         course_preview?: CoursePreview | null
         is_paid?: boolean
     }
-    onCourseClick?: (courseId: number) => void
+    onCourseClick?: (courseId: string | number) => void
     onToggleFavorite?: (courseId: number, courseDocumentId?: string) => void
-    onEnrollClick?: (courseId: number) => void
+    onEnrollClick?: (courseId: string | number) => void
     onOpenWishlist?: () => void
     onAddToCart?: (courseId: number) => void
     onEdit?: (courseId: number) => void
@@ -334,7 +335,9 @@ export function CourseCard({
     
 
     const handleCardClick = () => {
-        onCourseClick?.(course.id)
+        // Use documentId for navigation if available (Strapi v5), fallback to id
+        const courseIdentifier = course.documentId || course.id
+        onCourseClick?.(courseIdentifier)
     }
 
     const handleEnrollButtonClick = (e: React.MouseEvent) => {
@@ -530,12 +533,21 @@ export function CourseCard({
                                 <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{course.students.toLocaleString()}</span>
                             </div>
                         </div>
-                        <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2 border border-amber-100 dark:border-amber-900/50">
-                            <div className="flex items-center gap-1.5">
-                                <Star className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 fill-amber-600 dark:fill-amber-400" />
-                                <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{course.rating.toFixed(1)}</span>
+                        {course.rating > 0 ? (
+                            <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2 border border-amber-100 dark:border-amber-900/50">
+                                <div className="flex items-center gap-1.5">
+                                    <Star className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 fill-amber-600 dark:fill-amber-400" />
+                                    <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{course.rating.toFixed(1)}</span>
+                                </div>
                             </div>
+                        ) : (
+                            <div className="bg-gray-50 dark:bg-gray-950/30 rounded-lg p-2 border border-gray-100 dark:border-gray-900/50">
+                                <div className="flex items-center gap-1.5">
+                                    <Star className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">No rating</span>
+                                </div>
                             </div>
+                        )}
                         </div>
 
                     {/* Badges and Tags - Improved styling */}
@@ -570,8 +582,10 @@ export function CourseCard({
                                     // Use enriched avatarUrl if available, otherwise fall back to getAvatarUrl
                                     const avatarUrl = (instructor as any).avatarUrl || getAvatarUrl(instructor.avatar)
                                     const initials = getInstructorInitials(instructor.name)
+                                    // Use documentId as key if available (more reliable for Strapi v5), otherwise fallback to id
+                                    const instructorKey = (instructor as any).documentId || instructor.id
                                     return (
-                                        <Popover key={instructor.id}>
+                                        <Popover key={instructorKey}>
                                             <PopoverTrigger asChild>
                                                 <button
                                                     type="button"

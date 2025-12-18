@@ -44,18 +44,34 @@ async function resolveDocumentIdByNumericId(
     return null;
 }
 
+export interface CourseEnrollmentWithUser extends CourseEnrollment {
+    userDetails?: {
+        id: number;
+        username?: string;
+        email?: string;
+        full_name?: string;
+        avatar?: any;
+    } | null;
+}
+
 export async function getCourseEnrollments(
     userId?: string | number,
     courseId?: string | number
 ): Promise<CourseEnrollment[]> {
     try {
         const params = new URLSearchParams();
-        params.append('populate', '*');
+        params.append('populate[0]', 'user');
+        params.append('populate[1]', 'course_course');
         
         if (userId) {
             const userDocId = await resolveDocumentIdByNumericId('users', userId);
             if (userDocId) {
                 params.append('filters[user][documentId][$eq]', userDocId);
+            } else {
+                const numericUserId = typeof userId === 'string' ? Number(userId) : userId;
+                if (!isNaN(numericUserId)) {
+                    params.append('filters[user][id][$eq]', numericUserId.toString());
+                }
             }
         }
         
@@ -63,25 +79,41 @@ export async function getCourseEnrollments(
             const courseDocId = await resolveDocumentIdByNumericId('course-courses', courseId);
             if (courseDocId) {
                 params.append('filters[course_course][documentId][$eq]', courseDocId);
+            } else {
+                const numericCourseId = typeof courseId === 'string' ? Number(courseId) : courseId;
+                if (!isNaN(numericCourseId)) {
+                    params.append('filters[course_course][id][$eq]', numericCourseId.toString());
+                }
             }
         }
 
         const response = await strapi.get(`/api/course-enrollments?${params.toString()}`);
-        return (response.data.data || []).map((item: any) => ({
-            id: item.id,
-            documentId: item.documentId,
-            user: item.user?.data?.id || item.user?.id || item.user,
-            course_course: item.course_course?.data?.id || item.course_course?.id || item.course_course,
-            enroll_status: item.enroll_status || 'active',
-            started_at: item.started_at,
-            completed_at: item.completed_at,
-            progress_percent: Number(item.progress_percent) || 0,
-            is_owner: item.is_owner || false,
-            enrolled_via: item.enrolled_via || 'free',
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt,
-            publishedAt: item.publishedAt,
-        }));
+        return (response.data.data || []).map((item: any) => {
+            const userData = item.user?.data || item.user;
+            return {
+                id: item.id,
+                documentId: item.documentId,
+                user: userData?.id || item.user,
+                course_course: item.course_course?.data?.id || item.course_course?.id || item.course_course,
+                enroll_status: item.enroll_status || 'active',
+                started_at: item.started_at,
+                completed_at: item.completed_at,
+                progress_percent: Number(item.progress_percent) || 0,
+                is_owner: item.is_owner || false,
+                enrolled_via: item.enrolled_via || 'free',
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt,
+                publishedAt: item.publishedAt,
+                // Include user details if available
+                userDetails: userData ? {
+                    id: userData.id,
+                    username: userData.username,
+                    email: userData.email,
+                    full_name: userData.full_name || userData.name,
+                    avatar: userData.avatar,
+                } : null,
+            } as CourseEnrollment & { userDetails?: any };
+        });
     } catch (error: any) {
         console.error("Error fetching course enrollments:", error?.response?.data || error?.message || error);
         return [];
@@ -135,11 +167,11 @@ export async function checkUserEnrollment(
     courseId: string | number
 ): Promise<CourseEnrollment | null> {
     try {
+        // Use getCourseEnrollments which already handles documentId resolution
         const enrollments = await getCourseEnrollments(userId, courseId);
+        // Find any active enrollment (not just matching exact IDs, since getCourseEnrollments already filters)
         const activeEnrollment = enrollments.find(
-            (e) => e.enroll_status === 'active' && 
-                   String(e.user) === String(userId) && 
-                   String(e.course_course) === String(courseId)
+            (e) => e.enroll_status === 'active' || e.enroll_status === 'completed'
         );
         return activeEnrollment || null;
     } catch (error: any) {
@@ -164,17 +196,64 @@ export async function createCourseEnrollment(
     try {
         const now = new Date().toISOString();
         
-        // Resolve documentIds for relations
-        const userDocumentId = await resolveDocumentIdByNumericId("users", data.user);
+        // Resolve documentIds for relations using Strapi v5 documentId connections
+        // For users, try multiple approaches since users-permissions plugin might have different endpoints
+        let userDocumentId: string | null = null;
+        
+        // Check if data.user is already a documentId (non-numeric string)
+        if (typeof data.user === 'string' && !/^\d+$/.test(data.user)) {
+            userDocumentId = data.user;
+        } else {
+            // First, try to get documentId from /api/users/me if we have an authenticated request
+            try {
+                const meResponse = await strapi.get('/api/users/me?fields[0]=documentId&fields[1]=id');
+                if (meResponse.data?.documentId) {
+                    const meId = meResponse.data.id;
+                    const providedUserId = typeof data.user === 'string' ? Number(data.user) : data.user;
+                    // Only use /me if the IDs match
+                    if (meId === providedUserId || String(meId) === String(providedUserId)) {
+                        userDocumentId = meResponse.data.documentId;
+                    }
+                }
+            } catch (meError) {
+                // /me endpoint might not be available, continue with other methods
+            }
+            
+            // If /me didn't work, try resolving by numeric ID
+            if (!userDocumentId) {
+                userDocumentId = await resolveDocumentIdByNumericId("users", data.user);
+            }
+            
+            // If still no documentId, try direct query with authenticated client
+            if (!userDocumentId) {
+                try {
+                    const numericUserId = typeof data.user === 'string' ? Number(data.user) : data.user;
+                    if (!isNaN(numericUserId)) {
+                        // Try with data wrapper (Strapi v5 format)
+                        const userResponse = await strapi.get(`/api/users?filters[id][$eq]=${numericUserId}&fields[0]=documentId`);
+                        const users = userResponse.data?.data || userResponse.data || [];
+                        if (Array.isArray(users) && users.length > 0) {
+                            userDocumentId = users[0].documentId || null;
+                        } else if (userResponse.data && !Array.isArray(userResponse.data) && userResponse.data.documentId) {
+                            // Handle single object response
+                            userDocumentId = userResponse.data.documentId;
+                        }
+                    }
+                } catch (directError) {
+                    console.warn("Failed to fetch user documentId via direct query:", directError);
+                }
+            }
+        }
+        
         if (!userDocumentId) {
-            console.error("Failed to resolve user documentId for enrollment creation");
-            return null;
+            console.error("Failed to resolve user documentId for enrollment creation. User ID:", data.user);
+            throw new Error("Failed to resolve user documentId. Please try again.");
         }
 
         const courseDocumentId = await resolveDocumentIdByNumericId("course-courses", data.course_course);
         if (!courseDocumentId) {
             console.error("Failed to resolve course documentId for enrollment creation");
-            return null;
+            throw new Error("Failed to resolve course documentId. Please try again.");
         }
 
         const payload: any = {
@@ -208,6 +287,21 @@ export async function createCourseEnrollment(
             publishedAt: item.publishedAt,
         };
     } catch (error: any) {
+        // Check if this is a duplicate enrollment error
+        const errorMessage = error?.response?.data?.error?.message || error?.message || '';
+        const isDuplicateError = errorMessage.toLowerCase().includes('duplicate') || 
+                                errorMessage.toLowerCase().includes('already exists') ||
+                                error?.response?.status === 400;
+        
+        if (isDuplicateError) {
+            // Try to fetch existing enrollment instead of throwing
+            console.warn("Duplicate enrollment detected, fetching existing enrollment");
+            const existingEnrollment = await checkUserEnrollment(data.user, data.course_course);
+            if (existingEnrollment) {
+                return existingEnrollment;
+            }
+        }
+        
         console.error("Error creating course enrollment:", error?.response?.data || error?.message || error);
         throw error;
     }

@@ -81,6 +81,8 @@ export interface CourseCourse {
     enrollment_limit?: number;
     can_edit_after_publish?: boolean;
     course_preview?: CoursePreview | null;
+    rating_counts?: number; // Auto-computed rating count from Strapi
+    average_rating?: number; // Auto-computed average rating from Strapi
     createdAt?: string;
     updatedAt?: string;
     publishedAt?: string | null;
@@ -98,18 +100,44 @@ function parseNumericId(value: any): number | undefined {
 }
 
 function normalizeRelationArray(relation: any): Array<{ id: number; name: string; avatar?: any; documentId?: string }> {
-    if (!relation) return []
+    if (!relation) {
+        if (process.env.NODE_ENV !== "production") {
+            console.debug("[normalizeRelationArray] Relation is null/undefined")
+        }
+        return []
+    }
+    
     const data = Array.isArray(relation) ? relation : relation.data
-    if (!Array.isArray(data)) return []
+    if (!Array.isArray(data)) {
+        if (process.env.NODE_ENV !== "production") {
+            console.debug("[normalizeRelationArray] Data is not an array:", { relation, data })
+        }
+        return []
+    }
+    
     const normalized: Array<{ id: number; name: string; avatar?: any; documentId?: string }> = []
     for (const entry of data) {
+        // Skip null/undefined entries
+        if (!entry) continue
+        
         const attributes = entry.attributes ?? {}
         const rawId = entry.id ?? entry.documentId ?? attributes.id ?? ""
         const id = parseNumericId(rawId)
-        if (id === undefined) continue
         const documentId = entry.documentId || attributes.documentId || null
+        
+        // For Strapi v5, accept entries with documentId even if id is missing
+        // This is especially important for free courses where instructors might not have numeric IDs
+        if (id === undefined && !documentId) {
+            // Skip only if both id and documentId are missing
+            if (process.env.NODE_ENV !== "production") {
+                console.debug("[normalizeRelationArray] Skipping entry - no id or documentId:", entry)
+            }
+            continue
+        }
+        
+        // Use 0 as fallback id if not available (but documentId exists)
         const normalizedEntry: { id: number; name: string; avatar?: any; documentId?: string } = {
-            id,
+            id: id ?? 0,
             name: entry.name ?? attributes.name ?? "",
         }
         // Preserve documentId if available (more reliable for deduplication)
@@ -122,6 +150,15 @@ function normalizeRelationArray(relation: any): Array<{ id: number; name: string
         }
         normalized.push(normalizedEntry)
     }
+    
+    if (process.env.NODE_ENV !== "production" && normalized.length === 0 && data.length > 0) {
+        console.warn("[normalizeRelationArray] No entries normalized from data:", { 
+            dataLength: data.length, 
+            sampleEntry: data[0],
+            relationType: Array.isArray(relation) ? "array" : typeof relation
+        })
+    }
+    
     return normalized
 }
 
@@ -171,10 +208,27 @@ function extractPreviewUrl(coursePreview: any, fallbackUrl?: string): string | u
 
 async function buildDocumentIdEntriesFromIds(
     collection: string,
-    ids: Array<number | string>,
+    ids: Array<number | string | { id?: number; documentId?: string }>,
 ): Promise<Array<{ documentId: string }>> {
     const entries: Array<{ documentId: string }> = []
     for (const raw of ids) {
+        // Handle object format: { id: 1, documentId: "..." } or { documentId: "..." }
+        if (typeof raw === 'object' && raw !== null) {
+            const docId = raw.documentId || (raw.id ? await resolveDocumentIdByNumericId(collection, raw.id) : null)
+            if (docId) {
+                entries.push({ documentId: docId })
+            }
+            continue
+        }
+        
+        // Handle string/number format
+        // If it's already a documentId (non-numeric string), use it directly
+        if (typeof raw === 'string' && !/^\d+$/.test(raw)) {
+            entries.push({ documentId: raw })
+            continue
+        }
+        
+        // Otherwise, resolve numeric ID to documentId
         const numericId = parseNumericId(raw)
         if (numericId === undefined) continue
         const docId = await resolveDocumentIdByNumericId(collection, numericId)
@@ -204,17 +258,48 @@ async function normalizeSingleRelationUpdate(
 ): Promise<any> {
     if (value === undefined) return undefined
     if (value === null) return null
+    
+    // Handle documentId directly
+    if (typeof value === 'string' && !/^\d+$/.test(value)) {
+        // It's already a documentId
+        return { connect: [{ documentId: value }] }
+    }
+    
+    // Handle numeric ID
+    if (typeof value === 'number' || (typeof value === 'string' && /^\d+$/.test(value))) {
+        const docId = await resolveDocumentIdByNumericId(collection, value)
+        if (docId) {
+            return { connect: [{ documentId: docId }] }
+        }
+        return null
+    }
+    
+    // Handle object with id or documentId (e.g., { id: 1 } or { documentId: "..." })
+    if (typeof value === 'object' && value !== null) {
+        // Handle { connect: [{ id: 1 }] } format
+        if (value.connect && Array.isArray(value.connect)) {
+            const connectEntries = value.connect.map(async (entry: any) => {
+                const docId = entry.documentId || (entry.id ? await resolveDocumentIdByNumericId(collection, entry.id) : null)
+                return docId ? { documentId: docId } : null
+            })
+            const resolved = await Promise.all(connectEntries)
+            const validEntries = resolved.filter(Boolean) as Array<{ documentId: string }>
+            return validEntries.length ? { connect: validEntries } : null
+        }
+        
+        // Handle simple object { id: 1 } or { documentId: "..." }
+        const docId = value.documentId || (value.id ? await resolveDocumentIdByNumericId(collection, value.id) : null)
+        if (docId) {
+            return { connect: [{ documentId: docId }] }
+        }
+        return null
+    }
+    
     if (Array.isArray(value)) {
         const entries = await buildDocumentIdEntriesFromIds(collection, value)
-        return entries.length ? { connect: entries } : { set: [] }
+        return entries.length ? { connect: entries } : null
     }
-    if (value.connect && Array.isArray(value.connect)) {
-        const entries = await buildDocumentIdEntriesFromIds(
-            collection,
-            value.connect.map((entry: any) => entry?.id ?? entry),
-        )
-        return entries.length ? { connect: entries } : undefined
-    }
+    
     return value
 }
 
@@ -224,34 +309,66 @@ async function normalizeMultiRelationUpdate(
 ): Promise<any> {
     if (value === undefined) return undefined
     if (value === null) return { set: [] }
+    
+    // Handle array of IDs (numeric or documentId strings or objects with id/documentId)
     if (Array.isArray(value)) {
         const entries = await buildDocumentIdEntriesFromIds(collection, value)
         return entries.length ? { connect: entries } : { set: [] }
     }
+    
+    // Handle { set: [...] } format - convert id to documentId
     if (value.set && Array.isArray(value.set)) {
         if (value.set.length === 0) {
             return { set: [] }
         }
-        const entries = await buildDocumentIdEntriesFromIds(
-            collection,
-            value.set.map((entry: any) => entry?.id ?? entry),
-        )
+        // Extract IDs from objects like { id: 1 } or use direct values
+        const ids = value.set.map((entry: any) => {
+            if (typeof entry === 'object' && entry !== null) {
+                return entry.documentId || entry.id || entry
+            }
+            return entry
+        })
+        const entries = await buildDocumentIdEntriesFromIds(collection, ids)
         return { set: entries }
     }
+    
+    // Handle { connect: [...] } format - convert id to documentId
     if (value.connect && Array.isArray(value.connect)) {
-        const entries = await buildDocumentIdEntriesFromIds(
-            collection,
-            value.connect.map((entry: any) => entry?.id ?? entry),
-        )
+        // Extract IDs from objects like { id: 1 } or use direct values
+        const ids = value.connect.map((entry: any) => {
+            if (typeof entry === 'object' && entry !== null) {
+                return entry.documentId || entry.id || entry
+            }
+            return entry
+        })
+        const entries = await buildDocumentIdEntriesFromIds(collection, ids)
         return entries.length ? { connect: entries } : undefined
     }
+    
     return value
 }
 
-async function normalizeCourseUpdatePayload(data: any): Promise<any> {
+async function normalizeCourseUpdatePayload(data: any, existingCourse?: CourseCourse | null): Promise<any> {
     if (!data || typeof data !== "object") return data
     const transformed: any = { ...data }
 
+    // Preserve existing relations if not provided in update data
+    // This ensures relations like instructors and owner are not lost during updates
+    if (existingCourse) {
+        // Preserve owner if not in update data
+        if (!Object.prototype.hasOwnProperty.call(transformed, "owner") && existingCourse.owner) {
+            // Don't add owner if it's not being updated - let Strapi preserve it
+            // Only normalize if it's explicitly being updated
+        }
+        
+        // Preserve instructors if not in update data
+        if (!Object.prototype.hasOwnProperty.call(transformed, "instructors") && existingCourse.instructors && existingCourse.instructors.length > 0) {
+            // Don't add instructors if not being updated - let Strapi preserve them
+            // Only normalize if explicitly being updated
+        }
+    }
+
+    // Normalize relations that ARE being updated (using documentId priority)
     if (Object.prototype.hasOwnProperty.call(transformed, "course_level")) {
         transformed.course_level = await normalizeSingleRelationUpdate(transformed.course_level, "course-levels")
     }
@@ -317,14 +434,67 @@ export async function getPublicCourseCourses(options: CourseFetchOptions = {}): 
 
         const response = await strapiPublic.get(url);
 
-        const normalizedCourses = (response.data.data || [])
-            .map((item: any) => {
+        // Process courses - need to use Promise.all for async fallback logic
+        const normalizedCourses = await Promise.all(
+            (response.data.data || []).map(async (item: any) => {
             const courseLevel = normalizeSingleRelation(item.course_level);
             const categories = normalizeRelationArray(item.course_categories);
             const tags = normalizeRelationArray(item.course_tages);
             const skills = normalizeRelationArray(item.relevant_skills);
             const badges = normalizeRelationArray(item.course_badges);
-            const instructorsData = normalizeRelationArray(item.instructors);
+            let instructorsData = normalizeRelationArray(item.instructors);
+            
+            // Fallback: If no instructors found and course has an owner, try to get instructor from owner
+            // This is especially important for free courses where instructors might not be properly linked
+            if ((!instructorsData || instructorsData.length === 0) && item.owner) {
+                try {
+                    const ownerData = item.owner?.data || item.owner
+                    const ownerId = typeof ownerData === 'object' ? (ownerData.id || ownerData.documentId) : ownerData
+                    
+                    if (ownerId) {
+                        // Try to find instructor by user ID
+                        const { getInstructors } = await import('./instructor')
+                        const ownerInstructors = await getInstructors(String(ownerId))
+                        
+                        if (ownerInstructors && ownerInstructors.length > 0) {
+                            // Use owner's instructor profile as fallback
+                            instructorsData = ownerInstructors.map(inst => ({
+                                id: inst.id,
+                                name: inst.name || "Unknown Instructor",
+                                avatar: inst.avatar,
+                                documentId: inst.documentId,
+                            }))
+                            
+                            if (process.env.NODE_ENV !== "production") {
+                                console.log(`[getPublicCourseCourses] Using owner instructor for course "${item.name}" (ID: ${item.id})`)
+                            }
+                        }
+                    }
+                } catch (error) {
+                    if (process.env.NODE_ENV !== "production") {
+                        console.warn(`[getPublicCourseCourses] Could not fetch instructor from owner for course ${item.id}:`, error)
+                    }
+                }
+            }
+            
+            // Debug logging for free courses with missing instructors
+            if (process.env.NODE_ENV !== "production" && (!item.is_paid || item.Price === 0)) {
+                if (!instructorsData || instructorsData.length === 0) {
+                    console.warn(`[getPublicCourseCourses] Free course "${item.name}" (ID: ${item.id}) has no instructors:`, {
+                        courseId: item.id,
+                        courseName: item.name,
+                        is_paid: item.is_paid,
+                        price: item.Price,
+                        rawInstructors: item.instructors,
+                        owner: item.owner,
+                        instructorsDataType: typeof item.instructors,
+                        instructorsDataIsArray: Array.isArray(item.instructors),
+                        instructorsDataLength: Array.isArray(item.instructors) ? item.instructors.length : 'N/A',
+                        normalizedCount: instructorsData.length
+                    })
+                }
+            }
+            
             const currencyData = item.currency?.data || item.currency;
             
             // Extract preview URL from course_preview relation based on type
@@ -392,13 +562,16 @@ export async function getPublicCourseCourses(options: CourseFetchOptions = {}): 
                 enrollment_count: item.enrollment_count,
                 enrollment_limit: item.enrollment_limit || 0,
                 can_edit_after_publish: item.can_edit_after_publish,
+                rating_counts: item.rating_counts || 0, // Use auto-computed rating count from Strapi
+                average_rating: item.average_rating ?? undefined, // Use auto-computed average rating from Strapi
                 course_preview: normalizedPreview,
                 createdAt: item.createdAt,
                 updatedAt: item.updatedAt,
                 publishedAt: item.publishedAt,
                 locale: item.locale,
             }
-        })
+            })
+        )
 
         strapiResponseCache.set(cacheKey, normalizedCourses, {
             ttlMs: cacheTtlMs,
@@ -488,6 +661,7 @@ export async function getDashboardCourseCourses(options: DashboardCourseOptions 
                 id: inst.id,
                 name: inst.name,
                 avatar: inst.avatar,
+                documentId: inst.documentId, // Preserve documentId for Strapi v5 compatibility
             })),
                 currency: currencyData
                     ? {
@@ -504,6 +678,8 @@ export async function getDashboardCourseCourses(options: DashboardCourseOptions 
             enrollment_count: item.enrollment_count,
             enrollment_limit: item.enrollment_limit || 0,
             can_edit_after_publish: item.can_edit_after_publish,
+            rating_counts: item.rating_counts || 0, // Use auto-computed rating count from Strapi
+            average_rating: item.average_rating ?? undefined, // Use auto-computed average rating from Strapi
             course_preview: normalizedPreview ?? null,
             createdAt: item.createdAt,
             updatedAt: item.updatedAt,
@@ -580,7 +756,41 @@ export async function getCourseCourse(id: string | number): Promise<CourseCourse
         const tags = normalizeRelationArray(item.course_tages);
         const skills = normalizeRelationArray(item.relevant_skills);
         const badges = normalizeRelationArray(item.course_badges);
-        const instructorsData = normalizeRelationArray(item.instructors);
+        let instructorsData = normalizeRelationArray(item.instructors);
+        
+        // Fallback: If no instructors found and course has an owner, try to get instructor from owner
+        // This is especially important for free courses where instructors might not be properly linked
+        if ((!instructorsData || instructorsData.length === 0) && item.owner) {
+            try {
+                const ownerData = item.owner?.data || item.owner
+                const ownerId = typeof ownerData === 'object' ? (ownerData.id || ownerData.documentId) : ownerData
+                
+                if (ownerId) {
+                    // Try to find instructor by user ID
+                    const { getInstructors } = await import('./instructor')
+                    const ownerInstructors = await getInstructors(String(ownerId))
+                    
+                    if (ownerInstructors && ownerInstructors.length > 0) {
+                        // Use owner's instructor profile as fallback
+                        instructorsData = ownerInstructors.map(inst => ({
+                            id: inst.id,
+                            name: inst.name || "Unknown Instructor",
+                            avatar: inst.avatar,
+                            documentId: inst.documentId,
+                        }))
+                        
+                        if (process.env.NODE_ENV !== "production") {
+                            console.log(`[getCourseCourse] Using owner instructor for course "${item.name}" (ID: ${item.id})`)
+                        }
+                    }
+                }
+            } catch (error) {
+                if (process.env.NODE_ENV !== "production") {
+                    console.warn(`[getCourseCourse] Could not fetch instructor from owner for course ${item.id}:`, error)
+                }
+            }
+        }
+        
         const currencyData = item.currency?.data || item.currency;
         
         // Get first instructor for backward compatibility
@@ -620,10 +830,13 @@ export async function getCourseCourse(id: string | number): Promise<CourseCourse
             enrollment_count: item.enrollment_count,
             enrollment_limit: item.enrollment_limit || 0,
             can_edit_after_publish: item.can_edit_after_publish,
+            rating_counts: item.rating_counts || 0, // Use auto-computed rating count from Strapi
+            average_rating: item.average_rating ?? undefined, // Use auto-computed average rating from Strapi
             instructors: instructorsData.map((inst: any) => ({
                 id: inst.id,
                 name: inst.name,
                 avatar: inst.avatar,
+                documentId: inst.documentId, // Preserve documentId for Strapi v5 compatibility
             })),
             //@ts-ignore
             course_preview: coursePreviewData ? { id: coursePreviewData.id } : null,
@@ -925,7 +1138,100 @@ export async function updateCourseCourse(id: string, data: any): Promise<CourseC
             }
         }
         
-        const normalizedData = await normalizeCourseUpdatePayload(data)
+        // Get existing course to preserve relations that aren't being updated
+        if (!existingCourse) {
+            // Try to fetch existing course if we don't have it yet
+            const numericId = typeof id === 'string' ? Number(id) : id;
+            if (!isNaN(numericId)) {
+                existingCourse = await getCourseCourse(numericId);
+            } else {
+                // If id is documentId, try fetching by documentId
+                try {
+                    const docIdResponse = await strapiPublic.get(`/api/course-courses/${id}?populate=*`);
+                    if (docIdResponse.data?.data) {
+                        const item = docIdResponse.data.data;
+                        const instructorsData = normalizeRelationArray(item.instructors);
+                        existingCourse = {
+                            id: item.id,
+                            documentId: item.documentId,
+                            name: item.name,
+                            description: item.description,
+                            Price: Number(item.Price) || 0,
+                            is_paid: item.is_paid || false,
+                            instructors: instructorsData.map((inst: any) => ({
+                                id: inst.id,
+                                name: inst.name,
+                                avatar: inst.avatar,
+                                documentId: inst.documentId,
+                            })),
+                            owner: item.owner?.data?.id || item.owner?.id || item.owner,
+                        } as CourseCourse;
+                    }
+                } catch (fetchError) {
+                    console.warn("Could not fetch existing course for relation preservation:", fetchError);
+                }
+            }
+        }
+        
+        // Merge existing relations with update data to preserve relations not being updated
+        const mergedData: any = { ...data }
+        
+        // Preserve owner if not being updated
+        // CRITICAL: If owner is not in update data, we must explicitly preserve it
+        // because Strapi v5 might clear it if not included
+        if (!Object.prototype.hasOwnProperty.call(data, "owner") && existingCourse) {
+            // Owner not being updated - preserve existing owner using documentId
+            const existingOwner = existingCourse.owner
+            if (existingOwner) {
+                // Resolve owner to documentId and preserve it
+                const ownerId = typeof existingOwner === 'object' ? existingOwner.id : existingOwner
+                if (ownerId) {
+                    const ownerDocId = await resolveDocumentIdByNumericId("users", ownerId)
+                    if (ownerDocId) {
+                        mergedData.owner = { connect: [{ documentId: ownerDocId }] }
+                        console.log("[Course Update] Preserving existing owner relation")
+                    }
+                }
+            }
+        }
+        
+        // Preserve instructors if not being updated (or if update is trying to clear them incorrectly)
+        if (existingCourse) {
+            // If instructors is being set to empty array, check if we should preserve existing
+            if (Object.prototype.hasOwnProperty.call(data, "instructors")) {
+                const instructorsValue = data.instructors
+                
+                // Check if it's trying to clear instructors with { set: [] }
+                if (instructorsValue && typeof instructorsValue === 'object') {
+                    if (instructorsValue.set && Array.isArray(instructorsValue.set) && instructorsValue.set.length === 0) {
+                        // If existing course has instructors, this would clear them
+                        // Only clear if explicitly intended (existing course has no instructors)
+                        if (existingCourse.instructors && existingCourse.instructors.length > 0) {
+                            console.warn("[Course Update] Attempting to clear instructors with empty set - preserving existing instructors. To update instructors, provide the full list.");
+                            // Don't clear - remove from update data to preserve existing instructors
+                            delete mergedData.instructors
+                        }
+                        // If existing course has no instructors, allow clearing (no-op)
+                    } else if (instructorsValue.set && Array.isArray(instructorsValue.set) && instructorsValue.set.length > 0) {
+                        // Instructors are being updated with a new list - allow it
+                        // The normalization will convert ids to documentIds
+                    } else if (instructorsValue.connect && Array.isArray(instructorsValue.connect)) {
+                        // Using connect format - allow it, normalization will handle documentId conversion
+                    }
+                } else if (Array.isArray(instructorsValue) && instructorsValue.length === 0) {
+                    // Empty array - same as { set: [] }
+                    if (existingCourse.instructors && existingCourse.instructors.length > 0) {
+                        console.warn("[Course Update] Attempting to clear instructors with empty array - preserving existing instructors.");
+                        delete mergedData.instructors
+                    }
+                }
+            } else {
+                // Instructors not in update - will be preserved by Strapi
+                // Don't add it to mergedData
+            }
+        }
+        
+        const normalizedData = await normalizeCourseUpdatePayload(mergedData, existingCourse)
         // id should be documentId, not numeric id
         const response = await strapi.put(`/api/course-courses/${id}`, {
             data: normalizedData,

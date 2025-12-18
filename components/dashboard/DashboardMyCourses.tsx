@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
     Plus, BookOpen, Video, Loader2, Edit, Eye, Search, 
-    Filter, X, ChevronDown, Tag, Award, Layers, Target
+    Filter, X, ChevronDown, Tag, Award, Layers, Target, Star, Users, Clock
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { getDashboardCourseCourses, CourseCourse } from "@/integrations/strapi/courseCourse"
@@ -315,15 +315,19 @@ export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onE
     }
 
     const handleEdit = (course: CourseCourse) => {
+        // Use documentId for stable routing (Strapi v5), fallback to id
+        const courseIdentifier = course.documentId || course.id
         if (onEditCourse) {
-            onEditCourse(course.id)
+            onEditCourse(courseIdentifier)
         } else {
-            router.push(`/dashboard?tab=my-courses&edit=${course.id}`)
+            router.push(`/dashboard?tab=my-courses&edit=${courseIdentifier}`)
         }
     }
 
     const handleView = (course: CourseCourse) => {
-        router.push(`/courses/${course.id}`)
+        // Use documentId for stable routing (Strapi v5), fallback to id
+        const courseIdentifier = course.documentId || course.id
+        router.push(`/courses/${courseIdentifier}`)
     }
 
     const clearFilters = () => {
@@ -876,21 +880,48 @@ export function DashboardMyCourses({ myCourses: propCourses, onCreateCourse, onE
                                                     );
                                                 })()}
                                             </div>
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <div className="bg-slate-50 dark:bg-white/5 backdrop-blur-sm border border-slate-200 dark:border-white/10 rounded-xl p-3 group-hover:bg-slate-100 dark:group-hover:bg-white/10 group-hover:border-blue-400 dark:group-hover:border-white/20 transition-all duration-300">
-                                                    <div className="text-xs text-slate-500 dark:text-white/50 mb-1">Enrollments</div>
-                                                    <div className="font-semibold text-slate-900 dark:text-white">{course.enrollment_count || 0}</div>
-                                                </div>
-                                                {course.duration_minutes > 0 && (
-                                                    <div className="bg-slate-50 dark:bg-white/5 backdrop-blur-sm border border-slate-200 dark:border-white/10 rounded-xl p-3 group-hover:bg-slate-100 dark:group-hover:bg-white/10 group-hover:border-blue-400 dark:group-hover:border-white/20 transition-all duration-300">
-                                                        <div className="text-xs text-slate-500 dark:text-white/50 mb-1">Duration</div>
-                                                        <div className="font-semibold text-slate-900 dark:text-white">
-                                                            {course.duration_minutes < 60 
-                                                                ? `${course.duration_minutes}m`
-                                                                : `${Math.floor(course.duration_minutes / 60)}h ${course.duration_minutes % 60}m`}
-                                                        </div>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                <div className="bg-slate-50 dark:bg-white/5 backdrop-blur-sm border border-slate-200 dark:border-white/10 rounded-xl p-2 group-hover:bg-slate-100 dark:group-hover:bg-white/10 group-hover:border-blue-400 dark:group-hover:border-white/20 transition-all duration-300">
+                                                    <div className="flex items-center gap-1 mb-1">
+                                                        <Clock className="w-3 h-3 text-slate-400 dark:text-white/50" />
+                                                        <div className="text-xs text-slate-500 dark:text-white/50">Duration</div>
                                                     </div>
-                                                )}
+                                                    <div className="font-semibold text-sm text-slate-900 dark:text-white">
+                                                        {course.duration_minutes > 0 
+                                                            ? (course.duration_minutes < 60 
+                                                                ? `${course.duration_minutes}m`
+                                                                : `${Math.floor(course.duration_minutes / 60)}h ${course.duration_minutes % 60}m`)
+                                                            : "N/A"}
+                                                    </div>
+                                                </div>
+                                                <div className="bg-slate-50 dark:bg-white/5 backdrop-blur-sm border border-slate-200 dark:border-white/10 rounded-xl p-2 group-hover:bg-slate-100 dark:group-hover:bg-white/10 group-hover:border-blue-400 dark:group-hover:border-white/20 transition-all duration-300">
+                                                    <div className="flex items-center gap-1 mb-1">
+                                                        <Users className="w-3 h-3 text-slate-400 dark:text-white/50" />
+                                                        <div className="text-xs text-slate-500 dark:text-white/50">Students</div>
+                                                    </div>
+                                                    <div className="font-semibold text-sm text-slate-900 dark:text-white">{course.enrollment_count || 0}</div>
+                                                </div>
+                                                <div className="bg-amber-50 dark:bg-amber-950/30 backdrop-blur-sm border border-amber-200 dark:border-amber-900/50 rounded-xl p-2 group-hover:bg-amber-100 dark:group-hover:bg-amber-900/40 group-hover:border-amber-400 dark:group-hover:border-amber-700 transition-all duration-300">
+                                                    <div className="flex items-center gap-1 mb-1">
+                                                        <Star className="w-3 h-3 text-amber-600 dark:text-amber-400 fill-amber-600 dark:fill-amber-400" />
+                                                        <div className="text-xs text-amber-700 dark:text-amber-300">Rating</div>
+                                                    </div>
+                                                    <div className="font-semibold text-sm text-amber-900 dark:text-amber-200">
+                                                        {(() => {
+                                                            // If we have rating counts but no average_rating, calculate or show 0
+                                                            if (course.rating_counts && course.rating_counts > 0) {
+                                                                // If average_rating exists and is valid, show it
+                                                                if (course.average_rating != null && course.average_rating >= 0) {
+                                                                    return course.average_rating.toFixed(1);
+                                                                }
+                                                                // Otherwise show 0.0 if we have ratings but no average yet
+                                                                return "0.0";
+                                                            }
+                                                            // No ratings at all
+                                                            return "No ratings";
+                                                        })()}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 

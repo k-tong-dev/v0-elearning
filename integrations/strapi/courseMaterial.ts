@@ -86,6 +86,8 @@ export interface CourseContentEntity {
   copyright_warnings?: CopyrightWarning[] | null;
   video_fingerprint?: string | null;
   copyright_check_metadata?: Record<string, unknown> | null;
+  // Certificates relation (for certificate content type)
+  certificates?: any[] | any | null;
 }
 
 /**
@@ -115,18 +117,25 @@ export async function getCourseMaterials(
   courseId: number | string
 ): Promise<CourseMaterialEntity[]> {
   try {
+    // Resolve documentId for course (Strapi v5 uses documentId for relations)
+    const courseDocumentId = await resolveDocumentIdByNumericId("course-courses", courseId);
+    
     // Use authenticated client to fetch both published and unpublished materials
     // Try authenticated first, fallback to public if needed
     let response;
+    const filterParam = courseDocumentId 
+      ? `filters[course_course][documentId][$eq]=${courseDocumentId}`
+      : `filters[course_course][id][$eq]=${courseId}`;
+    
     try {
       response = await strapi.get(
-        `/api/course-materials?filters[course_course][id][$eq]=${courseId}&sort=order_index:asc`
+        `/api/course-materials?${filterParam}&sort=order_index:asc`
       );
     } catch (error) {
       // Fallback to public client if authenticated fails
       response = await strapiPublic.get(
-      `/api/course-materials?filters[course_course][id][$eq]=${courseId}&sort=order_index:asc`
-    );
+        `/api/course-materials?${filterParam}&sort=order_index:asc`
+      );
     }
     const items = response.data?.data ?? [];
     return items.map((item: any) => ({
@@ -144,11 +153,17 @@ export async function getCourseMaterials(
   }
 }
 
-// Helper to resolve documentId from numeric ID
+// Helper to resolve documentId from numeric ID or string ID
 async function resolveDocumentIdByNumericId(
   collection: string,
-  numericId: number,
+  idOrDocumentId: number | string,
 ): Promise<string | null> {
+  // If it's already a documentId (non-numeric string), return it
+  if (typeof idOrDocumentId === 'string' && !/^\d+$/.test(idOrDocumentId)) {
+    return idOrDocumentId;
+  }
+  
+  const numericId = typeof idOrDocumentId === 'string' ? Number(idOrDocumentId) : idOrDocumentId;
   const query = [`filters[id][$eq]=${numericId}`, "fields[0]=documentId"].join("&");
   const url = `/api/${collection}?${query}`;
   const clients = [strapi, strapiPublic];
@@ -216,32 +231,80 @@ export async function updateCourseMaterial(
     order_index: number;
     is_locked: boolean;
     active: boolean;
+    course_course?: number | string; // Allow course_course to be updated if needed
   }>
 ): Promise<CourseMaterialEntity | null> {
   try {
     // In Strapi v5, PUT/DELETE operations require documentId, not numeric id
     // If numeric id is provided, fetch documentId first
     let documentId: string;
+    let existingMaterial: any = null;
     const isNumericId = typeof id === 'number' || (typeof id === 'string' && /^\d+$/.test(id));
     
     if (isNumericId) {
-      // Fetch the material to get documentId
+      // Fetch the material to get documentId and existing data
       const numericId = typeof id === 'string' ? Number(id) : id;
       const fetchResponse = await strapiPublic.get(
-        `/api/course-materials?filters[id][$eq]=${numericId}`
+        `/api/course-materials?filters[id][$eq]=${numericId}&populate=*`
       );
       const items = fetchResponse.data?.data ?? [];
       if (items.length === 0) {
         console.error("Course material not found with id:", numericId);
         return null;
       }
-      documentId = items[0].documentId;
+      existingMaterial = items[0];
+      documentId = existingMaterial.documentId;
     } else {
       documentId = id as string;
+      // Fetch existing material to preserve relations
+      try {
+        const fetchResponse = await strapiPublic.get(`/api/course-materials/${documentId}?populate=*`);
+        existingMaterial = fetchResponse.data?.data;
+      } catch (error) {
+        console.warn("Could not fetch existing material:", error);
+      }
+    }
+
+    // Prepare update data - only include fields that are being updated
+    const updateData: any = {}
+    
+    // Only include fields that are actually being updated
+    if (data.name !== undefined) updateData.name = data.name
+    if (data.description !== undefined) updateData.description = data.description
+    if (data.order_index !== undefined) updateData.order_index = data.order_index
+    if (data.is_locked !== undefined) updateData.is_locked = data.is_locked
+    if (data.active !== undefined) updateData.active = data.active
+    
+    // Handle course_course relation - preserve if not being updated, use documentId if updating
+    if (data.course_course !== undefined) {
+      if (data.course_course) {
+        const courseDocId = await resolveDocumentIdByNumericId("course-courses", data.course_course);
+        if (courseDocId) {
+          updateData.course_course = { connect: [{ documentId: courseDocId }] };
+        } else {
+          console.warn("Could not resolve course_course documentId, preserving existing relation");
+          // Don't update if we can't resolve - preserve existing
+        }
+      } else {
+        updateData.course_course = null;
+      }
+    } else {
+      // course_course not in update data - preserve existing relation
+      // Fetch existing material's course_course and preserve it
+      if (existingMaterial && existingMaterial.course_course) {
+        const existingCourseId = existingMaterial.course_course?.data?.id || existingMaterial.course_course?.id || existingMaterial.course_course
+        if (existingCourseId) {
+          const courseDocId = await resolveDocumentIdByNumericId("course-courses", existingCourseId)
+          if (courseDocId) {
+            updateData.course_course = { connect: [{ documentId: courseDocId }] }
+            console.log("[Course Material Update] Preserving existing course_course relation")
+          }
+        }
+      }
     }
 
     const response = await strapi.put(`/api/course-materials/${documentId}`, {
-      data,
+      data: updateData,
     });
 
     const item = response.data?.data;
@@ -370,9 +433,9 @@ export async function getCourseContentsForMaterial(
     // Populate instructor only - media fields are no longer used (we use url field for all content)
     // Try authenticated first, fallback to public if needed
     let response;
-    // Only populate instructor - media fields (video, document, audio, images) are not populated
-    // as we now use the url field for all content types
-    const populateQuery = "populate[instructor][fields][0]=id";
+    // Populate instructor and certificates relations
+    // Certificates relation is needed for certificate content type
+    const populateQuery = "populate[0]=instructor&populate[1]=certificates";
     try {
       response = await strapi.get(
         `/api/course-contents?filters[course_material][id][$eq]=${materialId}&sort=order_index:asc&${populateQuery}`
@@ -394,6 +457,18 @@ export async function getCourseContentsForMaterial(
           instructorId = typeof item.instructor.id === 'number' ? item.instructor.id : Number(item.instructor.id);
         } else if (item.instructor.data?.id) {
           instructorId = typeof item.instructor.data.id === 'number' ? item.instructor.data.id : Number(item.instructor.data.id);
+        }
+      }
+      
+      // Extract certificates relation - handle both array and single object
+      let certificates: any = null;
+      if (item.certificates) {
+        if (Array.isArray(item.certificates)) {
+          certificates = item.certificates.length > 0 ? item.certificates : null;
+        } else if (item.certificates.data) {
+          certificates = Array.isArray(item.certificates.data) ? item.certificates.data : [item.certificates.data];
+        } else {
+          certificates = [item.certificates];
         }
       }
       
@@ -420,6 +495,8 @@ export async function getCourseContentsForMaterial(
         images: item.images?.data || item.images || null,
         // Copyright information component
         copyright_information: item.copyright_information ?? null,
+        // Certificates relation (for certificate content type)
+        certificates: certificates,
       };
     });
   } catch (error) {
@@ -667,7 +744,24 @@ export async function updateCourseContentForMaterial(
     const mediaField = contentType ? mediaFieldMap[contentType] : null;
     
     // Handle relations properly for Strapi v5 - use documentId for UPDATE operations
-    const updateData: any = { ...data };
+    // Only include fields that are actually being updated to preserve existing relations
+    const updateData: any = {};
+    
+    // Copy only fields that are explicitly being updated
+    const fieldsToUpdate = [
+      'name', 'type', 'order_index', 'is_preview', 'estimated_minutes', 
+      'duration_seconds', 'can_track_progress', 'url', 'url_provider', 
+      'url_metadata', 'url_checked_at', 'article',
+      'copyright_check_status', 'copyright_check_result', 'copyright_check_date',
+      'copyright_check_provider', 'copyright_violations', 'copyright_warnings',
+      'video_fingerprint', 'copyright_check_metadata'
+    ];
+    
+    for (const field of fieldsToUpdate) {
+      if (data[field as keyof typeof data] !== undefined) {
+        updateData[field] = data[field as keyof typeof data];
+      }
+    }
     
     // Attach media file to appropriate field if file ID is provided
     // In Strapi v5, media fields must use connect syntax for updates
@@ -688,12 +782,65 @@ export async function updateCourseContentForMaterial(
       }
     }
     
+    // Fetch existing content to preserve relations that aren't being updated
+    let existingContent: any = null;
+    try {
+      const existingResponse = await strapiPublic.get(`/api/course-contents/${documentId}?populate=*`);
+      existingContent = existingResponse.data?.data;
+    } catch (error) {
+      console.warn("Could not fetch existing content for relation preservation:", error);
+    }
+    
+    // Handle course_material relation - preserve if not being updated, use documentId if updating
     if (data.course_material !== undefined) {
-      const materialDocId = await resolveDocumentIdByNumericId("course-materials", data.course_material);
-      if (materialDocId) {
-        updateData.course_material = { connect: [{ documentId: materialDocId }] };
+      if (data.course_material) {
+        const materialDocId = await resolveDocumentIdByNumericId("course-materials", data.course_material);
+        if (materialDocId) {
+          updateData.course_material = { connect: [{ documentId: materialDocId }] };
+        } else {
+          console.warn("Could not resolve course_material documentId, preserving existing relation");
+          // Don't update if we can't resolve - preserve existing
+          if (existingContent && existingContent.course_material) {
+            const existingMaterialId = existingContent.course_material?.data?.id || existingContent.course_material?.id || existingContent.course_material
+            if (existingMaterialId) {
+              const existingMaterialDocId = await resolveDocumentIdByNumericId("course-materials", existingMaterialId)
+              if (existingMaterialDocId) {
+                updateData.course_material = { connect: [{ documentId: existingMaterialDocId }] }
+                console.log("[Course Content Update] Preserving existing course_material relation")
+              }
+            }
+          }
+        }
       } else {
         updateData.course_material = null;
+      }
+    } else {
+      // course_material not in update data - preserve existing relation
+      if (existingContent && existingContent.course_material) {
+        const existingMaterialId = existingContent.course_material?.data?.id || existingContent.course_material?.id || existingContent.course_material
+        if (existingMaterialId) {
+          const existingMaterialDocId = await resolveDocumentIdByNumericId("course-materials", existingMaterialId)
+          if (existingMaterialDocId) {
+            updateData.course_material = { connect: [{ documentId: existingMaterialDocId }] }
+            console.log("[Course Content Update] Preserving existing course_material relation")
+          }
+        }
+      }
+    }
+    
+    // Handle course_course relation if it exists on course content - preserve if not being updated
+    // Note: course_course might not be a direct relation on course_content, but preserve if it exists
+    if (existingContent && existingContent.course_course) {
+      // Only preserve if not being updated
+      if (data.course_course === undefined) {
+        const existingCourseId = existingContent.course_course?.data?.id || existingContent.course_course?.id || existingContent.course_course
+        if (existingCourseId) {
+          const existingCourseDocId = await resolveDocumentIdByNumericId("course-courses", existingCourseId)
+          if (existingCourseDocId) {
+            updateData.course_course = { connect: [{ documentId: existingCourseDocId }] }
+            console.log("[Course Content Update] Preserving existing course_course relation")
+          }
+        }
       }
     }
     if (data.instructor !== undefined) {

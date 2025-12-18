@@ -1134,7 +1134,9 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                                                                 className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl transition-all cursor-pointer group"
                                                                 onClick={() => {
                                                                     onClose()
-                                                                    router.push(`/courses/${course.id}`)
+                                                                    // Use documentId for stable routing (Strapi v5), fallback to id
+                                                                    const courseIdentifier = course.documentId || course.id
+                                                                    router.push(`/courses/${courseIdentifier}`)
                                                                 }}
                                                             >
                                                                 <div className="relative aspect-video overflow-hidden bg-slate-100 dark:bg-slate-800">

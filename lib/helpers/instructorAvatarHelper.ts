@@ -7,8 +7,8 @@ import { getInstructor } from "@/integrations/strapi/instructor"
  * @returns Enriched instructors with properly resolved avatar URLs
  */
 export async function enrichInstructorsWithAvatars(
-    instructors: Array<{ id: string | number; name?: string; avatar?: any }>
-): Promise<Array<{ id: string | number; name?: string; avatar?: any; avatarUrl?: string | null }>> {
+    instructors: Array<{ id: string | number; documentId?: string; name?: string; avatar?: any }>
+): Promise<Array<{ id: string | number; documentId?: string; name?: string; avatar?: any; avatarUrl?: string | null }>> {
     if (!instructors || instructors.length === 0) {
         return []
     }
@@ -16,12 +16,16 @@ export async function enrichInstructorsWithAvatars(
     // Fetch full instructor data in parallel
     const enrichedPromises = instructors.map(async (instructor) => {
         try {
+            // Use documentId if available (more reliable for Strapi v5), otherwise fallback to id
+            const instructorIdentifier = (instructor as any).documentId || instructor.id
+            
             // Fetch full instructor data from the instructor API
-            const fullInstructor = await getInstructor(instructor.id, false)
+            const fullInstructor = await getInstructor(instructorIdentifier, false)
             
             if (!fullInstructor) {
                 return {
                     ...instructor,
+                    documentId: instructor.documentId, // Preserve documentId
                     avatarUrl: getAvatarUrl(instructor.avatar),
                 }
             }
@@ -31,15 +35,17 @@ export async function enrichInstructorsWithAvatars(
 
             return {
                 id: instructor.id,
+                documentId: fullInstructor.documentId || instructor.documentId, // Preserve documentId from fetched instructor
                 name: instructor.name || fullInstructor.name,
                 avatar: fullInstructor.avatar,
                 avatarUrl,
             }
         } catch (error) {
-            console.warn(`Failed to fetch instructor ${instructor.id}:`, error)
+            console.warn(`Failed to fetch instructor ${(instructor as any).documentId || instructor.id}:`, error)
             // Fallback to original avatar data
             return {
                 ...instructor,
+                documentId: instructor.documentId, // Preserve documentId
                 avatarUrl: getAvatarUrl(instructor.avatar),
             }
         }

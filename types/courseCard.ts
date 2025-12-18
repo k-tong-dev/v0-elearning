@@ -2,6 +2,7 @@ export type CoursePreviewType = "image" | "video" | "url"
 
 export interface CourseInstructorInfo {
     id: string
+    documentId?: string // Strapi v5 uses documentId as the primary identifier
     name?: string
     avatar?: any
 }
@@ -13,6 +14,7 @@ export interface CoursePreviewMeta {
 
 export interface CourseCardData {
     id: number
+    documentId?: string // Strapi v5 documentId for stable routing
     title: string
     description: string
     image: string

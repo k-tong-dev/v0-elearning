@@ -876,12 +876,12 @@ export default function CoursesPage() {
         resetPagination()
     }
 
-    const handleCourseClick = (courseId: number) => {
+    const handleCourseClick = (courseId: string | number) => {
         console.log('Course card clicked - navigating to course detail:', courseId)
         router.push(`/courses/${courseId}`)
     }
 
-    const handleEnrollClick = (courseId: number) => {
+    const handleEnrollClick = (courseId: string | number) => {
         console.log('Enroll button clicked - starting enrollment process:', courseId)
         router.push(`/courses/${courseId}`)
     }

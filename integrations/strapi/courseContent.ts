@@ -1,10 +1,16 @@
 import { strapiPublic, strapi } from './client';
 
-// Helper to resolve documentId from numeric ID
+// Helper to resolve documentId from numeric ID or string ID
 async function resolveDocumentIdByNumericId(
     collection: string,
-    numericId: number,
+    idOrDocumentId: number | string,
 ): Promise<string | null> {
+    // If it's already a documentId (non-numeric string), return it
+    if (typeof idOrDocumentId === 'string' && !/^\d+$/.test(idOrDocumentId)) {
+        return idOrDocumentId;
+    }
+    
+    const numericId = typeof idOrDocumentId === 'string' ? Number(idOrDocumentId) : idOrDocumentId;
     const query = [`filters[id][$eq]=${numericId}`, "fields[0]=documentId"].join("&");
     const url = `/api/${collection}?${query}`;
     const clients = [strapi, strapiPublic];
@@ -194,12 +200,73 @@ export async function createCourseContent(data: Partial<CourseContent> & { name:
     }
 }
 
+// Helper to resolve documentId from numeric ID
+async function resolveDocumentIdByNumericId(
+    collection: string,
+    idOrDocumentId: number | string,
+): Promise<string | null> {
+    // If it's already a documentId (non-numeric string), return it
+    if (typeof idOrDocumentId === 'string' && !/^\d+$/.test(idOrDocumentId)) {
+        return idOrDocumentId;
+    }
+    
+    const numericId = typeof idOrDocumentId === 'string' ? Number(idOrDocumentId) : idOrDocumentId;
+    const query = [`filters[id][$eq]=${numericId}`, "fields[0]=documentId"].join("&");
+    const url = `/api/${collection}?${query}`;
+    const clients = [strapi, strapiPublic];
+    for (const client of clients) {
+        try {
+            const response = await client.get(url);
+            const items = response.data?.data ?? [];
+            if (items.length > 0) {
+                return items[0].documentId;
+            }
+        } catch (error) {
+            console.warn(`Failed to resolve documentId for ${collection}`, error);
+        }
+    }
+    return null;
+}
+
 // Note: In Strapi v5, PUT/DELETE operations require documentId (string), not numeric id
 export async function updateCourseContent(id: string, data: Partial<CourseContent>): Promise<CourseContent | null> {
     try {
+        // Prepare update data - only include fields that are being updated
+        // This ensures relations like course_course are preserved if not being updated
+        const updateData: any = {};
+        
+        // Only include fields that are explicitly being updated
+        const allowedFields = [
+            'name', 'is_paid', 'price', 'currency', 'preview_duration',
+            'purchase_count', 'revenue_generated'
+        ];
+        
+        for (const field of allowedFields) {
+            if (data[field as keyof typeof data] !== undefined) {
+                updateData[field] = data[field as keyof typeof data];
+            }
+        }
+        
+        // Handle course_course relation if being updated - use documentId
+        if (data.course_course !== undefined) {
+            if (data.course_course) {
+                const courseDocId = await resolveDocumentIdByNumericId("course-courses", data.course_course);
+                if (courseDocId) {
+                    updateData.course_course = { connect: [{ documentId: courseDocId }] };
+                } else {
+                    console.warn("Could not resolve course_course documentId, preserving existing relation");
+                    // Don't update if we can't resolve - preserve existing
+                    delete updateData.course_course;
+                }
+            } else {
+                updateData.course_course = null;
+            }
+        }
+        // If course_course is not in update data, don't include it - Strapi will preserve existing relation
+        
         // id should be documentId, not numeric id
         const response = await strapi.put(`/api/course-contents/${id}`, {
-            data
+            data: updateData
         });
         
         const item = response.data.data;

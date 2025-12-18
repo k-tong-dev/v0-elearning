@@ -107,7 +107,8 @@ export default function WishlistPage() {
         }
     }
 
-    const handleNavigate = (courseId: number) => {
+    const handleNavigate = (courseId: string | number) => {
+        // courseId can be documentId (string) or numeric id
         router.push(`/courses/${courseId}`)
     }
 

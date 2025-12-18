@@ -88,12 +88,12 @@ const courses = [
 export function CoursesSection() {
   const router = useRouter()
   
-  const handleCourseClick = (courseId: number) => {
+  const handleCourseClick = (courseId: string | number) => {
     console.log('Course card clicked - navigating to course detail:', courseId)
     router.push(`/courses/${courseId}`)
   }
 
-  const handleEnrollClick = (courseId: number) => {
+  const handleEnrollClick = (courseId: string | number) => {
     console.log('Enroll button clicked - starting enrollment process:', courseId)
     // For now, we'll also navigate to the course detail page
     // In a real app, this might open a payment modal or enrollment flow
