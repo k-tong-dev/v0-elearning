@@ -345,27 +345,60 @@ async function resolveDocumentIdByNumericId(
     }
     
     const numericId = typeof idOrDocumentId === 'string' ? Number(idOrDocumentId) : idOrDocumentId;
+    
+    // Special handling for users collection - try /api/users/me first
+    if (collection === "users") {
+        try {
+            const meResponse = await strapi.get('/api/users/me?fields[0]=documentId&fields[1]=id');
+            if (meResponse.data?.documentId) {
+                const meId = meResponse.data.id;
+                // Only use /me if the IDs match
+                if (meId === numericId || String(meId) === String(numericId)) {
+                    return meResponse.data.documentId;
+                }
+            }
+        } catch (meError) {
+            // /me endpoint might not be available, continue with other methods
+            console.warn("Failed to fetch user documentId via /api/users/me:", meError);
+        }
+    }
+    
     const query = [`filters[id][$eq]=${numericId}`, "fields[0]=documentId"].join("&");
     const url = `/api/${collection}?${query}`;
-    const clients = [strapi, strapiPublic];
-    for (const client of clients) {
+    
+    // Try authenticated client first (for users, this is required)
+    try {
+        const response = await strapi.get(url);
+        const items = response.data?.data ?? [];
+        if (items.length > 0) {
+            return items[0].documentId;
+        }
+    } catch (error: any) {
+        // For users, don't try public client (it will always fail with 401)
+        if (collection === "users") {
+            console.warn(`Failed to resolve documentId for ${collection} (authenticated request failed):`, error?.response?.status || error?.message);
+            return null;
+        }
+        
+        // For other collections, try public client as fallback
         try {
-            const response = await client.get(url);
+            const response = await strapiPublic.get(url);
             const items = response.data?.data ?? [];
             if (items.length > 0) {
                 return items[0].documentId;
             }
-        } catch (error) {
-            console.warn(`Failed to resolve documentId for ${collection}`, error);
+        } catch (publicError) {
+            console.warn(`Failed to resolve documentId for ${collection} (public request also failed):`, publicError);
         }
     }
+    
     return null;
 }
 
 export async function createUserSubscription(
     userId: string,
     subscriptionId: string | number,
-    data?: Partial<UserSubscription>
+    data?: Partial<UserSubscription> & { userDocumentId?: string }
 ): Promise<UserSubscription | null> {
     try {
         const now = new Date();
@@ -373,8 +406,15 @@ export async function createUserSubscription(
         nextBilling.setMonth(nextBilling.getMonth() + 1); // Default: 1 month from now
         
         // Resolve documentIds for relations to ensure Strapi Admin UI displays them
-        const userIdNum = typeof userId === 'string' ? Number(userId) : userId;
-        const userDocumentId = await resolveDocumentIdByNumericId("users", userIdNum);
+        // Use provided userDocumentId if available, otherwise resolve it
+        let userDocumentId: string | null = null;
+        if (data?.userDocumentId) {
+            userDocumentId = data.userDocumentId;
+        } else {
+            const userIdNum = typeof userId === 'string' ? Number(userId) : userId;
+            userDocumentId = await resolveDocumentIdByNumericId("users", userIdNum);
+        }
+        
         if (!userDocumentId) {
             console.error("Failed to resolve user documentId for subscription creation");
             return null;
@@ -577,7 +617,8 @@ export async function getMissingFreePlans(userId: string | number): Promise<Subs
 // Create user subscriptions for free plans and update user fields
 export async function createFreePlanSubscriptions(
     userId: string | number,
-    planIds: (string | number)[]
+    planIds: (string | number)[],
+    options?: { userDocumentId?: string }
 ): Promise<{ success: boolean; message: string }> {
     try {
         // Get the plans to create subscriptions for
@@ -590,12 +631,45 @@ export async function createFreePlanSubscriptions(
             return { success: false, message: "No valid plans found" };
         }
 
+        // Try to get user documentId first to avoid 401 errors
+        // Use provided userDocumentId if available, otherwise try to fetch it
+        let userDocumentId: string | null = options?.userDocumentId || null;
+        
+        if (!userDocumentId) {
+            try {
+                // First try /api/users/me if available
+                const { strapi } = await import('./client');
+                try {
+                    const meResponse = await strapi.get('/api/users/me?fields[0]=documentId&fields[1]=id');
+                    if (meResponse.data?.documentId) {
+                        const meId = meResponse.data.id;
+                        const userIdNum = typeof userId === 'string' ? Number(userId) : userId;
+                        // Only use /me if the IDs match
+                        if (meId === userIdNum || String(meId) === String(userIdNum)) {
+                            userDocumentId = meResponse.data.documentId;
+                        }
+                    }
+                } catch (meError) {
+                    // /me endpoint might not be available, continue with other methods
+                }
+                
+                // If /me didn't work, try resolving by numeric ID
+                if (!userDocumentId) {
+                    userDocumentId = await resolveDocumentIdByNumericId("users", userId);
+                }
+            } catch (error) {
+                console.warn("Failed to pre-fetch user documentId, will try during subscription creation:", error);
+            }
+        }
+        
         // Create user subscriptions - use numeric ID for relations (Strapi requires numeric IDs for relations)
         const subscriptionPromises = validPlans.map(plan => {
             // Use numeric ID for the relation, not documentId
+            // Pass userDocumentId if we have it to avoid another API call
             return createUserSubscription(String(userId), plan.id, {
                 state: 'active',
                 auto_renew: false, // Free plans don't auto-renew
+                userDocumentId: userDocumentId || undefined, // Pass if available
             });
         });
 

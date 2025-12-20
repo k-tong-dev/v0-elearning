@@ -493,8 +493,7 @@ export default function CourseStudyPage() {
             // 3. estimated_minutes > 0
             // 4. Content is NOT Quiz or Certificate (these complete based on answers, not time)
             // 5. User is authenticated and enrolled
-            const isQuizOrCert = selectedContent.type?.toLowerCase().includes('quiz') || 
-                               selectedContent.type?.toLowerCase().includes('certificate')
+            // Note: isQuizOrCert is already declared above (line 437), reusing it here
             
             // CRITICAL: Triple-check completion status before starting tracking
             // Check completedContents set (synchronous check)

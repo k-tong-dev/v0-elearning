@@ -90,7 +90,10 @@ export function FreePlanAgreementPopup({
         try {
             // Use numeric ID for relations (Strapi requires numeric IDs for relations)
             const planIds = plans.map(p => p.id)
-            const result = await createFreePlanSubscriptions(user.id, planIds)
+            // Pass user documentId if available to avoid 401 errors
+            const result = await createFreePlanSubscriptions(user.id, planIds, {
+                userDocumentId: user.documentId || undefined
+            })
 
             if (result.success) {
                 toast.success(result.message || "Free plans activated successfully!", {
