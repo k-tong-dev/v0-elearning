@@ -228,6 +228,50 @@ export async function getUserSubscription(userId: string | number): Promise<User
     }
 }
 
+/**
+ * Get the highest tax percentage from user's active subscriptions
+ * This tax is used as platform commission for course purchases
+ * @param userId - User ID
+ * @returns Tax percentage (0 if no active subscription or no tax)
+ */
+export async function getUserSubscriptionTax(userId: string | number): Promise<number> {
+    try {
+        const subscriptions = await getAllUserSubscriptions(userId);
+        
+        // Filter only active subscriptions
+        const activeSubscriptions = subscriptions.filter(sub => sub.state === 'active');
+        
+        if (activeSubscriptions.length === 0) {
+            // No active subscription - use default platform fee from env
+            return parseFloat(process.env.PLATFORM_FEE_PERCENT || '10');
+        }
+        
+        // Get all tax percentages from active subscriptions
+        const taxPercentages: number[] = [];
+        
+        for (const userSub of activeSubscriptions) {
+            if (userSub.subscription && typeof userSub.subscription === 'object') {
+                const subscription = userSub.subscription as Subscription;
+                if (subscription.subscription_tax?.price) {
+                    taxPercentages.push(Number(subscription.subscription_tax.price));
+                }
+            }
+        }
+        
+        // If no tax found in subscriptions, use default
+        if (taxPercentages.length === 0) {
+            return parseFloat(process.env.PLATFORM_FEE_PERCENT || '10');
+        }
+        
+        // Return the biggest tax percentage (highest commission)
+        return Math.max(...taxPercentages);
+    } catch (error) {
+        console.error("Error fetching user subscription tax:", error);
+        // Fallback to default platform fee
+        return parseFloat(process.env.PLATFORM_FEE_PERCENT || '10');
+    }
+}
+
 // Get all user subscriptions (all states)
 export async function getAllUserSubscriptions(userId: string | number): Promise<UserSubscription[]> {
     try {

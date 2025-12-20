@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Play, Pause, Volume2, VolumeX, ArrowRight } from "lucide-react"
+import { Play, Pause, Volume2, VolumeX, ArrowRight, Sparkles, BookOpen, Users, Award, TrendingUp } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 interface CourseCard {
@@ -32,6 +32,13 @@ const courseCards: CourseCard[] = [
         gradient: "from-gray-400 to-gray-600",
         icon: "💼",
     },
+]
+
+const stats = [
+    { icon: Users, value: "10K+", label: "Active Learners" },
+    { icon: BookOpen, value: "500+", label: "Courses" },
+    { icon: Award, value: "50+", label: "Instructors" },
+    { icon: TrendingUp, value: "98%", label: "Success Rate" },
 ]
 
 export function HeroSectionModern() {
@@ -74,66 +81,85 @@ export function HeroSectionModern() {
             />
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 py-20">
-                <div className="grid lg:grid-cols-2 gap-12 items-center">
-                    {/* Left Side - Heading */}
+                <div className="max-w-5xl mx-auto text-center">
+                    {/* Main Heading */}
                     <motion.div
-                        initial={{ opacity: 0, x: -50 }}
-                        animate={{ opacity: 1, x: 0 }}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
-                        className="space-y-8"
+                        className="space-y-8 mb-16"
                     >
-                        <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold text-slate-900 dark:text-white leading-tight">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 mb-6">
+                            <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                                Transform Your Career Today
+                            </span>
+                        </div>
+                        
+                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-slate-900 dark:text-white leading-tight">
                             Keep Learning<br />
-                            On Track
+                            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                                On Track
+                            </span>
                         </h1>
                         
-                        <div className="space-y-6">
-                            <p className="text-lg md:text-xl text-slate-600 dark:text-gray-300 leading-relaxed max-w-lg">
-                                Elevate your management skills with our cutting-edge courses. Join Our Courses for Comprehensive Learning.
-                            </p>
-                            
+                        <p className="text-xl md:text-2xl text-slate-600 dark:text-gray-300 leading-relaxed max-w-3xl mx-auto">
+                            Elevate your management skills with our cutting-edge courses. Join thousands of learners on their journey to success.
+                        </p>
+                        
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
                             <Button
                                 onClick={() => router.push("/courses")}
                                 size="lg"
-                                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-8 py-6 text-lg rounded-full shadow-lg shadow-blue-500/30"
+                                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-8 py-6 text-lg rounded-full shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300"
                             >
-                                Start Now
+                                Start Learning Now
                                 <ArrowRight className="ml-2 w-5 h-5" />
+                            </Button>
+                            <Button
+                                onClick={() => router.push("/courses")}
+                                size="lg"
+                                variant="outline"
+                                className="px-8 py-6 text-lg rounded-full border-2 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all duration-300"
+                            >
+                                Explore Courses
                             </Button>
                         </div>
                     </motion.div>
 
-                    {/* Right Side - Course Cards Preview */}
+                    {/* Stats Section */}
                     <motion.div
-                        initial={{ opacity: 0, x: 50 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.8, delay: 0.3 }}
-                        className="relative flex items-center justify-center"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mt-16"
                     >
-                        <div className="w-full max-w-2xl">
-                            {/* Statistics Section */}
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.8, delay: 0.6 }}
-                                className="mb-12 flex items-center gap-6"
-                            >
-                                <div className="text-6xl font-bold text-slate-900 dark:text-white">1.2K</div>
-                                <div className="flex -space-x-3">
-                                    {[1, 2, 3].map((i) => (
-                                        <div
-                                            key={i}
-                                            className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-sm font-bold text-white shadow-lg"
-                                        >
-                                            {String.fromCharCode(64 + i)}
+                        {stats.map((stat, index) => {
+                            const Icon = stat.icon
+                            return (
+                                <motion.div
+                                    key={stat.label}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
+                                    className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300 hover:shadow-lg"
+                                >
+                                    <div className="flex flex-col items-center text-center space-y-3">
+                                        <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                                            <Icon className="w-6 h-6" />
                                         </div>
-                                    ))}
-                                </div>
-                                <p className="text-slate-600 dark:text-gray-300 text-base max-w-xs">
-                                    Total number of users completed the training.
-                                </p>
-                            </motion.div>
-                        </div>
+                                        <div>
+                                            <div className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
+                                                {stat.value}
+                                            </div>
+                                            <div className="text-sm text-slate-600 dark:text-gray-400 mt-1">
+                                                {stat.label}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )
+                        })}
                     </motion.div>
                 </div>
 
@@ -192,41 +218,6 @@ export function HeroSectionModern() {
                         ))}
                     </div>
 
-                    {/* Statistics Section - Liquid Glass */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 1 }}
-                        className="mt-16"
-                    >
-                        <div className="liquid-glass-card p-6 max-w-2xl">
-                                    <div className="flex items-center gap-6 flex-wrap">
-                                <div>
-                                    <div className="text-6xl font-bold bg-gradient-to-r from-blue-400 to-blue-500 bg-clip-text text-transparent">1.2K</div>
-                                    <p className="text-slate-600 dark:text-gray-400 text-xs mt-1">Active Learners</p>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex -space-x-3">
-                                        {[1, 2, 3].map((i) => (
-                                            <motion.div
-                                                key={i}
-                                                initial={{ opacity: 0, scale: 0 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                transition={{ delay: 1.1 + i * 0.1 }}
-                                                className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-500 border-2 border-white dark:border-slate-900 flex items-center justify-center text-sm font-bold text-white shadow-lg cursor-pointer hover:scale-110 transition-transform"
-                                            >
-                                                {String.fromCharCode(64 + i)}
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-600 dark:text-gray-400">
-                                        <Play className="w-4 h-4" />
-                                        <span className="text-sm">+234 joined this week</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
                 </motion.div>
             </div>
 

@@ -37,6 +37,7 @@ import { PreferToLearnsManagement } from "@/components/dashboard/profile-setting
 import { ProfileHeaderDisplay } from "@/components/dashboard/profile-settings/ProfileHeaderDisplay"
 import { ConnectedDevices } from "@/components/dashboard/profile-settings/ConnectedDevices"
 import { AccountDeletion } from "@/components/dashboard/profile-settings/AccountDeletion"
+import { PaymentMethodsManager } from "@/components/dashboard/PaymentMethodsManager"
 import { FaRegUser, FaCog, FaCrown, FaDesktop, FaTrash } from "react-icons/fa"
 import { motion } from "framer-motion"
 import { useAuth } from "@/hooks/use-auth"

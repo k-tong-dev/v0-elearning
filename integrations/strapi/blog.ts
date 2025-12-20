@@ -125,6 +125,14 @@ export async function getBlogPostById(id: string | number): Promise<BlogPost | n
         // Check if id is numeric or a slug
         const isNumericId = typeof id === 'number' || (typeof id === 'string' && /^\d+$/.test(id));
         
+        // Check if it looks like a documentId (UUID format with hyphens)
+        const looksLikeDocumentId = typeof id === 'string' && id.includes('-') && id.length > 20;
+        
+        // If it looks like a documentId, use the documentId endpoint
+        if (looksLikeDocumentId) {
+            return await getBlogPostByDocumentId(id);
+        }
+        
         // If it's not numeric, try fetching by slug first
         if (!isNumericId) {
             return await getBlogPostBySlug(String(id));
@@ -139,10 +147,26 @@ export async function getBlogPostById(id: string | number): Promise<BlogPost | n
         populateParams.append('populate[4]', 'SEO');
         populateParams.append('populate[5]', 'SEO.ogImage');
         
-        const response = await strapiPublic.get(`/api/blog-posts/${id}?${populateParams.toString()}`);
-        const item = response.data.data;
-        if (!item) return null;
-        return mapBlogPost(item);
+        // For numeric IDs, try to resolve to documentId first for Strapi v5 compatibility
+        // If that fails, fall back to numeric ID
+        try {
+            const response = await strapiPublic.get(`/api/blog-posts/${id}?${populateParams.toString()}`);
+            const item = response.data.data;
+            if (!item) return null;
+            return mapBlogPost(item);
+        } catch (numericError: any) {
+            // If numeric ID fails with 404, try to resolve to documentId
+            if (numericError.response?.status === 404) {
+                const docIdResponse = await strapiPublic.get(`/api/blog-posts?filters[id][$eq]=${id}&fields[0]=documentId`);
+                if (docIdResponse.data?.data && docIdResponse.data.data.length > 0) {
+                    const documentId = docIdResponse.data.data[0].documentId;
+                    if (documentId) {
+                        return await getBlogPostByDocumentId(documentId);
+                    }
+                }
+            }
+            throw numericError;
+        }
     } catch (error) {
         console.error("Error fetching blog post by id:", error);
         return null;

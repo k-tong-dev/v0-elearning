@@ -433,9 +433,16 @@ export async function getCourseContentsForMaterial(
     // Populate instructor only - media fields are no longer used (we use url field for all content)
     // Try authenticated first, fallback to public if needed
     let response;
-    // Populate instructor and certificates relations
-    // Certificates relation is needed for certificate content type
-    const populateQuery = "populate[0]=instructor&populate[1]=certificates";
+    // Populate instructor, certificates, and all media fields
+    // Media fields (video, audio, document, images) are needed for content display
+    const populateQuery = [
+      "populate[0]=instructor",
+      "populate[1]=certificates",
+      "populate[2]=video",
+      "populate[3]=audio",
+      "populate[4]=document",
+      "populate[5]=images"
+    ].join("&");
     try {
       response = await strapi.get(
         `/api/course-contents?filters[course_material][id][$eq]=${materialId}&sort=order_index:asc&${populateQuery}`
@@ -444,7 +451,7 @@ export async function getCourseContentsForMaterial(
       // Fallback to public client if authenticated fails
       response = await strapiPublic.get(
         `/api/course-contents?filters[course_material][id][$eq]=${materialId}&sort=order_index:asc&${populateQuery}`
-    );
+      );
     }
     const items = response.data?.data ?? [];
     return items.map((item: any) => {

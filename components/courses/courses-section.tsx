@@ -2,91 +2,109 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { Button } from "@heroui/react"
 import { CourseCard } from "@/components/courses/CourseCard"
 import { ArrowRight } from "lucide-react"
-
-const courses = [
-  {
-    id: 1,
-    title: "Build Text to Image SaaS App in React JS",
-    description: "Master React from basics to advanced concepts with hands-on projects and real-world applications",
-    educator: "John Smith",
-    educatorId: "1",
-    rating: 4.8,
-    students: 2847,
-    duration: "12 hours",
-    price: "$89",
-    originalPrice: "$129",
-    image: "/react-development-course.png",
-    category: "Development",
-    level: "Intermediate",
-    tags: ["React", "JavaScript", "SaaS"],
-    trending: true,
-    bestseller: false,
-    discount: "31% off",
-  },
-  {
-    id: 2,
-    title: "AI Powered SaaS App in React JS",
-    description: "Learn AI and ML concepts with Python and real-world applications in data science",
-    educator: "Sarah Johnson",
-    educatorId: "2",
-    rating: 4.9,
-    students: 1923,
-    duration: "15 hours",
-    price: "$99",
-    originalPrice: "$149",
-    image: "/ai-saas-development.png",
-    category: "AI/ML",
-    level: "Advanced",
-    tags: ["AI", "Machine Learning", "React"],
-    trending: false,
-    bestseller: true,
-    discount: "33% off",
-  },
-  {
-    id: 3,
-    title: "React Router Complete Course in One Video",
-    description: "Build complete web applications with modern technologies and deployment strategies",
-    educator: "Mike Chen",
-    educatorId: "3",
-    rating: 4.7,
-    students: 3456,
-    duration: "8 hours",
-    price: "$69",
-    originalPrice: "$99",
-    image: "/react-router-tutorial.png",
-    category: "Development",
-    level: "Beginner",
-    tags: ["React", "Router", "Frontend"],
-    trending: true,
-    bestseller: false,
-    discount: "30% off",
-  },
-  {
-    id: 4,
-    title: "Build Full Stack E-Commerce App in React JS",
-    description: "Create cross-platform mobile apps for iOS and Android with React Native",
-    educator: "Emily Davis",
-    educatorId: "4",
-    rating: 4.9,
-    students: 1567,
-    duration: "20 hours",
-    price: "$119",
-    originalPrice: "$179",
-    image: "/e-commerce-react-app.png",
-    category: "Full Stack",
-    level: "Advanced",
-    tags: ["React", "E-commerce", "Full-Stack"],
-    trending: false,
-    bestseller: true,
-    discount: "33% off",
-  },
-]
+import { getPublicCourseCourses } from "@/integrations/strapi/courseCourse"
+import type { CourseCourse } from "@/integrations/strapi/courseCourse"
+import { getCoursePreviewUrl } from "@/integrations/strapi/coursePreview"
+import { getAvatarUrl } from "@/lib/getAvatarUrl"
 
 export function CoursesSection() {
   const router = useRouter()
+  const [courses, setCourses] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setIsLoading(true)
+        const coursesData = await getPublicCourseCourses()
+        // Filter only published courses and take first 4
+        const publishedCourses = coursesData
+          .filter(course => course.course_status === "published" && course.active !== false)
+          .slice(0, 4)
+          .map((course: CourseCourse) => {
+            // Map to CourseCard format - use same approach as courses page
+            const baseMediaUrl = process.env.NEXT_PUBLIC_STRAPI_URL || ""
+            const resolveMediaUrl = (value?: string | null) => {
+              if (!value) return "/placeholder.svg"
+              if (value.startsWith("http")) return value
+              return baseMediaUrl ? `${baseMediaUrl}${value}` : value
+            }
+            
+            // Use preview_url which is already extracted by extractPreviewUrl in courseCourse.ts
+            // This is the same approach used on the courses page
+            const thumbnail = resolveMediaUrl(course.preview_url)
+            
+            // Get instructor with proper avatar extraction
+            const instructor = course.instructors?.[0]
+            const instructorName = instructor?.name || "Instructor"
+            const instructorAvatar = instructor?.avatar ? getAvatarUrl(instructor.avatar) : null
+            
+            // Map instructors array with proper avatar URLs
+            const instructorsList = (course.instructors || []).map((inst: any) => ({
+              id: inst.id,
+              documentId: inst.documentId,
+              name: inst.name || "Instructor",
+              avatar: inst.avatar,
+              avatarUrl: getAvatarUrl(inst.avatar),
+            }))
+            
+            // Calculate duration from duration_minutes
+            const durationHours = Math.floor((course.duration_minutes || 0) / 60)
+            const durationMinutes = (course.duration_minutes || 0) % 60
+            const duration = durationHours > 0 
+              ? `${durationHours} hour${durationHours > 1 ? 's' : ''}${durationMinutes > 0 ? ` ${durationMinutes} min` : ''}`
+              : durationMinutes > 0 ? `${durationMinutes} min` : "N/A"
+            
+            // Format price
+            const price = course.Price || 0
+            const formattedPrice = price > 0 ? `$${price.toFixed(2)}` : "Free"
+            
+            return {
+              id: course.id,
+              documentId: course.documentId,
+              title: course.name || "Untitled Course",
+              description: course.description || "No description available",
+              educator: instructorName,
+              educatorId: instructor?.id?.toString() || "1",
+              rating: course.average_rating || 0,
+              students: course.enrollment_count || 0,
+              duration: duration,
+              price: formattedPrice,
+              priceValue: price,
+              originalPrice: course.discount_type === "percentage" && course.discount_percentage
+                ? `$${(price / (1 - course.discount_percentage / 100)).toFixed(2)}`
+                : formattedPrice,
+              image: thumbnail,
+              category: course.course_categories?.[0]?.name || "General",
+              level: course.course_level?.name || "Beginner",
+              tags: course.course_tages?.map((tag: any) => tag.name) || [],
+              trending: false,
+              bestseller: course.enrollment_count > 100,
+              discount: course.discount_type === "percentage" && course.discount_percentage
+                ? `${course.discount_percentage}% off`
+                : undefined,
+              instructors: instructorsList,
+              course_preview: course.course_preview,
+              preview_url: course.preview_url || null,
+              preview_available: course.preview_available || false,
+            }
+          })
+        
+        setCourses(publishedCourses)
+      } catch (error) {
+        console.error("Failed to fetch courses:", error)
+        setCourses([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCourses()
+  }, [])
   
   const handleCourseClick = (courseId: string | number) => {
     console.log('Course card clicked - navigating to course detail:', courseId)
@@ -128,15 +146,27 @@ export function CoursesSection() {
 
         {/* Courses Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {courses.map((course, index) => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              index={index}
-              onCourseClick={handleCourseClick}
-              onEnrollClick={handleEnrollClick}
-            />
-          ))}
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="animate-pulse">
+                <div className="bg-slate-200 dark:bg-slate-800 rounded-lg h-64"></div>
+              </div>
+            ))
+          ) : courses.length > 0 ? (
+            courses.map((course, index) => (
+              <CourseCard
+                key={course.id || course.documentId || index}
+                course={course}
+                index={index}
+                onCourseClick={handleCourseClick}
+                onEnrollClick={handleEnrollClick}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <p className="text-slate-600 dark:text-gray-400">No courses available at the moment.</p>
+            </div>
+          )}
         </div>
 
         {/* View All Button */}

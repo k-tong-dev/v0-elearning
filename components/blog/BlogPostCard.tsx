@@ -30,10 +30,12 @@ export function BlogPostCard({ post, categories, formatDate, isFeatured = false,
 
     // Check if blog is favorited
     useEffect(() => {
-        if (currentUser?.id && post.id) {
-            isBlogFavorite(currentUser.id, post.id).then(setIsFavorited).catch(() => {});
+        const userId = currentUser?.documentId || currentUser?.id;
+        const blogPostId = post.documentId || post.id;
+        if (userId && blogPostId) {
+            isBlogFavorite(userId, blogPostId).then(setIsFavorited).catch(() => {});
         }
-    }, [currentUser?.id, post.id]);
+    }, [currentUser?.documentId, currentUser?.id, post.documentId, post.id]);
 
     const handlePostClick = () => {
         // Use documentId first (prevents duplicates), then slug, then id
@@ -44,7 +46,10 @@ export function BlogPostCard({ post, categories, formatDate, isFeatured = false,
     const handleFavoriteClick = async (e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent navigation when clicking heart
         
-        if (!currentUser?.id || !post.id || isTogglingFavorite) {
+        const userId = currentUser?.documentId || currentUser?.id;
+        const blogPostId = post.documentId || post.id;
+        
+        if (!userId || !blogPostId || isTogglingFavorite) {
             if (!currentUser) {
                 toast.error("Please log in to favorite blogs");
             }
@@ -54,8 +59,14 @@ export function BlogPostCard({ post, categories, formatDate, isFeatured = false,
         setIsTogglingFavorite(true);
         try {
             if (isFavorited) {
-                const favorites = await getUserBlogFavorites(currentUser.id);
-                const favoriteEntry = favorites.find(fav => fav.blogPostId === Number(post.id));
+                const favorites = await getUserBlogFavorites(userId);
+                // Find by documentId first, then fall back to numeric ID
+                const favoriteEntry = favorites.find(fav => {
+                    if (blogPostId && typeof blogPostId === 'string' && !blogPostId.match(/^\d+$/)) {
+                        return fav.blogPostDocumentId === blogPostId;
+                    }
+                    return fav.blogPostId === Number(blogPostId);
+                });
                 
                 if (favoriteEntry) {
                     await deleteBlogFavorite(favoriteEntry.id, favoriteEntry.documentId);
@@ -63,7 +74,7 @@ export function BlogPostCard({ post, categories, formatDate, isFeatured = false,
                     toast.success("Removed from favorites");
                 }
             } else {
-                await createBlogFavorite(currentUser.id, post.id);
+                await createBlogFavorite(userId, blogPostId);
                 setIsFavorited(true);
                 toast.success("Added to favorites");
             }
@@ -94,21 +105,7 @@ export function BlogPostCard({ post, categories, formatDate, isFeatured = false,
                         className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     ) : (
-                        <div className="w-full h-48 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 group-hover:scale-110 transition-transform duration-500 relative overflow-hidden">
-                            {/* Animated gradient overlay for depth */}
-                            <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/50 via-transparent to-purple-600/50 animate-pulse" />
-                            {/* Decorative pattern */}
-                            <div className="absolute inset-0 opacity-20">
-                                <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-                                <div className="absolute bottom-0 right-0 w-40 h-40 bg-purple-300/20 rounded-full blur-3xl" />
-                            </div>
-                            {/* Title overlay for visual interest */}
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="text-white/30 font-bold text-4xl md:text-5xl select-none">
-                                    {post.title.charAt(0).toUpperCase()}
-                                </div>
-                            </div>
-                        </div>
+                        <div className="w-full h-48 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 group-hover:scale-110 transition-transform duration-500" />
                     )}
                     <div className="absolute top-4 left-4">
                         {isFeatured && (

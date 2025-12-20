@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthToken } from "@/lib/auth-middleware";
 import { getCourseCourse, updateCourseCourse } from "@/integrations/strapi/courseCourse";
 import { createPurchaseTransaction, checkUserPurchasedCourse, updatePurchaseTransaction } from "@/integrations/strapi/purchaseTransaction";
+import { getUserSubscriptionTax } from "@/integrations/strapi/subscription";
 
 const PAYPAL_BASE = process.env.PAYPAL_MODE === "live"
   ? "https://api.paypal.com"
@@ -100,12 +101,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Instructor not found" }, { status: 400 });
     }
 
+    // Get user's subscription tax (platform commission percentage)
+    const taxPercentage = await getUserSubscriptionTax(user.id.toString());
+    
+    // Calculate amounts:
+    // - coursePrice: Base course price (goes to creator)
+    // - taxAmount: Platform commission (goes to owner/system)
+    // - totalAmount: What user pays (coursePrice + taxAmount)
+    const coursePrice = expectedPrice;
+    const taxAmount = coursePrice * (taxPercentage / 100);
+    const totalAmount = coursePrice + taxAmount;
+
     // Create purchase transaction in pending state
+    // Store total amount (what user pays)
     const purchaseTx = await createPurchaseTransaction({
       user: user.id.toString(),
       instructor: instructorId.toString(),
       course_course: courseIdentifier,
-      amount_paid: expectedPrice,
+      amount_paid: totalAmount, // Total amount including tax
       state: "pending",
     });
 
@@ -132,8 +145,33 @@ export async function POST(request: NextRequest) {
           {
             amount: {
               currency_code: (course.currency?.code || currency || "USD").toUpperCase(),
-              value: expectedPrice.toFixed(2),
+              value: totalAmount.toFixed(2), // Total amount including tax
+              breakdown: {
+                item_total: {
+                  currency_code: (course.currency?.code || currency || "USD").toUpperCase(),
+                  value: coursePrice.toFixed(2), // Base course price
+                },
+                tax_total: {
+                  currency_code: (course.currency?.code || currency || "USD").toUpperCase(),
+                  value: taxAmount.toFixed(2), // Platform commission
+                },
+              },
             },
+            items: [
+              {
+                name: course.name || "Course purchase",
+                description: `Course: ${course.name || 'Course'}`,
+                quantity: "1",
+                unit_amount: {
+                  currency_code: (course.currency?.code || currency || "USD").toUpperCase(),
+                  value: coursePrice.toFixed(2),
+                },
+                tax: {
+                  currency_code: (course.currency?.code || currency || "USD").toUpperCase(),
+                  value: taxAmount.toFixed(2),
+                },
+              },
+            ],
             custom_id: purchaseTx.documentId || purchaseTx.id?.toString(),
             description: course.name || "Course purchase",
           },

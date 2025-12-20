@@ -107,6 +107,76 @@ export async function POST(request: NextRequest) {
         const amount = payout.amount || 0;
         const currency = payout.currency?.code || "USD";
 
+        // Validate payment info exists before processing
+        let paymentInfoValid = false;
+        let missingPaymentInfo = "";
+
+        switch (payoutMethod) {
+          case "paypal":
+            if (!instructor.paypal_email) {
+              paymentInfoValid = false;
+              missingPaymentInfo = "PayPal email";
+            } else {
+              paymentInfoValid = true;
+            }
+            break;
+          case "stripe":
+            // Note: stripe_account_id field needs to be added to Instructor schema
+            if (!instructor.stripe_account_id) {
+              paymentInfoValid = false;
+              missingPaymentInfo = "Stripe Connect account ID";
+            } else {
+              paymentInfoValid = true;
+            }
+            break;
+          case "bank_transfer":
+            if (!instructor.bank_account_number || !instructor.bank_name) {
+              paymentInfoValid = false;
+              missingPaymentInfo = "Bank account details (account number and bank name)";
+            } else {
+              paymentInfoValid = true;
+            }
+            break;
+          case "manual":
+            // Manual processing - always valid, admin will handle
+            paymentInfoValid = true;
+            break;
+          default:
+            paymentInfoValid = false;
+            missingPaymentInfo = "Valid payout method";
+        }
+
+        // If payment info is missing, mark as manual and add note
+        if (!paymentInfoValid && payoutMethod !== "manual") {
+          console.warn(`Payment info missing for instructor ${instructor.id}: ${missingPaymentInfo}. Marking for manual processing.`);
+          
+          // Update payout to manual method and add admin note
+          await strapi.put(`/api/revenue-payouts/${payout.documentId}`, {
+            data: {
+              payout_method: "manual",
+              state: "pending",
+              admin_notes: [
+                {
+                  type: "paragraph",
+                  children: [
+                    {
+                      type: "text",
+                      text: `⚠️ Automatic payout failed: Missing ${missingPaymentInfo}. Please contact instructor to collect payment information and process manually.`
+                    }
+                  ]
+                }
+              ]
+            },
+          });
+
+          results.push({
+            payoutId: payout.id,
+            status: "pending_manual",
+            error: `Missing payment info: ${missingPaymentInfo}. Marked for manual processing.`,
+          });
+          continue;
+        }
+
         // Update payout state to processing
         await strapi.put(`/api/revenue-payouts/${payout.documentId}`, {
           data: {
@@ -256,15 +326,20 @@ async function processStripePayout(
 ): Promise<{ success: boolean; payoutId?: string; error?: string }> {
   try {
     // Check if instructor has Stripe Connect account
+    // NOTE: This field needs to be added to Instructor schema in Strapi Admin
+    // Field name: stripe_account_id (type: string)
     const stripeAccountId = instructor.stripe_account_id;
     if (!stripeAccountId) {
-      return { success: false, error: "Stripe Connect account not configured" };
+      return { 
+        success: false, 
+        error: "Stripe Connect account not configured. Instructor needs to add stripe_account_id to their profile." 
+      };
     }
 
     // Import Stripe dynamically
     const Stripe = (await import("stripe")).default;
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-      apiVersion: "2024-12-18.acacia",
+      apiVersion: "2025-11-17.clover",
     });
 
     // Create transfer to connected account

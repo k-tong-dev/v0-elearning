@@ -113,12 +113,29 @@ export async function POST(request: NextRequest) {
           });
 
           // Create revenue payout record for instructor
+          // Money distribution:
+          // - amount_paid: Total amount user paid (coursePrice + taxAmount)
+          // - coursePrice: Base course price (goes to creator)
+          // - taxAmount: Platform commission (goes to owner/system)
           const instructorId = transaction.instructor;
           if (instructorId) {
             try {
               const { strapi } = await import('@/integrations/strapi/client');
-              const platformFeePercent = parseFloat(process.env.PLATFORM_FEE_PERCENT || '10'); // Default 10% platform fee
-              const instructorAmount = (transaction.amount_paid || 0) * (1 - platformFeePercent / 100);
+              const { getUserSubscriptionTax } = await import('@/integrations/strapi/subscription');
+              
+              // Get user's subscription tax for this transaction
+              const taxPercentage = await getUserSubscriptionTax(user.id.toString());
+              const totalPaid = transaction.amount_paid || 0;
+              
+              // Calculate: totalPaid = coursePrice + (coursePrice * tax%)
+              // So: coursePrice = totalPaid / (1 + tax%/100)
+              const coursePrice = totalPaid / (1 + taxPercentage / 100);
+              const taxAmount = totalPaid - coursePrice;
+              
+              // Instructor gets the base course price (not including tax)
+              const instructorAmount = coursePrice;
+              
+              console.log(`PayPal revenue distribution - Total: ${totalPaid}, Course Price: ${coursePrice}, Tax: ${taxAmount}, Instructor: ${instructorAmount}`);
               
               await strapi.post('/api/revenue-payouts', {
                 data: {

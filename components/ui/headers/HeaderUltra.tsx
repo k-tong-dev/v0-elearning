@@ -812,7 +812,7 @@ export function HeaderUltra() {
                     isLoading={isWishlistLoading}
                     isSyncing={isWishlistSyncing}
                     isAuthenticated={isAuthenticated}
-                    userName={user?.fullName || user?.username || user?.email || "Learner"}
+                    userName={user?.username || user?.username || user?.email || "Learner"}
                     userAvatar={getAvatarUrl((user as any)?.avatar) || (typeof (user as any)?.avatarUrl === "string" ? (user as any)?.avatarUrl : null)}
                     onGoToWishlist={() => {
                         router.push("/wishlist")

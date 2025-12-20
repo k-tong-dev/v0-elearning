@@ -52,8 +52,6 @@ const navItems = [
     { label: "Certificates",  icon: Award,             value: "certificates" },
     { label: "Instructors",   icon: Users,             value: "instructors" },
     { label: "Enrollments",   icon: GraduationCap,     value: "enrollments" },
-    { label: "Expenditure",   icon: DollarSign,        value: "expenditure" },
-    { label: "Analytics",     icon: BarChart3,         value: "analytics" },
     { label: "My Reports",    icon: Bug,               value: "reports" },
     { label: "Support",       icon: MessageCircle,     value: "contact" },
     { label: "Settings",      icon: Settings,          value: "settings" },

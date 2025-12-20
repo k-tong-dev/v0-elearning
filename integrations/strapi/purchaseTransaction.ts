@@ -26,8 +26,8 @@ export interface PurchaseTransaction {
 export async function getPurchaseTransactions(userId?: string): Promise<PurchaseTransaction[]> {
     try {
         const url = userId
-            ? `/api/purchase-transactions?filters[user][id][$eq]=${userId}&populate=*`
-            : '/api/purchase-transactions?populate=*';
+            ? `/api/purchase-transactions?filters[user][id][$eq]=${userId}&populate=*&sort=createdAt:desc`
+            : '/api/purchase-transactions?populate=*&sort=createdAt:desc';
         
         const response = await strapiPublic.get(url);
         return (response.data.data || []).map((item: any) => ({
@@ -95,17 +95,55 @@ async function resolveDocumentIdByNumericId(
     
     const numericId = typeof idOrDocumentId === 'string' ? Number(idOrDocumentId) : idOrDocumentId;
     const query = [`filters[id][$eq]=${numericId}`, "fields[0]=documentId"].join("&");
-    const url = `/api/${collection}?${query}`;
+    
+    // Users collection has a different base path and response structure
+    const url = collection === "users" ? `/api/users?${query}` : `/api/${collection}?${query}`;
     const clients = [strapi, strapiPublic];
     for (const client of clients) {
         try {
             const response = await client.get(url);
-            const items = response.data?.data ?? [];
-            if (items.length > 0) {
-                return items[0].documentId;
+            // Handle different response structures
+            let items: any[] = [];
+            if (collection === "users") {
+                // Users endpoint might return array directly or wrapped
+                items = Array.isArray(response.data) 
+                    ? response.data 
+                    : (response.data?.data ?? []);
+            } else {
+                items = response.data?.data ?? [];
             }
-        } catch (error) {
-            console.warn(`Failed to resolve documentId for ${collection}`, error);
+            
+            // Find the matching item by numeric id to avoid accidental mismatches
+            const item = items.find((it: any) => {
+                const rawId = it?.id ?? it?.attributes?.id;
+                return Number(rawId) === numericId;
+            }) ?? items[0];
+            
+            if (item) {
+                // In Strapi v5, documentId is directly on the item
+                // Also check attributes in case of different response structure
+                const documentId = item.documentId || item.attributes?.documentId;
+                
+                // Validate that we got the right item by checking numeric id matches
+                const itemId = item.id || item.attributes?.id;
+                if (itemId && Number(itemId) !== numericId) {
+                    console.warn(`ID mismatch: expected ${numericId}, got ${itemId}`);
+                    continue; // Try next client
+                }
+                
+                if (documentId && typeof documentId === 'string') {
+                    return documentId;
+                }
+                console.warn(`DocumentId not found for ${collection} id ${numericId}. Item:`, item);
+            } else {
+                console.warn(`No items found for ${collection} with id ${numericId}. Response:`, response.data);
+            }
+        } catch (error: any) {
+            console.warn(`Failed to resolve documentId for ${collection}`, {
+                error: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
         }
     }
     return null;
@@ -124,14 +162,16 @@ export async function createPurchaseTransaction(
         // Resolve documentIds for relations to ensure Strapi Admin UI displays them
         const userDocumentId = await resolveDocumentIdByNumericId("users", data.user);
         if (!userDocumentId) {
-            console.error("Failed to resolve user documentId for purchase transaction creation");
-            return null;
+            const errorMsg = `Failed to resolve user documentId for purchase transaction creation. User ID: ${data.user}`;
+            console.error(errorMsg);
+            throw new Error(errorMsg);
         }
 
         const instructorDocumentId = await resolveDocumentIdByNumericId("instructors", data.instructor);
         if (!instructorDocumentId) {
-            console.error("Failed to resolve instructor documentId for purchase transaction creation");
-            return null;
+            const errorMsg = `Failed to resolve instructor documentId for purchase transaction creation. Instructor ID: ${data.instructor}`;
+            console.error(errorMsg);
+            throw new Error(errorMsg);
         }
 
         let courseConnect = undefined;
@@ -187,6 +227,12 @@ export async function createPurchaseTransaction(
             }
         });
         
+        if (!response.data?.data) {
+            const errorMsg = `Invalid response from Strapi when creating purchase transaction. Response: ${JSON.stringify(response.data)}`;
+            console.error(errorMsg);
+            throw new Error(errorMsg);
+        }
+        
         const item = response.data.data;
         return {
             id: item.id,
@@ -206,9 +252,17 @@ export async function createPurchaseTransaction(
             publishedAt: item.publishedAt,
             locale: item.locale,
         };
-    } catch (error) {
-        console.error("Error creating purchase transaction:", error);
-        return null;
+    } catch (error: any) {
+        const errorMsg = error?.response?.data?.error?.message || error?.message || 'Unknown error creating purchase transaction';
+        const errorDetails = error?.response?.data ? JSON.stringify(error.response.data) : '';
+        console.error("Error creating purchase transaction:", {
+            message: errorMsg,
+            details: errorDetails,
+            stack: error?.stack,
+            fullError: error
+        });
+        // Re-throw the error so the API route can handle it properly
+        throw new Error(`Failed to create purchase transaction: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`);
     }
 }
 

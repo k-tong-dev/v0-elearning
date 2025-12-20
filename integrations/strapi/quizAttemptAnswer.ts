@@ -43,15 +43,55 @@ export async function createQuizAttemptAnswer(data: {
 }): Promise<QuizAttemptAnswerEntity | null> {
     try {
         // Resolve documentIds for relations to ensure Strapi Admin UI displays them
-        const attemptDocumentId = await resolveDocumentIdByNumericId("quiz-attempts", data.quiz_attempt);
+        // Try multiple approaches to resolve quiz_attempt documentId
+        let attemptDocumentId: string | null = null;
+        
+        // First try the standard resolution
+        attemptDocumentId = await resolveDocumentIdByNumericId("quiz-attempts", data.quiz_attempt);
+        
+        // If that fails, try direct query with authenticated client
         if (!attemptDocumentId) {
-            console.error("Failed to resolve quiz_attempt documentId for quiz attempt answer creation");
+            try {
+                const response = await strapi.get(`/api/quiz-attempts?filters[id][$eq]=${data.quiz_attempt}&fields[0]=documentId`);
+                const items = response.data?.data || response.data || [];
+                if (Array.isArray(items) && items.length > 0) {
+                    attemptDocumentId = items[0].documentId || null;
+                } else if (response.data && !Array.isArray(response.data) && response.data.documentId) {
+                    attemptDocumentId = response.data.documentId;
+                }
+            } catch (directError) {
+                console.warn("Failed to fetch quiz_attempt documentId via direct query:", directError);
+            }
+        }
+        
+        if (!attemptDocumentId) {
+            console.error("Failed to resolve quiz_attempt documentId for quiz attempt answer creation. Quiz Attempt ID:", data.quiz_attempt);
             return null;
         }
 
-        const quizDocumentId = await resolveDocumentIdByNumericId("course-quizs", data.course_quiz);
+        // Try multiple approaches to resolve course_quiz documentId
+        let quizDocumentId: string | null = null;
+        
+        // First try the standard resolution
+        quizDocumentId = await resolveDocumentIdByNumericId("course-quizs", data.course_quiz);
+        
+        // If that fails, try direct query with authenticated client
         if (!quizDocumentId) {
-            console.error("Failed to resolve course_quiz documentId for quiz attempt answer creation");
+            try {
+                const response = await strapi.get(`/api/course-quizs?filters[id][$eq]=${data.course_quiz}&fields[0]=documentId`);
+                const items = response.data?.data || response.data || [];
+                if (Array.isArray(items) && items.length > 0) {
+                    quizDocumentId = items[0].documentId || null;
+                } else if (response.data && !Array.isArray(response.data) && response.data.documentId) {
+                    quizDocumentId = response.data.documentId;
+                }
+            } catch (directError) {
+                console.warn("Failed to fetch course_quiz documentId via direct query:", directError);
+            }
+        }
+        
+        if (!quizDocumentId) {
+            console.error("Failed to resolve course_quiz documentId for quiz attempt answer creation. Course Quiz ID:", data.course_quiz);
             return null;
         }
 

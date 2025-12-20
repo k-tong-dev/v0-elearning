@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { getUserBlogFavorites, deleteBlogFavorite, BlogFavoriteEntry } from "@/integrations/strapi/blogFavorites"
-import { getBlogPostById, BlogPost } from "@/integrations/strapi/blog"
+import { getBlogPostById, getBlogPostByDocumentId, BlogPost } from "@/integrations/strapi/blog"
 import { getAvatarUrl } from "@/lib/getAvatarUrl"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -35,13 +35,16 @@ export function DashboardBlogFavorites() {
             
             // Load blog details for each favorite
             const blogsPromises = favorites.map(async (favorite) => {
-                if (!favorite.blogPostId) return { ...favorite, blog: undefined }
+                if (!favorite.blogPostDocumentId && !favorite.blogPostId) return { ...favorite, blog: undefined }
                 
                 try {
-                    const blog = await getBlogPostById(favorite.blogPostId)
+                    // Prefer documentId for Strapi v5 API calls
+                    const blog = favorite.blogPostDocumentId 
+                        ? await getBlogPostByDocumentId(favorite.blogPostDocumentId)
+                        : await getBlogPostById(favorite.blogPostId!)
                     return { ...favorite, blog }
                 } catch (error) {
-                    console.warn(`Failed to fetch blog ${favorite.blogPostId}:`, error)
+                    console.warn(`Failed to fetch blog ${favorite.blogPostDocumentId || favorite.blogPostId}:`, error)
                     return { ...favorite, blog: undefined }
                 }
             })

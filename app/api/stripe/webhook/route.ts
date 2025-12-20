@@ -5,7 +5,7 @@ import { createCourseEnrollment } from '@/integrations/strapi/courseEnrollment';
 import { getCourseCourse } from '@/integrations/strapi/courseCourse';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-11-17.clover',
 });
 
 // Get webhook secret from environment
@@ -129,19 +129,36 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
           });
 
           // Create revenue payout record for instructor
+          // Money distribution:
+          // - totalAmount (amountPaid): What user paid (coursePrice + taxAmount)
+          // - coursePrice: Base course price (goes to creator)
+          // - taxAmount: Platform commission (goes to owner/system)
           const instructorId = metadata.instructorId;
           if (instructorId) {
             try {
               const { strapi } = await import('@/integrations/strapi/client');
-              const platformFeePercent = parseFloat(process.env.PLATFORM_FEE_PERCENT || '10'); // Default 10% platform fee
-              const instructorAmount = amountPaid * (1 - platformFeePercent / 100);
+              
+              // Get course price and tax from metadata (set during payment intent creation)
+              const coursePrice = metadata.coursePrice 
+                ? parseFloat(metadata.coursePrice) 
+                : amountPaid; // Fallback to total if not in metadata
+              
+              const taxAmount = metadata.taxAmount 
+                ? parseFloat(metadata.taxAmount) 
+                : 0;
+              
+              // Instructor gets the base course price (not including tax)
+              // Tax amount goes to platform owner (system)
+              const instructorAmount = coursePrice;
+              
+              console.log(`Revenue distribution - Total: ${amountPaid}, Course Price: ${coursePrice}, Tax: ${taxAmount}, Instructor: ${instructorAmount}`);
               
               await strapi.post('/api/revenue-payouts', {
                 data: {
                   instructor: {
                     connect: [{ id: Number(instructorId) }]
                   },
-                  amount: instructorAmount,
+                  amount: instructorAmount, // Base course price goes to creator
                   currency: {
                     connect: course.currency?.id ? [{ id: course.currency.id }] : undefined
                   },
@@ -153,13 +170,18 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
                       children: [
                         {
                           type: 'text',
-                          text: `Course: ${course.name || 'Unknown'} - Transaction: ${transaction.id}`
+                          text: `Course: ${course.name || 'Unknown'} - Transaction: ${transaction.id} - Course Price: ${coursePrice}, Tax: ${taxAmount}`
                         }
                       ]
                     }
                   ]
                 }
               });
+              
+              // TODO: Create platform revenue record for tax amount (owner/system commission)
+              // This would track the platform's commission separately
+              // For now, tax amount is tracked in the transaction metadata
+              
             } catch (payoutError) {
               console.error('Error creating revenue payout:', payoutError);
               // Don't fail the payment if payout record creation fails

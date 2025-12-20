@@ -92,9 +92,56 @@ export async function createQuizAttempt(data: {
 }): Promise<QuizAttemptEntity | null> {
     try {
         // Resolve documentIds for relations to ensure Strapi Admin UI displays them
-        const userDocumentId = await resolveDocumentIdByNumericId("users", data.user);
+        // For users, try multiple approaches since users-permissions plugin might have different endpoints
+        let userDocumentId: string | null = null;
+        
+        // Check if data.user is already a documentId (non-numeric string)
+        if (typeof data.user === 'string' && !/^\d+$/.test(data.user)) {
+            userDocumentId = data.user;
+        } else {
+            // First, try to get documentId from /api/users/me if we have an authenticated request
+            try {
+                const meResponse = await strapi.get('/api/users/me?fields[0]=documentId&fields[1]=id');
+                if (meResponse.data?.documentId) {
+                    const meId = meResponse.data.id;
+                    const providedUserId = typeof data.user === 'string' ? Number(data.user) : data.user;
+                    // Only use /me if the IDs match
+                    if (meId === providedUserId || String(meId) === String(providedUserId)) {
+                        userDocumentId = meResponse.data.documentId;
+                    }
+                }
+            } catch (meError) {
+                // /me endpoint might not be available, continue with other methods
+            }
+            
+            // If /me didn't work, try resolving by numeric ID
+            if (!userDocumentId) {
+                userDocumentId = await resolveDocumentIdByNumericId("users", data.user);
+            }
+            
+            // If still no documentId, try direct query with authenticated client
+            if (!userDocumentId) {
+                try {
+                    const numericUserId = typeof data.user === 'string' ? Number(data.user) : data.user;
+                    if (!isNaN(numericUserId)) {
+                        // Try with data wrapper (Strapi v5 format)
+                        const userResponse = await strapi.get(`/api/users?filters[id][$eq]=${numericUserId}&fields[0]=documentId`);
+                        const users = userResponse.data?.data || userResponse.data || [];
+                        if (Array.isArray(users) && users.length > 0) {
+                            userDocumentId = users[0].documentId || null;
+                        } else if (userResponse.data && !Array.isArray(userResponse.data) && userResponse.data.documentId) {
+                            // Handle single object response
+                            userDocumentId = userResponse.data.documentId;
+                        }
+                    }
+                } catch (directError) {
+                    console.warn("Failed to fetch user documentId via direct query:", directError);
+                }
+            }
+        }
+        
         if (!userDocumentId) {
-            console.error("Failed to resolve user documentId for quiz attempt creation");
+            console.error("Failed to resolve user documentId for quiz attempt creation. User ID:", data.user);
             return null;
         }
 
@@ -135,7 +182,9 @@ export async function createQuizAttempt(data: {
             user: normalizeUser(item.user),
             certificate_program: item.certificate_program?.data
                 ? { id: item.certificate_program.data.id }
-                : { id: item.certificate_program.id },
+                : item.certificate_program?.id
+                    ? { id: item.certificate_program.id }
+                    : { id: 0 },
             course_content: item.course_content
                 ? item.course_content.data
                     ? { id: item.course_content.data.id }
@@ -197,7 +246,9 @@ export async function updateQuizAttempt(
             user: normalizeUser(item.user),
             certificate_program: item.certificate_program?.data
                 ? { id: item.certificate_program.data.id }
-                : { id: item.certificate_program.id },
+                : item.certificate_program?.id
+                    ? { id: item.certificate_program.id }
+                    : { id: 0 },
             course_content: item.course_content
                 ? item.course_content.data
                     ? { id: item.course_content.data.id }

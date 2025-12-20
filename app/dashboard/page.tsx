@@ -8,10 +8,8 @@ import { useAuth } from "@/hooks/use-auth"
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview"
 import { DashboardMyCourses } from "@/components/dashboard/DashboardMyCourses"
 import { DashboardCombinedEnrollments } from "@/components/dashboard/DashboardCombinedEnrollments"
-import { DashboardAnalytics } from "@/components/dashboard/DashboardAnalytics"
 import { DashboardSettings } from "@/components/dashboard/DashboardSettings"
 import CreateCourseForm from "@/components/dashboard/CreateCourseForm"
-import { DashboardExpenditure } from "@/components/dashboard/DashboardExpenditure"
 import { DashboardSidebarResizable } from "@/components/dashboard/DashboardSidebarResizable"
 import { DashboardMyReports } from "@/components/dashboard/DashboardMyReports"
 import { DashboardMyContacts } from "@/components/dashboard/DashboardMyContacts"
@@ -22,6 +20,8 @@ import { DashboardCertificates } from "@/components/dashboard/DashboardCertifica
 import { DashboardViewCard } from "@/components/dashboard/DashboardViewCard"
 import { DashboardFavorites } from "@/components/dashboard/DashboardFavorites"
 import { DashboardBlogFavorites } from "@/components/dashboard/DashboardBlogFavorites"
+import { DashboardOrderHistory } from "@/components/dashboard/DashboardOrderHistory"
+import { DashboardPaymentMethods } from "@/components/dashboard/DashboardPaymentMethods"
 import { User as StrapiUser } from "@/types/user"
 import { getUserSubscription } from "@/integrations/strapi/subscription"
 import {BookOpen, DollarSign, MessageCircle, Star, ThumbsUp, Users} from "lucide-react"
@@ -454,6 +454,7 @@ function DashboardContent() {
                                     enrollmentData={enrollmentData}
                                     courseTypeData={courseTypeData}
                                     recentActivity={recentActivityData}
+                                    lessonsCompletedData={lessonsCompletedData}
                                 />
                             </TabsContent>
 
@@ -485,14 +486,6 @@ function DashboardContent() {
                                 <DashboardInstructors />
                             </TabsContent>
 
-                            <TabsContent value="expenditure" className="mt-0">
-                                <DashboardExpenditure />
-                            </TabsContent>
-
-                            <TabsContent value="analytics" className="mt-0">
-                                <DashboardAnalytics stats={stats} enrollmentData={enrollmentData} lessonsCompletedData={lessonsCompletedData} />
-                            </TabsContent>
-
                             <TabsContent value="reports" className="mt-0">
                                 <DashboardMyReports currentUser={currentUserForSettings} />
                             </TabsContent>
@@ -519,10 +512,7 @@ function DashboardContent() {
 
                             {/* Orders Tabs */}
                             <TabsContent value="orders-my" className="mt-0">
-                                <div className="rounded-xl border border-border/50 bg-card/50 p-8">
-                                    <h2 className="text-2xl font-bold mb-4">My Orders</h2>
-                                    <p className="text-muted-foreground">Your purchase orders will appear here</p>
-                                </div>
+                                <DashboardOrderHistory />
                             </TabsContent>
 
                             <TabsContent value="orders-sales" className="mt-0">
@@ -555,6 +545,10 @@ function DashboardContent() {
                                 </div>
                             </TabsContent>
 
+                            <TabsContent value="payment-methods" className="mt-0">
+                                <DashboardPaymentMethods />
+                            </TabsContent>
+
                             <TabsContent value="settings" className="mt-0">
                                 <DashboardSettings
                                     currentUser={currentUserForSettings}
@@ -575,9 +569,13 @@ function DashboardContent() {
             <FreePlanAgreementPopup
                 isOpen={showFreePlanPopup}
                 plans={missingPlans}
-                onClose={() => setShowFreePlanPopup(false)}
+                onClose={() => {
+                    setShowFreePlanPopup(false)
+                }}
                 onSuccess={() => {
-                    requestReload(() => setShowFreePlanPopup(false))
+                    // Close popup first, then show reload dialog
+                    setShowFreePlanPopup(false)
+                    requestReload()
                 }}
             />
             {ReloadConfirmDialog}

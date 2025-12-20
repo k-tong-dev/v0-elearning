@@ -72,24 +72,39 @@ export async function getUserBlogFavorites(userId: string | number): Promise<Blo
 export async function createBlogFavorite(userId: string | number, blogPostId: string | number): Promise<BlogFavoriteEntry | null> {
     if (!userId && userId !== 0) throw new Error("Missing user id")
     if (!blogPostId && blogPostId !== 0) throw new Error("Missing blog post id")
-    const numericUserId = Number(userId)
-    const numericBlogPostId = Number(blogPostId)
-    if (!Number.isFinite(numericUserId) || !Number.isFinite(numericBlogPostId)) {
-        throw new Error("Invalid identifiers for blog favorite")
-    }
+    
+    // Use documentId if provided (string that's not pure numeric), otherwise treat as numeric ID and resolve
+    const userDocId = typeof userId === 'string' && /^\d+$/.test(userId) === false ? userId : null
+    const blogDocId = typeof blogPostId === 'string' && /^\d+$/.test(blogPostId) === false ? blogPostId : null
 
     try {
         const query = buildPopulateQuery()
-        const userDocId = await resolveDocumentIdByNumericId("users", numericUserId)
-        const blogDocId = await resolveDocumentIdByNumericId("blog-posts", numericBlogPostId)
+        
+        // If we have numeric IDs, resolve them to documentIds
+        let finalUserDocId = userDocId
+        let finalBlogDocId = blogDocId
+        
+        if (!finalUserDocId) {
+            const numericUserId = Number(userId)
+            if (Number.isFinite(numericUserId)) {
+                finalUserDocId = await resolveDocumentIdByNumericId("users", numericUserId)
+            }
+        }
+        
+        if (!finalBlogDocId) {
+            const numericBlogPostId = Number(blogPostId)
+            if (Number.isFinite(numericBlogPostId)) {
+                finalBlogDocId = await resolveDocumentIdByNumericId("blog-posts", numericBlogPostId)
+            }
+        }
+
+        if (!finalUserDocId || !finalBlogDocId) {
+            throw new Error("Invalid identifiers for blog favorite: could not resolve documentIds")
+        }
 
         const payload: any = {
-            user: userDocId
-                ? { connect: [{ documentId: userDocId }] }
-                : numericUserId,
-            blog: blogDocId
-                ? { connect: [{ documentId: blogDocId }] }
-                : numericBlogPostId,
+            user: { connect: [{ documentId: finalUserDocId }] },
+            blog: { connect: [{ documentId: finalBlogDocId }] },
         }
 
         const response = await strapi.post(`/api/user-wishlists?${query}`, {
@@ -135,8 +150,19 @@ export async function isBlogFavorite(userId: string | number, blogPostId: string
     if (!userId || !blogPostId) return false
     try {
         const favorites = await getUserBlogFavorites(userId)
-        const numericBlogPostId = Number(blogPostId)
-        return favorites.some(fav => fav.blogPostId === numericBlogPostId)
+        // Check by documentId first (preferred), then fall back to numeric ID
+        const blogDocId = typeof blogPostId === 'string' && !blogPostId.match(/^\d+$/) ? blogPostId : null
+        const numericBlogPostId = blogDocId ? null : Number(blogPostId)
+        
+        return favorites.some(fav => {
+            if (blogDocId && fav.blogPostDocumentId) {
+                return fav.blogPostDocumentId === blogDocId
+            }
+            if (numericBlogPostId !== null && Number.isFinite(numericBlogPostId)) {
+                return fav.blogPostId === numericBlogPostId
+            }
+            return false
+        })
     } catch (error) {
         console.error("[isBlogFavorite] Failed:", error)
         return false

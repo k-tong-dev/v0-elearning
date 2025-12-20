@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { HeroSectionModern } from "@/components/hero-section-modern"
-import { FreeLessonsSection } from "@/components/free-lessons-section"
+import { FeaturesSection } from "@/components/features-section"
 import { CoursesSection } from "@/components/courses/courses-section"
 import { TestimonialsSection } from "@/components/testimonials-section"
 import { FAQSection } from "@/components/faq-section"
@@ -37,7 +37,7 @@ export default function HomePage() {
                 <HeroSectionModern />
             </div>
             <div data-aos="fade-up">
-                <FreeLessonsSection />
+                <FeaturesSection />
             </div>
             <div data-aos="fade-up">
                 <HeroCompany />

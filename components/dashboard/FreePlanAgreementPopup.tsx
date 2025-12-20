@@ -98,10 +98,12 @@ export function FreePlanAgreementPopup({
                 })
                 setHasConfirmed(true)
                 await refreshUser()
+                // Close popup immediately
+                onClose()
+                // Then trigger reload dialog after a short delay
                 setTimeout(() => {
                     onSuccess()
-                    onClose()
-                }, 1500)
+                }, 500)
             } else {
                 toast.error(result.message || "Failed to activate free plans", {
                     position: "top-center",

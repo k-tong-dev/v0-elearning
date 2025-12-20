@@ -28,6 +28,7 @@ import {
     Heart,
     ChevronDown,
     ChevronRight,
+    CreditCard,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -91,11 +92,10 @@ const navItems = [
             { label: "Career", value: "wishlist-career" },
         ]
     },
-    { label: "Expenditure", icon: DollarSign, value: "expenditure" },
-    { label: "Analytics", icon: BarChart3, value: "analytics" },
     { label: "My Reports", icon: Bug, value: "reports" },
     { label: "Support", icon: MessageCircle, value: "contact" },
     { label: "Friends", icon: UserPlus, value: "friends" },
+    { label: "Payment Methods", icon: CreditCard, value: "payment-methods" },
     { label: "Settings", icon: Settings, value: "settings" },
 ]
 
