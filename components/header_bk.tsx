@@ -216,6 +216,13 @@ export function Header() {
             icon: Phone,
             color: "text-blue-500",
         },
+        {
+            title: "Career",
+            description: "Join our team",
+            href: "/career",
+            icon: Briefcase,
+            color: "text-teal-500",
+        },
     ]
 
     return (

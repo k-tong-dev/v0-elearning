@@ -26,17 +26,21 @@ export async function getMenuItems(): Promise<MenuItem[]> {
                 'publicationState': 'live', // Only get published items
                 'locale': 'en', // Explicitly request English locale
             },
+            timeout: 5000, // 5 second timeout
         });
 
         // If no results, try without publicationState filter (in case items exist but aren't marked as published)
         if (!response.data?.data || response.data.data.length === 0) {
-            console.warn('No published items found, trying without publicationState filter...');
+            if (process.env.NODE_ENV === 'development') {
+                console.warn('[Menu] No published items found, trying without publicationState filter...');
+            }
             response = await strapiPublic.get('/api/menu-controllers', {
                 params: {
                     'pagination[limit]': 1000,
                     'sort': 'id:asc',
                     'locale': 'en', // Explicitly request English locale
                 },
+                timeout: 5000, // 5 second timeout
             });
         }
 
@@ -79,15 +83,19 @@ export async function getMenuItems(): Promise<MenuItem[]> {
         // console.log('Mapped items:', mappedItems.slice(0, 3)); // Log first 3 items
         return mappedItems;
     } catch (error: any) {
-        // console.error('Error fetching menu items from Strapi:', error);
-        if (error.response) {
-            console.error('Response status:', error.response.status);
-            console.error('Response data:', error.response.data);
-        } else if (error.request) {
-            console.error('No response received:', error.request);
-        } else {
-            console.error('Error message:', error.message);
+        // Silently fail and return empty array - fallback features will be used
+        // Only log in development mode
+        if (process.env.NODE_ENV === 'development') {
+            if (error.response) {
+                console.warn('[Menu] API Error - Status:', error.response.status);
+                console.warn('[Menu] Response:', error.response.data);
+            } else if (error.request) {
+                console.warn('[Menu] No response received - Strapi may not be running or endpoint not available');
+            } else {
+                console.warn('[Menu] Error:', error.message);
+            }
         }
+        // Return empty array - component will use fallback features
         return [];
     }
 }

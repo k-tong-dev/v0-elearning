@@ -174,22 +174,41 @@ export default function MultiStepSignupPage() {
                     throw new Error("Username and password are required.")
                 }
 
-                const { jwt, user: strapiUser } = await registerAccount({
-                    username: formData.username,
-                    email: formData.email,
-                    password: formData.password,
-                })
-                setStrapiUserId(strapiUser.id.toString())
-                storeAccessToken(jwt)
-                userContext(strapiUser)
+                // Validate username format (alphanumeric and underscores, 3-20 chars)
+                const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+                if (!usernameRegex.test(formData.username)) {
+                    throw new Error("Username must be 3-20 characters and contain only letters, numbers, and underscores.");
+                }
 
-                toast.success("Account created successfully!", {
-                    description: "Now, let's personalize your profile.",
-                    position: "top-center",
-                    duration: 2000,
-                })
-                setStepDirection(1)
-                setCurrentStep((prev) => prev + 1)
+                // Validate email format
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(formData.email)) {
+                    throw new Error("Please enter a valid email address.");
+                }
+
+                try {
+                    const { jwt, user: strapiUser } = await registerAccount({
+                        username: formData.username.trim(),
+                        email: formData.email.trim().toLowerCase(),
+                        password: formData.password,
+                    })
+                    setStrapiUserId(strapiUser.id.toString())
+                    storeAccessToken(jwt)
+                    userContext(strapiUser)
+
+                    toast.success("Account created successfully!", {
+                        description: "Now, let's personalize your profile.",
+                        position: "top-center",
+                        duration: 2000,
+                    })
+                    setStepDirection(1)
+                    setCurrentStep((prev) => prev + 1)
+                } catch (registerError: any) {
+                    // Re-throw with better error message
+                    const errorMsg = registerError.message || "Failed to register account. Please try again.";
+                    console.error("[Signup] Registration error:", registerError);
+                    throw new Error(errorMsg);
+                }
             } else if (currentStep === 2) {
                 if (!strapiUserId) throw new Error("Strapi User ID is missing.")
                 try {

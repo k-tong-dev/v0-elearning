@@ -28,6 +28,8 @@ import {
     Heart,
     ChevronDown,
     ChevronRight,
+    Briefcase,
+    FileText,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -59,6 +61,17 @@ const navItems = [
     { label: "Certificates", icon: Award, value: "certificates" },
     { label: "Instructors", icon: Users, value: "instructors" },
     { label: "Enrollments", icon: GraduationCap, value: "enrollments" },
+    { 
+        label: "Career", 
+        icon: Briefcase, 
+        value: "career",
+        hasSubmenu: true,
+        submenu: [
+            { label: "Create Position", value: "career/admin/jobs/new" },
+            { label: "My Applications", value: "career/my-applications" },
+            { label: "Manage Career", value: "career/admin" },
+        ]
+    },
     { 
         label: "Shopping Cart",
         icon: ShoppingCart,
@@ -129,6 +142,7 @@ export function DashboardSidebarResizable({
         Cart: false,
         orders: false,
         wishlist: false,
+        career: false,
     })
 
     // Keyboard shortcut for search (Cmd+K or Ctrl+K)

@@ -21,9 +21,13 @@ import { DashboardFriends } from "@/components/dashboard/DashboardFriends"
 import { DashboardCertificates } from "@/components/dashboard/DashboardCertificates"
 import { DashboardViewCard } from "@/components/dashboard/DashboardViewCard"
 import { DashboardFavorites } from "@/components/dashboard/DashboardFavorites"
+import { DashboardCreatePosition } from "@/components/dashboard/DashboardCreatePosition"
+import { DashboardMyApplications } from "@/components/dashboard/DashboardMyApplications"
+import { DashboardManageCareer } from "@/components/dashboard/DashboardManageCareer"
 import { User as StrapiUser } from "@/types/user"
 import { getUserSubscription } from "@/integrations/strapi/subscription"
 import {BookOpen, DollarSign, MessageCircle, Star, ThumbsUp, Users} from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { FreePlanAgreementPopup } from "@/components/dashboard/FreePlanAgreementPopup"
 import { useFreePlanCheck } from "@/hooks/use-free-plan-check"
 import { useConfirmPageReload } from "@/hooks/use-confirm-page-reload"
@@ -69,6 +73,7 @@ interface Enrollment {
     lastActive: string
     completed: boolean
 }
+
 
 export default function DashboardPage() {
     return (
@@ -557,6 +562,19 @@ function DashboardContent() {
                                     <h2 className="text-2xl font-bold mb-4">Career Opportunities</h2>
                                     <p className="text-muted-foreground">Your saved job opportunities will appear here</p>
                                 </div>
+                            </TabsContent>
+
+                            {/* Career Submenu Tabs */}
+                            <TabsContent value="career/admin/jobs/new" className="mt-0">
+                                <DashboardCreatePosition />
+                            </TabsContent>
+
+                            <TabsContent value="career/my-applications" className="mt-0">
+                                <DashboardMyApplications />
+                            </TabsContent>
+
+                            <TabsContent value="career/admin" className="mt-0">
+                                <DashboardManageCareer />
                             </TabsContent>
 
                             <TabsContent value="settings" className="mt-0">

@@ -48,32 +48,159 @@ export async function checkStrapiUserExists(email: string): Promise<boolean> {
         if (!email) return false;
 
         const encodedEmail = encodeURIComponent(email.trim().toLowerCase());
-        const response = await strapiPublic.get(`/api/users?filters[email][$eq]=${encodedEmail}`);
-        const data = Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response.data?.data)
-                ? response.data.data
-                : [];
+        
+        // Try with authenticated client first (if token is available)
+        const accessToken = getCookieToken();
+        const client = accessToken ? strapi : strapiPublic;
+        
+        try {
+            const response = await client.get(`/api/users?filters[email][$eq]=${encodedEmail}`, {
+                timeout: 10000,
+            });
+            const data = Array.isArray(response.data)
+                ? response.data
+                : Array.isArray(response.data?.data)
+                    ? response.data.data
+                    : [];
 
-        return data.length > 0;
-    } catch (error) {
-        console.error("Error checking Strapi user existence:", error);
+            return data.length > 0;
+        } catch (authError: any) {
+            // If authenticated request fails with 401/403, try public endpoint
+            if (accessToken && (authError.response?.status === 401 || authError.response?.status === 403)) {
+                const publicResponse = await strapiPublic.get(`/api/users?filters[email][$eq]=${encodedEmail}`, {
+                    timeout: 10000,
+                });
+                const publicData = Array.isArray(publicResponse.data)
+                    ? publicResponse.data
+                    : Array.isArray(publicResponse.data?.data)
+                        ? publicResponse.data.data
+                        : [];
+
+                return publicData.length > 0;
+            }
+            throw authError;
+        }
+    } catch (error: any) {
+        // Handle network errors gracefully - return false instead of throwing
+        if (error.code === 'ECONNABORTED' || error.message === 'Network Error' || !error.response) {
+            if (process.env.NODE_ENV === 'development') {
+                console.warn('[checkStrapiUserExists] Network error - Strapi may not be running');
+            }
+        } else if (process.env.NODE_ENV === 'development') {
+            console.error('[checkStrapiUserExists] Error:', {
+                message: error.message,
+                status: error.response?.status,
+            });
+        }
         return false;
     }
 }
 
 export async function registerAccount(userData: { username: string; email: string; password?: string }): Promise<{ jwt: string; user: any }> {
     try {
-        const response = await strapiPublic.post('/api/auth/local/register', {
-            username: userData.username,
-            email: userData.email,
+        // Validate required fields
+        if (!userData.username || !userData.email) {
+            throw new Error('Username and email are required.');
+        }
+
+        if (!userData.password || userData.password.length < 6) {
+            throw new Error('Password must be at least 6 characters long.');
+        }
+
+        const payload = {
+            username: userData.username.trim(),
+            email: userData.email.trim().toLowerCase(),
             password: userData.password,
+        };
+
+        if (process.env.NODE_ENV === 'development') {
+            console.log('[registerAccount] Registering user with Strapi:', {
+                username: payload.username,
+                email: payload.email,
+                passwordLength: payload.password?.length,
+            });
+        }
+
+        const response = await strapiPublic.post('/api/auth/local/register', payload, {
+            timeout: 15000, // 15 second timeout
         });
-        console.log("[registerAccount] Response:", response.data); // Debug
+
+        if (process.env.NODE_ENV === 'development') {
+            console.log("[registerAccount] Success response:", {
+                hasJwt: !!response.data?.jwt,
+                hasUser: !!response.data?.user,
+                userId: response.data?.user?.id,
+            });
+        }
+
+        if (!response.data?.jwt || !response.data?.user) {
+            throw new Error('Invalid response from Strapi. Missing JWT or user data.');
+        }
+
         return response.data;
     } catch (error: any) {
-        console.error("Strapi registration error:", error.response?.data || error.message);
-        throw new Error(error.response?.data?.error?.message || "Failed to register user with Strapi.");
+        // Enhanced error handling
+        let errorMessage = "Failed to register user with Strapi.";
+        
+        if (error.response) {
+            // Strapi returned an error response
+            const errorData = error.response.data;
+            
+            if (errorData?.error) {
+                // Strapi v5 error format
+                if (errorData.error.message) {
+                    errorMessage = errorData.error.message;
+                } else if (typeof errorData.error === 'string') {
+                    errorMessage = errorData.error;
+                }
+            } else if (errorData?.message) {
+                // Alternative error format
+                errorMessage = errorData.message;
+            } else if (errorData?.data?.error?.message) {
+                // Nested error format
+                errorMessage = errorData.data.error.message;
+            }
+
+            // Check for specific validation errors
+            if (errorData?.error?.details?.errors) {
+                const validationErrors = errorData.error.details.errors
+                    .map((err: any) => `${err.path.join('.')}: ${err.message}`)
+                    .join(', ');
+                errorMessage = `Validation error: ${validationErrors}`;
+            }
+
+            // Check for duplicate email/username
+            if (error.response.status === 400) {
+                if (errorMessage.toLowerCase().includes('email') || errorMessage.toLowerCase().includes('already')) {
+                    errorMessage = 'An account with this email already exists. Please use a different email or try logging in.';
+                } else if (errorMessage.toLowerCase().includes('username') || errorMessage.toLowerCase().includes('taken')) {
+                    errorMessage = 'This username is already taken. Please choose a different username.';
+                }
+            }
+
+            console.error("[registerAccount] Strapi error response:", {
+                status: error.response.status,
+                statusText: error.response.statusText,
+                error: errorData,
+                message: errorMessage,
+            });
+        } else if (error.message) {
+            // Network or other errors
+            if (error.code === 'ECONNABORTED') {
+                errorMessage = 'Request timeout. Please check your connection and try again.';
+            } else if (error.message === 'Network Error' || !error.response) {
+                errorMessage = 'Network error. Please ensure Strapi is running and try again.';
+            } else {
+                errorMessage = error.message;
+            }
+            
+            console.error("[registerAccount] Network/other error:", {
+                message: error.message,
+                code: error.code,
+            });
+        }
+
+        throw new Error(errorMessage);
     }
 }
 
@@ -101,19 +228,80 @@ export async function getStrapiUserByEmail(email: string): Promise<any | null> {
         if (!email) return null;
 
         const encodedEmail = encodeURIComponent(email.trim().toLowerCase());
-        const response = await strapiPublic.get(`/api/users?filters[email][$eq]=${encodedEmail}&populate=*`);
-        const data = Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response.data?.data)
-                ? response.data.data
-                : [];
+        
+        // Try with authenticated client first (if token is available)
+        const accessToken = getCookieToken();
+        const client = accessToken ? strapi : strapiPublic;
+        
+        try {
+            const response = await client.get(`/api/users?filters[email][$eq]=${encodedEmail}&populate=*`, {
+                timeout: 10000, // 10 second timeout
+            });
+            
+            const data = Array.isArray(response.data)
+                ? response.data
+                : Array.isArray(response.data?.data)
+                    ? response.data.data
+                    : [];
 
-        if (data.length > 0) {
-            return data[0];
+            if (data.length > 0) {
+                return data[0];
+            }
+            return null;
+        } catch (authError: any) {
+            // If authenticated request fails with 401/403, try public endpoint
+            if (accessToken && (authError.response?.status === 401 || authError.response?.status === 403)) {
+                if (process.env.NODE_ENV === 'development') {
+                    console.warn('[getStrapiUserByEmail] Authenticated request failed, trying public endpoint...');
+                }
+                const publicResponse = await strapiPublic.get(`/api/users?filters[email][$eq]=${encodedEmail}&populate=*`, {
+                    timeout: 10000,
+                });
+                
+                const publicData = Array.isArray(publicResponse.data)
+                    ? publicResponse.data
+                    : Array.isArray(publicResponse.data?.data)
+                        ? publicResponse.data.data
+                        : [];
+
+                if (publicData.length > 0) {
+                    return publicData[0];
+                }
+            }
+            throw authError;
         }
-        return null;
-    } catch (error) {
-        console.error("Error fetching Strapi user by email:", error);
+    } catch (error: any) {
+        // Handle network errors gracefully
+        if (error.code === 'ECONNABORTED') {
+            if (process.env.NODE_ENV === 'development') {
+                console.warn('[getStrapiUserByEmail] Request timeout - Strapi may be slow or unavailable');
+            }
+        } else if (error.message === 'Network Error' || !error.response) {
+            // Network error - Strapi server is likely not running or unreachable
+            if (process.env.NODE_ENV === 'development') {
+                console.warn(
+                    '[getStrapiUserByEmail] Network error - Strapi may not be running.\n' +
+                    `  → Check if Strapi is running at: ${STRAPI_BASE_URL}\n` +
+                    '  → Start Strapi: cd eLearningAdmin && pnpm run develop\n' +
+                    '  → This is a non-critical error and will be handled gracefully.'
+                );
+            }
+        } else if (error.response?.status === 401 || error.response?.status === 403) {
+            // Authentication error - endpoint may require auth
+            if (process.env.NODE_ENV === 'development') {
+                console.warn('[getStrapiUserByEmail] Authentication required for /api/users endpoint');
+            }
+        } else {
+            // Other errors
+            if (process.env.NODE_ENV === 'development') {
+                console.error('[getStrapiUserByEmail] Error:', {
+                    message: error.message,
+                    status: error.response?.status,
+                    data: error.response?.data,
+                });
+            }
+        }
+        // Return null gracefully - this allows the app to continue functioning
         return null;
     }
 }

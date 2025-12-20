@@ -102,24 +102,29 @@ export function AdvancedSearchModal({
             try {
                 const menuItems = await getMenuItems()
                 
-                // Convert MenuItem to SearchFeature
-                const features: SearchFeature[] = menuItems.map((item) => ({
-                    id: item.code || item.id.toString(),
-                    title: item.title || 'Untitled',
-                    description: item.description || '',
-                    href: item.href || '#',
-                    icon: item.icon || 'fa fa-circle',
-                    category: item.category || 'page',
-                    requiresAuth: item.requiresAuth || false,
-                    requiresPro: item.requiresPro || false,
-                    keywords: Array.isArray(item.keywords) ? item.keywords : (item.keywords ? [item.keywords] : []),
-                    gradient: item.gradient || 'from-blue-500 to-cyan-500',
-                }))
-                
-                setAllFeatures(features)
+                // Only update if we got items, otherwise use fallback
+                if (menuItems && menuItems.length > 0) {
+                    // Convert MenuItem to SearchFeature
+                    const features: SearchFeature[] = menuItems.map((item) => ({
+                        id: item.code || item.id.toString(),
+                        title: item.title || 'Untitled',
+                        description: item.description || '',
+                        href: item.href || '#',
+                        icon: item.icon || 'fa fa-circle',
+                        category: item.category || 'page',
+                        requiresAuth: item.requiresAuth || false,
+                        requiresPro: item.requiresPro || false,
+                        keywords: Array.isArray(item.keywords) ? item.keywords : (item.keywords ? [item.keywords] : []),
+                        gradient: item.gradient || 'from-blue-500 to-cyan-500',
+                    }))
+                    
+                    setAllFeatures(features)
+                } else {
+                    // Use fallback features if no items from Strapi
+                    setAllFeatures([])
+                }
             } catch (error) {
-                console.error("Error fetching menu items:", error)
-                // Fallback to empty array
+                // Silently fail - fallback features will be used
                 setAllFeatures([])
             } finally {
                 setLoadingMenu(false)

@@ -105,21 +105,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const { data } = await supabase.auth.getSession();
             const supabaseUser = data.session?.user;
             if (supabaseUser) {
-                const strapiUser = await getStrapiUserByEmail(supabaseUser.email!);
-                if (strapiUser) {
-                    const normalizedUser: User = {
-                        ...(strapiUser as User),
-                        id: strapiUser?.id != null ? String(strapiUser.id) : "",
-                        supabaseId: supabaseUser.id,
-                        email: supabaseUser.email!,
-                        username: strapiUser?.username || supabaseUser.email!,
-                        name: strapiUser?.name || strapiUser?.username || supabaseUser.email!,
-                    };
-                    setUser((prev) => (areUsersEqual(prev, normalizedUser) ? prev : normalizedUser));
-                    setIsAuthenticated(true);
-                } else {
+                try {
+                    const strapiUser = await getStrapiUserByEmail(supabaseUser.email!);
+                    if (strapiUser) {
+                        const normalizedUser: User = {
+                            ...(strapiUser as User),
+                            id: strapiUser?.id != null ? String(strapiUser.id) : "",
+                            supabaseId: supabaseUser.id,
+                            email: supabaseUser.email!,
+                            username: strapiUser?.username || supabaseUser.email!,
+                            name: strapiUser?.name || strapiUser?.username || supabaseUser.email!,
+                        };
+                        setUser((prev) => (areUsersEqual(prev, normalizedUser) ? prev : normalizedUser));
+                        setIsAuthenticated(true);
+                    } else {
+                        // Strapi user not found, but Supabase user exists - create user context from Supabase
+                        const normalizedUser = {
+                            id: "",
+                            supabaseId: supabaseUser.id,
+                            email: supabaseUser.email!,
+                            username: supabaseUser.user_metadata?.full_name || supabaseUser.email!,
+                            name: supabaseUser.user_metadata?.full_name || supabaseUser.email!,
+                            avatar: supabaseUser.user_metadata?.avatar_url || null,
+                        } as User;
+                        setUser((prev) => (areUsersEqual(prev, normalizedUser) ? prev : normalizedUser));
+                        setIsAuthenticated(true);
+                    }
+                } catch (err: any) {
+                    // Handle error gracefully - continue with Supabase user data
+                    console.warn('[refreshUser] Error fetching Strapi user, using Supabase data:', err.message);
                     const normalizedUser = {
-                        ...(strapiUser ? (strapiUser as User) : {}),
                         id: "",
                         supabaseId: supabaseUser.id,
                         email: supabaseUser.email!,
