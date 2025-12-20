@@ -1,22 +1,61 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { HeaderUltra } from "@/components/ui/headers/HeaderUltra"
 import { Footer } from "@/components/ui/footers/footer"
 import { Button } from "@heroui/react"
 import { useCart } from "@/contexts/CartContext"
-import { ShoppingCart, Trash2, ArrowLeft, CreditCard, CheckCircle, X } from "lucide-react"
+import { ShoppingCart, Trash2, ArrowLeft, CreditCard, CheckCircle, X, AlertCircle } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/use-auth"
+import { checkUserPurchasedCourse } from "@/integrations/strapi/purchaseTransaction"
+import { useEffect, useState } from "react"
 
 export default function CardPage() {
     const router = useRouter()
-    const { items, removeFromCart, clearCart, totalPrice, totalPriceFormatted, itemCount } = useCart()
-    const { isAuthenticated } = useAuth()
+    const { items, removeFromCart, clearCart, totalPrice, totalPriceFormatted, itemCount, refreshCart } = useCart()
+    const { isAuthenticated, user } = useAuth()
     const [isProcessing, setIsProcessing] = useState(false)
+    const [purchasedCourseIds, setPurchasedCourseIds] = useState<Set<number>>(new Set())
+
+    // Check for purchased courses and filter them out
+    useEffect(() => {
+        const checkPurchasedCourses = async () => {
+            if (!isAuthenticated || !user?.id || items.length === 0) return
+
+            const purchasedIds = new Set<number>()
+            const itemsToRemove: number[] = []
+
+            for (const item of items) {
+                try {
+                    const courseId = item.courseDocumentId || item.courseId.toString()
+                    const isPurchased = await checkUserPurchasedCourse(user.id.toString(), courseId)
+                    if (isPurchased) {
+                        purchasedIds.add(item.courseId)
+                        itemsToRemove.push(item.courseId)
+                    }
+                } catch (error) {
+                    console.error("Error checking purchase status:", error)
+                }
+            }
+
+            if (itemsToRemove.length > 0) {
+                setPurchasedCourseIds(purchasedIds)
+                // Remove purchased courses from cart
+                for (const courseId of itemsToRemove) {
+                    await removeFromCart(courseId)
+                }
+                toast.warning(`${itemsToRemove.length} course(s) already purchased and removed from cart`)
+                // Refresh cart to update UI
+                await refreshCart()
+            }
+        }
+
+        checkPurchasedCourses()
+    }, [items, isAuthenticated, user?.id, removeFromCart, refreshCart])
 
     const handleCheckout = async () => {
         if (!isAuthenticated) {
@@ -60,15 +99,33 @@ export default function CardPage() {
                         <div className="p-3 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500">
                             <ShoppingCart className="w-8 h-8 text-white" />
                         </div>
-                        <div>
+                        <div className="flex-1">
                             <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                 Shopping Cart
                             </h1>
                             <p className="text-slate-600 dark:text-slate-400">
-                                {itemCount} {itemCount === 1 ? "course" : "courses"} in your Card
+                                {itemCount} {itemCount === 1 ? "course" : "courses"} in your Cart
                             </p>
                         </div>
                     </div>
+                    
+                    {purchasedCourseIds.size > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-start gap-3"
+                        >
+                            <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                            <div>
+                                <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">
+                                    Purchased courses removed
+                                </p>
+                                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                                    {purchasedCourseIds.size} course(s) you've already purchased have been removed from your cart. Check your enrolled courses to access them.
+                                </p>
+                            </div>
+                        </motion.div>
+                    )}
                 </motion.div>
 
                 {items.length === 0 ? (

@@ -50,6 +50,7 @@ import type { CoursePreview } from "@/integrations/strapi/coursePreview";
 import { enrichInstructorsWithAvatars } from "@/lib/helpers/instructorAvatarHelper";
 import { useCart } from "@/contexts/CartContext";
 import { getAvatarUrl } from "@/lib/getAvatarUrl"
+import { checkUserPurchasedCourse } from "@/integrations/strapi/purchaseTransaction"
 
 export default function CoursesPage() {
     const router = useRouter()
@@ -1100,6 +1101,9 @@ export default function CoursesPage() {
                                 ? isInCartByDocumentId(course.documentId)
                                 : isInCart(course.id)
                             
+                            // Check if course is purchased
+                            const courseIsPurchased = purchasedCourseIds.has(course.id)
+                            
                             return (
                                 <div
                                     key={`${course.id}-${courseInCart}`}
@@ -1126,6 +1130,7 @@ export default function CoursesPage() {
                                             }
                                         }}
                                         isInCart={courseInCart}
+                                        isPurchased={courseIsPurchased}
                                         isFavorite={favorites.some(id => Number(id) === Number(course.id))}
                                     />
                                 </div>

@@ -67,6 +67,7 @@ interface CourseCardProps {
     onView?: (courseId: number) => void
     isFavorite?: boolean
     isInCart?: boolean
+    isPurchased?: boolean
     showEditButton?: boolean
     variant?: "default" | "dashboard"
 }
@@ -326,6 +327,7 @@ export function CourseCard({
                                onView,
                                isFavorite = false,
                                isInCart = false,
+                               isPurchased = false,
                                showEditButton = false,
                                variant = "default",
                            }: CourseCardProps) {
@@ -725,16 +727,26 @@ export function CourseCard({
                                             </span>
                                         </motion.div>
                                     )}
-                            <Button 
-                                className={cn(
-                                    "bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white h-9 px-4 text-xs font-bold rounded-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105",
-                                    course.is_paid && onAddToCart && !isInCart ? "flex-1" : "w-full"
-                                )}
-                                onClick={handleEnrollButtonClick}
-                            >
-                                        <FaRegMoneyBillAlt className="w-3.5 h-3.5 mr-1.5" />
-                                        {course.is_paid ? "Buy Now" : "Enroll Now"}
-                            </Button>
+                            {isPurchased ? (
+                                <Button 
+                                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white h-9 px-4 text-xs font-bold rounded-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                                    onClick={handleEnrollButtonClick}
+                                >
+                                    <Play className="w-3.5 h-3.5 mr-1.5" />
+                                    Start Learning
+                                </Button>
+                            ) : (
+                                <Button 
+                                    className={cn(
+                                        "bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white h-9 px-4 text-xs font-bold rounded-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105",
+                                        course.is_paid && onAddToCart && !isInCart ? "flex-1" : "w-full"
+                                    )}
+                                    onClick={handleEnrollButtonClick}
+                                >
+                                    <FaRegMoneyBillAlt className="w-3.5 h-3.5 mr-1.5" />
+                                    {course.is_paid ? "Buy Now" : "Enroll Now"}
+                                </Button>
+                            )}
                                 </>
                             )}
                         </div>

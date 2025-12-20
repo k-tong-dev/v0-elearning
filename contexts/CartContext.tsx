@@ -13,6 +13,7 @@ import {
 } from "@/integrations/strapi/cartItem"
 import { getAvatarUrl } from "@/lib/getAvatarUrl"
 import { getCoursePreview, getCoursePreviewUrl } from "@/integrations/strapi/coursePreview"
+import { checkUserPurchasedCourse } from "@/integrations/strapi/purchaseTransaction"
 
 export interface CartItem {
     id: number
@@ -132,9 +133,47 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 const mappedPromises = strapiItems.map(item => mapStrapiCartItem(item))
                 const mappedResults = await Promise.all(mappedPromises)
                 const mappedItems = mappedResults.filter((item): item is CartItem => item !== null)
-                console.log("[CartContext] Mapped cart items:", mappedItems)
-                console.log("[CartContext] Setting items state with:", mappedItems.length, "items")
-                setItems(mappedItems)
+                
+                // Filter out purchased courses (check in parallel for better performance)
+                const purchaseChecks = await Promise.all(
+                    mappedItems.map(async (item) => {
+                        const courseId = item.courseDocumentId || item.courseId.toString()
+                        try {
+                            const isPurchased = await checkUserPurchasedCourse(user.id.toString(), courseId)
+                            return { item, isPurchased }
+                        } catch (error) {
+                            console.error("[CartContext] Error checking purchase status:", error)
+                            return { item, isPurchased: false } // Keep item if check fails
+                        }
+                    })
+                )
+                
+                const purchasedItems: CartItem[] = []
+                const validItems: CartItem[] = []
+                
+                for (const { item, isPurchased } of purchaseChecks) {
+                    if (isPurchased) {
+                        console.log("[CartContext] Course already purchased, removing from cart:", item.courseId)
+                        purchasedItems.push(item)
+                        // Remove from Strapi cart
+                        if (item.strapiCartItemId) {
+                            try {
+                                await removeCartItemAPI(item.strapiCartItemId)
+                            } catch (error) {
+                                console.error("[CartContext] Failed to remove purchased course from cart:", error)
+                            }
+                        }
+                    } else {
+                        validItems.push(item)
+                    }
+                }
+                
+                if (purchasedItems.length > 0) {
+                    toast.info(`${purchasedItems.length} course(s) already purchased and removed from cart`)
+                }
+                
+                console.log("[CartContext] Valid cart items (after filtering purchased):", validItems.length)
+                setItems(validItems)
             } catch (error) {
                 console.error("[CartContext] Failed to load from Strapi:", error)
                 toast.error("Failed to load cart")
@@ -281,6 +320,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
             console.warn("[Cart] Course already in cart (isInCart check), preventing duplicate:", course.id)
             toast.warning("This course is already in your cart!")
             return
+        }
+
+        // Check if course is already purchased
+        if (isAuthenticated && user) {
+            try {
+                const isPurchased = await checkUserPurchasedCourse(user.id.toString(), course.id)
+                if (isPurchased) {
+                    toast.error("You have already purchased this course! Check your enrolled courses.")
+                    return
+                }
+            } catch (error) {
+                console.error("[Cart] Error checking if course is purchased:", error)
+                // Continue with adding to cart if check fails
+            }
         }
 
         if (isAuthenticated && user) {

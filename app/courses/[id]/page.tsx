@@ -792,6 +792,22 @@ export default function CourseDetailPage() {
 
         if (!course) return
 
+        // Check if course is already purchased
+        try {
+            const { checkUserPurchasedCourse } = await import('@/integrations/strapi/purchaseTransaction')
+            const courseId = course.documentId || course.id
+            const isPurchased = await checkUserPurchasedCourse(user.id.toString(), courseId)
+            
+            if (isPurchased) {
+                toast.error("You have already purchased this course! Check your enrolled courses.")
+                router.push(`/courses/${courseId}/study`)
+                return
+            }
+        } catch (error) {
+            console.error("Error checking if course is purchased:", error)
+            // Continue with cart check if purchase check fails
+        }
+
         // Check if already in cart - use documentId for reliable comparison
         const courseInCart = course.documentId 
             ? isInCartByDocumentId(course.documentId)
@@ -1121,14 +1137,14 @@ export default function CourseDetailPage() {
 
                                         {/* Action Buttons */}
                                         <div className="space-y-3">
-                                            {userEnrollment ? (
+                                            {(userEnrollment || (course.is_paid && hasPurchase)) ? (
                                                 <Button
                                                     size="lg"
                                                     className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg h-14 text-lg font-semibold"
                                                     onClick={() => router.push(`/courses/${courseId}/study`)}
                                                 >
                                                     <Play className="w-6 h-6 mr-2" />
-                                                    Start Course
+                                                    Start Learning
                                                 </Button>
                                             ) : (
                                                 <>
