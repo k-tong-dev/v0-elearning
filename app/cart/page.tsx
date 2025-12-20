@@ -12,7 +12,6 @@ import Image from "next/image"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/use-auth"
 import { checkUserPurchasedCourse } from "@/integrations/strapi/purchaseTransaction"
-import { useEffect, useState } from "react"
 
 export default function CardPage() {
     const router = useRouter()

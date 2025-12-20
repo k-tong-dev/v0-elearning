@@ -106,6 +106,46 @@ export default function CoursesPage() {
         (typeof (user as any)?.avatarUrl === "string" ? (user as any)?.avatarUrl : null)
     const [coursePreviewMap, setCoursePreviewMap] = useState<Record<string, CoursePreview | null>>({})
     const [enrichedCoursesData, setEnrichedCoursesData] = useState<CourseCourse[]>([])
+    const [purchasedCourseIds, setPurchasedCourseIds] = useState<Set<number>>(new Set())
+
+    // Check purchase status for all paid courses
+    useEffect(() => {
+        if (!isAuthenticated || !user?.id || enrichedCoursesData.length === 0) {
+            setPurchasedCourseIds(new Set())
+            return
+        }
+
+        let isCancelled = false
+        const checkPurchases = async () => {
+            const purchasedIds = new Set<number>()
+            
+            // Check purchase status for paid courses only
+            const paidCourses = enrichedCoursesData.filter(course => course.is_paid)
+            
+            for (const course of paidCourses) {
+                if (isCancelled) break
+                try {
+                    const courseId = course.documentId || course.id.toString()
+                    const isPurchased = await checkUserPurchasedCourse(user.id.toString(), courseId)
+                    if (isPurchased) {
+                        purchasedIds.add(course.id)
+                    }
+                } catch (error) {
+                    console.error(`Error checking purchase for course ${course.id}:`, error)
+                }
+            }
+            
+            if (!isCancelled) {
+                setPurchasedCourseIds(purchasedIds)
+            }
+        }
+
+        checkPurchases()
+
+        return () => {
+            isCancelled = true
+        }
+    }, [enrichedCoursesData, isAuthenticated, user?.id])
 
     // Enrich instructor data with avatars from instructor API
     useEffect(() => {
