@@ -196,13 +196,26 @@ export function DashboardOverview({ stats, enrollmentData, courseTypeData, recen
                     // Determine course type from course contents
                     let courseType = 'Other'
                     try {
-                        const materials = await getCourseMaterials(course.id)
+                        // Fetch materials with course contents populated
+                        const { strapi } = await import('@/integrations/strapi/client')
+                        const courseDocId = course.documentId || course.id
+                        const isDocumentId = typeof courseDocId === 'string' && !/^\d+$/.test(courseDocId)
+                        const filterParam = isDocumentId
+                            ? `filters[course_course][documentId][$eq]=${courseDocId}`
+                            : `filters[course_course][id][$eq]=${course.id}`
+                        
+                        const materialsResponse = await strapi.get(
+                            `/api/course-materials?${filterParam}&populate[course_contents][fields][0]=type&sort=order_index:asc`
+                        )
+                        const materials = materialsResponse.data?.data || []
+                        
                         if (materials && materials.length > 0) {
                             // Count content types
                             const contentTypeCounts = new Map<string, number>()
                             for (const material of materials) {
-                                if (material.course_contents && material.course_contents.length > 0) {
-                                    for (const content of material.course_contents) {
+                                const contents = material.course_contents?.data || material.course_contents || []
+                                if (contents.length > 0) {
+                                    for (const content of contents) {
                                         const contentType = content.type || 'unknown'
                                         contentTypeCounts.set(contentType, (contentTypeCounts.get(contentType) || 0) + 1)
                                     }
