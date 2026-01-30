@@ -222,7 +222,7 @@ export default function CreateInstructorForm({ onCancel, onSuccess, editingInstr
 
             const instructorData: any = {
                 name: formData.name,
-                user: user.id,
+                user: user.documentId,
                 bio: formData.bio,
                 specializations: specializations,
                 // Use new avatar if uploaded, otherwise keep existing
