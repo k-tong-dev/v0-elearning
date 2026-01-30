@@ -479,7 +479,6 @@ async function resolveDocumentIdByNumericId(
 
 export async function createInstructor(data: Partial<Instructor> & { name: string; user: string }): Promise<Instructor | null> {
     try {
-        // Resolve documentId for the user relation to ensure Strapi Admin UI displays it
         const userDocumentId = await resolveDocumentIdByNumericId("users", data.user);
         if (!userDocumentId) {
             console.error("Failed to resolve user documentId for instructor creation");
